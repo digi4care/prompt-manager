@@ -108,13 +108,13 @@
 		<div class="flex gap-4">
 			<label class="flex items-center gap-2">
 				<input type="radio" name="mode" value="local" bind:group={mode} class="h-4 w-4" />
-				<span class="text-sm">Lokaal</span>
-				<span class="text-xs text-muted-foreground">(zelf server starten)</span>
+				<span class="text-sm font-medium">SDK</span>
+				<span class="text-xs text-muted-foreground">(embedded server, geen setup nodig)</span>
 			</label>
 			<label class="flex items-center gap-2">
 				<input type="radio" name="mode" value="remote" bind:group={mode} class="h-4 w-4" />
-				<span class="text-sm">Remote</span>
-				<span class="text-xs text-muted-foreground">(externe server met wachtwoord)</span>
+				<span class="text-sm font-medium">Server</span>
+				<span class="text-xs text-muted-foreground">(verbind met externe server)</span>
 			</label>
 		</div>
 	</div>

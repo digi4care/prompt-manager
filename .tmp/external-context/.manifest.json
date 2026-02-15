@@ -1,0 +1,24 @@
+{
+	"version": "1.0",
+	"last_updated": "2026-02-13T00:00:00Z",
+	"libraries": {
+		"better-auth": {
+			"files": [
+				{
+					"filename": "totp-enable-verify-sveltekit.md",
+					"topic": "enable verify totp flow in sveltekit",
+					"tech_stack": "SvelteKit",
+					"fetched": "2026-02-13T00:00:00Z",
+					"source": "Context7 API"
+				},
+				{
+					"filename": "totp-verification-failures.md",
+					"topic": "common totp verification failures",
+					"tech_stack": "SvelteKit",
+					"fetched": "2026-02-13T00:00:00Z",
+					"source": "Context7 API"
+				}
+			]
+		}
+	}
+}

@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "api_version": "v1",
+  "documentation": "/api/docs",
+  "endpoints": {
+    "auth": "/api/auth",
+    "prompts": "/api/prompts",
+    "admin": "/api/admin",
+    "opencode": "/api/opencode"
+  },
+  "features": {
+    "rate_limiting": true,
+    "csrf_protection": true,
+    "audit_logging": true
+  }
+}

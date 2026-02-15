@@ -1,0 +1,867 @@
+[0.2s] What's up everybody? If you're like me,
+[2.4s] you get a little bit FOMOed and
+[4.3s] overwhelmed with the seemingly thousands
+[6.8s] of MCP servers that have come out. Which
+[9.1s] ones are good? Which ones are for coding
+[12.2s] specifically? Well, at this point, I've
+[13.8s] tried out a few dozen different MCP
+[15.7s] servers. Some of them are good. Some of
+[17.8s] them were so so. Some of them were super
+[20.4s] concrete for specific situations. Some
+[23.0s] of them were too abstract that I could
+[24.8s] even get any value out of them. So, I
+[26.7s] said, "Hey, wouldn't the internet
+[28.7s] appreciate if I went through all of them
+[30.7s] and broke down the ones that I actually
+[33.0s] still use every single week?" If you
+[35.7s] don't know me, my name is Sean. I've
+[37.8s] worked in different SAS companies
+[39.6s] before, and I also helped build and
+[42.1s] scale a marketing company to over 8
+[45.0s] figures in annual revenue. And so, from
+[47.7s] all of that experience, I like to bring
+[49.4s] to YouTube real life practical tutorials
+[53.0s] for things that actually work in the
+[55.0s] real world. So, that's what we're going
+[56.3s] to do. My top nine MCP servers that I
+[58.7s] use every single week. We're going to go
+[60.7s] through each of them. We're going to
+[61.6s] talk about what they are, where I
+[63.6s] actually use them in my process, and
+[65.1s] what it means for your overall
+[66.6s] development workflows, aka should you
+[69.3s] actually consider using them or not. So,
+[71.0s] if you like doing more with less, this
+[73.0s] video is for you. And spoiler alert, one
+[75.4s] of these MCPs is from a smaller
+[77.6s] developer, but I still love it. So,
+[80.2s] stick around till the end for that one.
+[82.2s] or shamelessly check out the timestamps
+[84.7s] below and just fast forward to it, but
+[86.6s] then YouTube might not show my content
+[88.5s] to people like you and I'll be doomed to
+[90.8s] 20,000 subscribers for the rest of
+[93.8s] eternity. So, let's get into it. So,
+[95.7s] first up on the app is the linear MCP.
+[98.9s] So, Linear is an app that honestly
+[100.7s] allows you to build a lot faster and a
+[103.0s] lot more systematically. And it does
+[105.0s] that by allowing you to track issues
+[107.6s] that you're having, but also manage
+[109.8s] larger feature builds and add things
+[112.0s] into the backlog as you come across them
+[113.8s] in your development process. Because if
+[115.4s] you're like me, things come up all the
+[117.4s] time when you're building and just
+[119.7s] jotting those down like a notepad is a
+[121.6s] terrible way to do things. And so it's
+[123.5s] really nice to have a tool like Linear
+[125.8s] integrated as an MCP into your
+[128.6s] development workflows. So let's take a
+[130.4s] look at an example. So, a lot of people
+[132.1s] get lost in the sauce when they're
+[133.9s] building things. So, in this example,
+[135.2s] I'm asking Claude to analyze my app for
+[137.5s] performance bottlenecks and recommend
+[139.7s] some different optimizations. And so,
+[141.7s] what inevitably happens is that when
+[143.0s] this thing completes, and again, this
+[144.9s] could be a bug. It could be a feature
+[146.5s] that you've thought of, it could be
+[147.7s] something you know you need to add to
+[148.9s] your backlog. It could be something
+[150.7s] that's a critical blocker that you just
+[153.2s] don't want to fix right now. And so you
+[155.4s] need to sync the work that's happening
+[157.1s] in the app right now with a backlog that
+[160.4s] you can check and prioritize and work
+[162.8s] on. And so this is really important
+[164.5s] because your backlogs need to be
+[166.7s] prioritized. You need to know what's
+[168.2s] important to fix, what's important to
+[169.7s] build on. How are you going to decide if
+[171.8s] you're in building mode or fixing mode
+[173.7s] or whatever mode? Well, linear is great
+[176.0s] because when these things crop up in the
+[177.9s] course of your development and you're
+[179.5s] making those decisions, you can add them
+[182.5s] into your backlog. So let's take a look
+[184.7s] at what that looks like. And so it's
+[186.3s] found some issues already like how I'm
+[187.8s] querying my database, issues with how
+[190.0s] I'm caching information on the front end
+[192.9s] and a few different things. And so what
+[195.3s] we can do is we can use the linear MCP
+[198.3s] to actually prioritize this backlog. So
+[201.0s] let's take a look at what that looks
+[202.3s] like. So I can tell it use the linear
+[204.6s] MCP to prioritize these in order of
+[206.6s] impact and give implementation notes.
+[209.0s] And now we can see as this process is
+[212.2s] nearing completion. And so it went
+[213.5s] through and it created a bunch of
+[215.6s] tickets basically for me to um address.
+[218.7s] And so we can see all of these from
+[220.3s] October 3rd. We have different bugs and
+[222.2s] then we have different rooms for
+[223.4s] improvement too. And so if we wanted to
+[225.4s] look at for example the cache
+[228.2s] invalidation strategy, we can come in,
+[230.5s] we can look at it, we can see what the
+[232.2s] impact is that it's having notes about
+[234.6s] the implementation with specific code
+[237.5s] snippets and then we have different
+[239.4s] solutions that we can use to implement
+[241.4s] this. Now, why is this important? Well,
+[244.1s] later on, call it 2 days from now, when
+[246.6s] we go in and we want to look at this
+[248.4s] specific issue. So, for example, this
+[250.6s] one's 81. If we went back into our
+[253.2s] project and had no context for that
+[255.0s] conversation that just took place, we
+[257.4s] could say pull from linear MCP this
+[261.2s] issue and summarize it. And now we could
+[263.5s] say or build an implementation plan,
+[265.7s] right? And so on. And so what it's going
+[267.3s] to do is it's going to go and it is
+[268.7s] going to fetch that issue from linear
+[272.0s] and then it'll pull it in and from there
+[273.7s] we could work on it. There we go. We
+[275.4s] have an exact definition essentially of
+[277.8s] the problem. And so this is great
+[279.3s] because AI coding moves very fast but if
+[282.0s] you don't have systems in place that
+[284.9s] velocity creates chaos in your process
+[288.2s] and then you lose track of important
+[289.9s] things to fix as well as important
+[291.8s] things to maybe build later on. So if
+[293.8s] you want to develop with AI sustainably,
+[296.6s] you need to be able to capture these
+[298.1s] things and surface them so that you can
+[300.3s] continue moving forward and working on
+[302.1s] the important things that need to be
+[303.9s] worked on. So the next MCP that we're
+[305.8s] going to look at is Perplexity's MCP.
+[308.0s] And there's a lot of different reasons
+[310.2s] why this becomes very valuable. It's
+[312.4s] helpful when you're researching for new
+[314.4s] features, especially in an area that
+[317.1s] you're not an expert in necessarily. Say
+[319.5s] you want to go out and start building
+[320.7s] agents, but you're not, you know,
+[322.5s] incredibly talented at building agents
+[324.6s] and you want to understand what are the
+[326.7s] patterns, what are the best practices.
+[328.6s] Perplexity is something that's going to
+[329.8s] help you do that. It's also really
+[331.7s] helpful when you're trying to debug
+[333.2s] certain problems or understand the
+[335.3s] solution that you should try to take to
+[336.8s] a specific problem. Perplexity can go
+[338.7s] out and it can find other people that
+[340.8s] have hit that type of problem before.
+[342.6s] And so without awareness about the types
+[345.0s] of things that we're building and what
+[346.7s] the best practices are, you're never
+[348.8s] going to build something that's truly
+[350.2s] optimized. So perplexity helps us in
+[353.0s] that research phase. So one way that we
+[355.2s] could use this is literally right here
+[356.6s] where we just left off. So we have these
+[359.2s] proposed solutions for how we can solve
+[361.4s] that caching issue. Well, we could ask
+[363.4s] Perplexi to go out and find best
+[365.7s] practices for doing that thing. But
+[367.8s] let's say that we want to do research
+[370.2s] for a new feature that we're going to
+[372.1s] build. So here's an example. I want to
+[373.8s] build a new feature that utilizes the
+[375.4s] Gemini API to understand what exactly is
+[378.7s] inside of an image that a user uploads.
+[381.2s] For example, like the objects in the
+[382.6s] image and allow a user to tap on them
+[384.3s] and erase them from the image. Use the
+[386.1s] Perplexity MCP to determine the best
+[387.9s] approach. And within a few seconds,
+[389.6s] realistically, I think that was like no
+[390.8s] more than 60 seconds, we now have a
+[393.0s] concrete recommendation for exactly how
+[395.4s] to do that. So we can use the Gemini
+[398.1s] flash API for segmenting the images and
+[402.0s] it can in fact identify multiple objects
+[404.5s] in a single API call which is pretty
+[406.2s] cool. Then it's saying basically just
+[407.9s] display those boxes in a interactive UI
+[411.2s] flow where the users can click on it and
+[413.0s] then you can use an inpainting model to
+[415.4s] actually provide that capacity to be
+[417.0s] able to remove the things from the
+[419.2s] images and so perplexity is really
+[421.3s] undervalued for what it is. It's not
+[423.7s] just going to go find information. and
+[425.2s] it's going to understand the context of
+[426.9s] what you really want and combine
+[428.6s] multiple searches together to give you
+[430.5s] an actual plan. So, I love using this
+[433.4s] process for trying to understand the
+[435.4s] best pattern or workflow or APIs or
+[438.7s] implementation plan for technology or
+[441.3s] frameworks that I really don't know much
+[443.5s] about. And so, to zoom out for a second,
+[445.8s] AI can code faster than you think, but
+[448.5s] it needs to know what you consider good
+[451.0s] and what direction you want to take with
+[453.4s] what you are building. And so that gap
+[455.7s] between what is possible and what is
+[458.2s] optimal, a tool like perplexity helps us
+[461.0s] bridge that gap and understand what we
+[463.4s] can feasibly do and then integrate that
+[466.0s] into our development process. So modern
+[469.4s] vibe coding isn't about guessing or just
+[471.8s] giving the decision-m to the language
+[474.5s] model. It's about giving it the right
+[476.6s] context to make informed decisions. And
+[480.2s] that is what perplexity helps us do. So
+[482.2s] the next MCP server is GitHub's MCP. So
+[486.4s] proper repository management, issue
+[488.9s] management, branching, all of that type
+[491.4s] of stuff. It can actually be quite
+[493.0s] involved for someone that is more on the
+[495.8s] beginner side. So AI coders that are new
+[498.9s] to development can struggle with some of
+[501.4s] those fundamentals that might be second
+[503.2s] nature to someone that's been doing it
+[504.6s] for a decade. And trust me, I see it in
+[507.4s] my comments. This guy used he used a
+[510.2s] flux capacitor to connect to his widgety
+[512.6s] woo while he was trying to traverse his
+[514.6s] git trees in real time. What a noob. But
+[517.4s] the fundamental issue here is that
+[518.7s] working in only one branch is going to
+[520.8s] create such big issues for you that if
+[524.2s] you don't get in the habit of proper
+[525.8s] version control systems, you are going
+[527.9s] to be screwed eventually. And so the use
+[530.6s] cases that I fall into most for GitHub's
+[534.4s] MCP is the general repository
+[537.8s] management. So looking at commits that
+[539.7s] have been made across the project and
+[541.6s] trying to understand certain things and
+[543.7s] then creating issues and automating the
+[546.3s] creation of pull requests so that we can
+[548.8s] track mergers that we're trying to make
+[551.0s] back into our main project and and all
+[552.9s] of that type of stuff. Which again, even
+[554.7s] if you're just vibe coding a project,
+[556.7s] you want to get in the habit of
+[558.0s] thinking, hey, one day this is really
+[559.5s] going to be something and I I better get
+[561.2s] into the development best practices now
+[564.3s] and not just go balls to the wall
+[567.0s] working in one branch for the rest of my
+[568.8s] life. So, here's an example. We're going
+[570.5s] to create a new bug branch to tackle
+[572.6s] this goal 78 issue that we have. And
+[575.7s] then I want you to use the GitHub MCP to
+[577.6s] create an issue for it. Once you've done
+[580.2s] that, fix the bug. Once you've done
+[582.5s] that, use the GitHub MCP to create a
+[585.0s] pull request that fixes the issue, leave
+[587.8s] feedback on the changes, and mark the
+[589.6s] issue complete. So, if we were to now
+[591.2s] pop back over into GitHub and we went to
+[593.3s] our repository, we can see that there's
+[595.1s] now an open poll request. And so, if we
+[597.8s] were to go in here and look at it, we
+[599.5s] can see a summary of what the problem
+[601.8s] actually was and what the solution was
+[605.5s] to fix it. Now I have a separate linting
+[608.0s] issue which is why this is not deploying
+[610.1s] to my project on Verscell. But we could
+[612.8s] come through here. We could run tests.
+[615.9s] We could review the actual file changes
+[619.2s] that were made. And if all is good, we
+[621.5s] can actually merge this into our main
+[624.6s] branch. So if we were to now pop back
+[626.2s] into our main branch, boom, we can see
+[628.1s] that we just pushed this pull request
+[630.6s] through. So speed without structure is
+[633.0s] just technical debt waiting to happen.
+[635.4s] and it's just in disguise. Hasn't shown
+[637.3s] its face yet, but it's there. And so,
+[639.2s] while AI is democratizing the coding
+[642.1s] process, it's still important that
+[643.8s] you're thoughtful and deliberate about
+[646.1s] what you are doing and that you have
+[647.9s] systems behind what you are doing. So,
+[650.1s] the best AI developers are not skipping
+[652.4s] fundamentals. They are just automating
+[654.6s] as much of it as makes sense. So, the
+[657.0s] next MCP we're going to look at is the
+[658.6s] Superbase MCP. Now, the reason we're
+[660.6s] doing this, this is a very valuable
+[663.5s] development tool. If you are using
+[665.1s] Superbase, which I know a lot of you do.
+[667.3s] Now, the reason it's valuable is that
+[668.8s] when you're developing, especially when
+[670.2s] you're running into issues in your code,
+[672.7s] you inevitably need to look at the
+[674.7s] different tables that you have and the
+[676.5s] entries in order to determine why
+[678.8s] something isn't happening the way that
+[680.2s] you think it should be happening, right?
+[681.8s] And so, you need to be able to actually
+[683.3s] reference the state of your database to
+[685.9s] see what is broken and what's not. Now,
+[687.8s] if you were not using this MCP server,
+[689.8s] your options would be to make a manual
+[691.8s] SQL query and have to actually run that
+[693.8s] thing from inside of your coding
+[695.5s] environment. Or number two, actually
+[697.2s] going in like I'm showing here and
+[699.7s] looking at our database tables and
+[702.4s] trying to understand, hey, what columns
+[704.0s] are there, what columns are supposed to
+[705.3s] be there that aren't, which ones are
+[707.1s] that shouldn't be, and you know, all of
+[708.7s] that type of stuff. And trying to
+[709.9s] determine what exactly is the problem.
+[712.8s] knowing what columns to actually pull
+[714.5s] and send back into the system to give it
+[716.3s] example data. Very annoying headache to
+[719.4s] have to deal with. So why do that when
+[721.4s] we could just use an MCP? So for this
+[723.5s] one, let's take a look at a an app that
+[725.8s] we're working in. So we've been working
+[727.0s] on this in a few different videos on the
+[728.9s] channel. It's like a generalized prompt
+[731.4s] uh repository type of app. I'm not going
+[733.2s] to get into that now, but it basically
+[734.8s] has this functionality where we can come
+[736.2s] in, we can store prompts, then we can
+[737.9s] edit those prompts and keep a live
+[740.3s] version history of the edits that we
+[742.3s] made. Now, let's say that we had made a
+[745.4s] bunch of edits to this prompt
+[747.3s] specifically, but none of the versions
+[749.2s] were actually showing. So, what we could
+[751.5s] do is say, hm, I mean, I know I made
+[753.5s] those changes, so it should be there.
+[755.5s] Let's try to figure out what's happening
+[757.0s] because it might be the case that the
+[758.3s] tables weren't created properly. Could
+[760.7s] be that the entries aren't being
+[761.9s] injected in there. Could be that the
+[764.2s] like the ID keys aren't matching up, so
+[766.8s] it doesn't know to pull in for this
+[769.4s] specific prompt, these specific
+[770.8s] versions. There's a lot of things that
+[772.1s] could be the case. And so we could say
+[775.0s] version history isn't loading for one of
+[776.5s] my prompts called design maker, which is
+[778.0s] the one we were just looking at. Use the
+[779.8s] Superbase MCP to help me understand why.
+[782.6s] And so we can see what this looks like
+[784.1s] inside of our project where they use the
+[786.3s] Superbase MCP to investigate everything.
+[789.4s] And then instead of us having to
+[790.7s] actually create, you know, a SQL query
+[792.2s] to go find all this stuff, it is going
+[794.1s] to go out and it's going to find it. So
+[795.9s] it first finds the actual project that
+[798.2s] we're talking about, then it goes and it
+[800.0s] finds the title of the prompt we were
+[802.0s] talking about, right? And so it
+[803.5s] understands our project and what exactly
+[805.4s] we're saying and it knows where to go
+[808.2s] find that thing. And so the result of
+[810.2s] this one obviously was that it did in
+[811.4s] fact find them because we do know they
+[812.8s] exist. So obviously in this case that
+[814.5s] was just a user error. But this can be
+[816.6s] incredibly helpful when you start
+[818.8s] running into issues where it's clear
+[821.2s] that there's a disconnect between your
+[823.6s] app and the database and how information
+[826.2s] is moving between the two. So vibe
+[828.3s] coding really works well when you can
+[830.3s] easily match your expectations to the
+[833.3s] reality of what's happening and making
+[835.5s] sure that there isn't a disconnect
+[837.0s] between those two worlds which a tool
+[838.9s] like this helps us do pretty easily. So
+[841.7s] next up on the list is a tool called
+[843.3s] context 7. So the fundamental issue with
+[846.5s] a lot of language models is that they
+[848.1s] still make stuff up sometimes. And so
+[850.5s] when you are building something new AI
+[852.9s] often uses outofdate documentation. So
+[856.2s] you'll see this where they hallucinate
+[857.8s] endpoints that don't exist. They like
+[860.2s] make up functions that don't exist and
+[863.1s] you end up, you know, building a lot of
+[864.9s] architecture around something that isn't
+[866.9s] actually the way that it works. And so
+[868.6s] the thing we need to solve for is having
+[870.6s] always upto-date documentation for
+[873.3s] whatever framework or library it is that
+[876.0s] you are using. And the tool that I like
+[877.9s] to do that with is called context 7. So
+[881.4s] here's like a very direct like linear
+[884.3s] kind of way to use something like this.
+[886.9s] So I want to build a multi- aent team
+[889.5s] that can improve prompts for users which
+[891.4s] again is part of this kind of app that
+[893.4s] we're building. Let's say it does this
+[895.3s] or the way that I want it to happen is
+[897.5s] that it uses a root orchestrator with
+[900.0s] access to various tools and personas
+[901.8s] like a researcher that's maybe powered
+[903.9s] by perplexity a subject matter expert if
+[907.5s] this for example is for like a coding
+[909.0s] domain. um a writer that can actually
+[911.4s] rewrite the prompt. So, it has access to
+[913.1s] all of these different agents, but I
+[915.7s] need to really understand best practices
+[917.2s] and conventions for crew AI in order to
+[919.8s] do this. And I want to use context 7 to
+[922.6s] pull that documentation and help me
+[924.6s] build that understanding. And so, what
+[926.8s] it does is it first goes out, it
+[928.4s] searches for the name and gets the
+[930.6s] library ID for that name. And then it's
+[934.1s] going to go through and it's going to
+[935.3s] start searching through that library to
+[937.1s] pull me the relevant documentation. that
+[939.8s] gets the answer really that I am looking
+[943.0s] for. Now the only potential downside
+[945.1s] with context 7 is it does return a lot
+[948.0s] of tokens but there are paid options
+[951.3s] that will help you cut this down like
+[953.2s] ref for example which is an alternative
+[955.7s] to context 7 that does not return you
+[957.8s] the entire list of documentation kind of
+[960.2s] intelligently determines what it's going
+[962.0s] to deliver you and so this pattern of ro
+[965.0s] goal backstory this is how crewi works
+[967.0s] so it was able to pull this out from its
+[968.9s] documentation and then start giving
+[971.0s] examples it's showing us how to actually
+[973.0s] design the tasks. It's showing us the
+[975.4s] type of processes that they actually
+[977.5s] have. So when you're building agents in
+[979.5s] a tool like crew, you have this concept
+[982.3s] of sequential tasks that go one after
+[984.2s] another or hierarchical tasks where this
+[987.4s] root orchestrator can delegate to
+[990.4s] specialists kind of intelligently. And
+[992.6s] so it's pulling in really a lot of
+[994.5s] really great context based on the
+[997.1s] question that we asked. So, context 7 is
+[999.8s] really great for research about how to
+[1002.3s] best implement this thing as well as
+[1004.6s] pulling documentation for something that
+[1006.4s] you already know you're doing. Like if I
+[1008.4s] wanted to like optimize a superbase
+[1010.6s] query, I could pull in the superbase
+[1012.6s] documentation and use that to improve uh
+[1015.8s] what it is that I'm doing. So AI's
+[1018.1s] greatest strengths in that it's always
+[1019.9s] confident about what it's doing is
+[1021.8s] simultaneously one of its biggest
+[1023.9s] weaknesses in that it will make up
+[1026.1s] responses to things and convince you
+[1028.5s] that it is true. So the future of like
+[1030.6s] how to use AI properly in coding or in
+[1033.3s] business or in any domain of life is
+[1035.7s] knowing how exactly to give the system
+[1038.6s] the best context that it needs so that
+[1041.1s] it can still move super quick but within
+[1043.7s] a specific lane of context that you
+[1045.6s] provide. And this is why experts will
+[1048.2s] never go away because they provide that
+[1050.3s] foundational knowledge and they push the
+[1052.4s] frontiers of things. So the next MCP
+[1055.3s] that I I use regularly is the Playright
+[1058.6s] MCP. So Playright is typically used for
+[1061.5s] automating like endtoend browser
+[1063.9s] testing, meaning it can actually
+[1066.2s] interact with the browser and test
+[1068.8s] things that are going on there. The use
+[1070.8s] case that I love to use Playright for is
+[1074.1s] in creating what I call selfgrading UIs.
+[1078.1s] Meaning we use the model to
+[1080.6s] automatically fix itself. And what I
+[1083.8s] mean by that is that the model can
+[1085.5s] automatically grade its own work against
+[1089.1s] the standards that we have documented.
+[1092.0s] And so what it does is it creates this
+[1093.8s] iterative improvement through a system
+[1096.6s] that checks itself. And so here is
+[1098.6s] typically how this process works. So we
+[1100.3s] go through and we build something. Now
+[1102.3s] in this case, let's say it's like a web
+[1103.8s] app and we're inside of a browser. Now
+[1106.0s] what typically happens before we get to
+[1108.5s] this stage of having it in the browser
+[1110.2s] and testing it and all of that type of
+[1111.8s] stuff, we've built ideally some sort of
+[1114.2s] UXUI system that this thing should be
+[1116.9s] building toward. And so the question
+[1118.5s] becomes when it's done, did it actually
+[1120.5s] build what we wanted it to build the way
+[1123.0s] that we wanted it to do? And what often
+[1126.4s] happens is that it'll take shortcuts and
+[1128.6s] you know you can have this great design
+[1130.2s] system but it doesn't actually implement
+[1131.8s] on it properly. And so what this system
+[1134.2s] does is it allows us to use Playright as
+[1137.8s] an MCP to take browser snapshots, then
+[1141.9s] grade those snapshots against that
+[1144.6s] standard that we had set for how we want
+[1147.0s] our UI made. And then it sends that
+[1150.2s] feedback to the LLM so that the LLM can
+[1153.5s] go fix what mistakes it made. And we can
+[1157.0s] allow this cycle to continue back and
+[1158.9s] forth, back and forth, back and forth
+[1160.8s] until we have a UI that we are happy
+[1164.2s] with. So the reason I love this is that
+[1165.8s] one of the next big evolutions inside of
+[1168.2s] AI, not just in coding, is that we use
+[1171.4s] the language model to generate the
+[1173.2s] output, but then based on our objective
+[1175.7s] standards of what we want, we force it
+[1178.7s] to reflect on what it did and improve
+[1181.0s] itself over time. So these
+[1183.1s] self-correcting loops help you turn AI
+[1185.7s] into something that's a partner that can
+[1187.8s] actually help you build the quality that
+[1189.8s] you are looking for through iteration.
+[1192.5s] So the next MCP up on the list is called
+[1194.4s] SEM grip. Now the thing is you don't
+[1196.2s] know what you don't know. That's one of
+[1198.2s] the biggest problems that vibe coders
+[1200.6s] face. You can create security
+[1203.2s] vulnerabilities that are very obvious to
+[1205.4s] someone that knows really knows what
+[1206.9s] they're doing. You can do that without
+[1208.7s] even really realizing it. And so when
+[1210.8s] things aren't being done the way that
+[1212.5s] they should be done, you really don't
+[1214.6s] want to deploy something that is
+[1216.5s] fundamentally broken or not secure,
+[1219.6s] especially when it comes to security,
+[1221.5s] right? People's personal data and
+[1223.5s] information. And so this is one of the
+[1225.4s] reasons I love Smrep because it allows
+[1227.4s] us to automate security checks inside of
+[1231.4s] our code. And so again, we're inside of
+[1233.3s] this prompt wallet application and we
+[1235.0s] can simply tell it, I want you to run
+[1236.6s] Smrep to understand my project, its
+[1239.0s] vulnerabilities,
+[1240.5s] how bad they are, if there are any, and
+[1242.9s] give me back basically a report. And so
+[1245.4s] basically, this does like a minimal scan
+[1247.7s] at first. So it checked my project
+[1250.2s] authentication handlers were fine,
+[1252.5s] server actions are fine, middleware, and
+[1254.6s] the configuration of the middleware was
+[1256.4s] good, and the way that we're handling
+[1258.3s] our environment variables. So based on
+[1261.4s] the rule set that they have in their
+[1263.6s] database, uh it checked out for these
+[1266.6s] eight files. Now what I asked to do was
+[1269.6s] run a more comprehensive scan of the
+[1272.5s] entire codebase. So that is what it's
+[1274.6s] off doing now. So basically all of these
+[1277.6s] vulnerabilities that it did find after
+[1279.4s] running through that thing, they don't
+[1281.3s] come down to the code themselves. It's
+[1282.7s] more about the the dependencies that we
+[1284.6s] have and making sure that they're
+[1285.9s] actually up to date with where they need
+[1288.5s] to be. And so it gives me my recommended
+[1290.5s] actions. Updating clerk which is used
+[1292.7s] for the authentication. So very
+[1294.0s] important to do updating Nex.js and then
+[1297.0s] updating my ESL lint. Now obviously if
+[1299.7s] you're using something like linear MCP
+[1301.5s] which we talked about earlier, you can
+[1303.4s] make this a task for your team or
+[1305.8s] yourself to do and then prioritize it
+[1308.4s] based on its importance to you which
+[1310.7s] should be important because it's
+[1312.0s] security. So moving fast is really only
+[1314.3s] valuable in so much that what you're
+[1316.2s] building can scale and is secure because
+[1319.4s] if you're not doing that, it's kind of
+[1320.9s] like you're just in a car and you close
+[1322.7s] your eyes and slam on the gas pedal.
+[1324.5s] You're going to go pretty fast, but
+[1326.1s] eventually you're going to crash and
+[1327.3s] break some So if you don't want
+[1328.9s] security holes, consider using Simgrip.
+[1331.5s] So this next MCP is called Vibe Check.
+[1333.7s] And this is the one that I mentioned was
+[1335.1s] from a smaller developer. And what I
+[1337.2s] mean by that is it's not a repository
+[1339.0s] that has thousands of stars and hundreds
+[1341.4s] of forks or anything like that, but it
+[1343.8s] can still be valuable for you in your
+[1346.3s] vibe coding process. So, like I
+[1348.1s] mentioned, the tool is called Vibe
+[1349.8s] Check, and it describes itself as a
+[1352.0s] plug-and-play metacognitive oversight
+[1354.6s] layer for autonomous AI agents, a
+[1357.1s] researchbacked MCP server keeping LLMs
+[1360.0s] aligned, reflective, and safe. So, what
+[1362.2s] does that mean? Well, if we go down to
+[1363.8s] the problem, there's this thing that I'm
+[1366.2s] sure you've seen before if you've tried
+[1368.2s] to build like kind of ambitious projects
+[1370.1s] and you're just letting it go where it
+[1372.2s] just starts really starting to
+[1373.8s] overengineer stuff and it's kind of like
+[1375.9s] snowballing into this very complicated
+[1378.0s] thing very fast. And so the author of
+[1380.6s] this repository talks about this concept
+[1383.1s] of pattern inertia and reasoning lock in
+[1386.1s] which means a large language model can
+[1389.3s] very confidently follow a flawed plan.
+[1391.7s] And so if you don't have this external
+[1393.6s] nudging in place, you may get stuff
+[1396.2s] that's really misaligned or way
+[1398.0s] overengineered.
+[1399.7s] And so this vibe check MCP provides
+[1402.8s] these like reflective pauses in the
+[1405.3s] middle of your process to make sure that
+[1408.3s] we're not taking for granted certain
+[1410.5s] assumptions
+[1412.0s] and that we're building in the right
+[1413.8s] direction. And so it's pretty cool
+[1415.3s] because this is a researchbacked um
+[1418.2s] approach to things where it's called a
+[1419.6s] chain pattern interrupt which injects
+[1422.2s] brief well-timed pause points at risk
+[1424.9s] inflection moments to realign the agent
+[1427.4s] around what the user is actually trying
+[1429.6s] to do and preventing that situation
+[1431.8s] where it just snowballs into some crazy
+[1434.4s] thing that like dude I wasn't even
+[1435.9s] trying to build this. That is what we
+[1438.4s] are avoiding with this. And it's cool
+[1441.1s] because you can integrate this with
+[1442.6s] anything really that you are building.
+[1444.7s] And so there's a few different tools
+[1446.1s] that it has to do this. The first is
+[1448.2s] Vibe check, which the author recommends
+[1450.9s] that you actually put this like in your
+[1452.9s] system settings, like in your main agent
+[1456.6s] definition, which gets added in as
+[1459.0s] context anytime you're going to use a
+[1460.9s] model. And then if it finds some sort of
+[1463.0s] fundamental mistake that the model tends
+[1464.9s] to keep going down, it can capture those
+[1467.3s] mistakes and store them so that it stops
+[1470.2s] making them over and over and over
+[1472.2s] again. And so the first thing is that we
+[1473.9s] need to have the MCP installed. And the
+[1476.2s] second is that we need to have this kind
+[1478.1s] of mandatory field in this case in our
+[1480.9s] claw.markdown file that tells the system
+[1484.1s] that it needs to use this thing. And so
+[1486.5s] specifically, it's saying you need to
+[1487.6s] call vibe check after planning and
+[1489.7s] before major actions. So let's see if we
+[1492.0s] can force this thing to trigger so that
+[1493.6s] you can see what it looks like. And so
+[1495.8s] we can see as this thing is running what
+[1497.2s] it actually looks like. When this vibe
+[1498.9s] check runs, it's going to look at
+[1501.3s] basically what we were intending to do,
+[1504.6s] like what the goal was and what the plan
+[1506.4s] was and how well we actually moved
+[1509.0s] toward achieving that. And it seems to
+[1511.8s] think we did a great job with uh with
+[1514.4s] this one. And so what it's doing is it's
+[1516.2s] going back one more time and now it's
+[1518.4s] rechecking exactly what it did. So it's
+[1521.2s] saying vibe check raises an excellent
+[1522.8s] point about verification. We should also
+[1525.0s] add a prefers reduced motion support to
+[1527.3s] the frame or motion component. Let me
+[1528.9s] add that. And so now it's going through
+[1530.7s] and it's tightening up its
+[1531.9s] implementation a bit. And now it is
+[1534.7s] learning from the mistake it made. Now
+[1536.7s] let's see what happens if instead we
+[1538.4s] just try to do something pretty
+[1539.8s] ambiguous because at the end of the day
+[1541.3s] those were very well- definfined tasks.
+[1543.1s] But what if we just said something like,
+[1544.2s] "Hey, go build me a service that does
+[1546.2s] this thing." And make it kind of
+[1547.6s] ambiguous and see if we can get the vibe
+[1549.9s] check to come in and give us better
+[1552.4s] feedback. So now we can see what this
+[1554.2s] looks like in real time when we're
+[1555.6s] trying to do something that maybe we
+[1558.0s] shouldn't be doing it the way we're
+[1559.1s] intending to. And so again, we gave this
+[1561.9s] kind of ambiguous, hey, go build me this
+[1564.6s] crew AI service complete with the
+[1566.2s] research and a writer, right? That's
+[1567.3s] like pretty, I mean, ambiguous at the
+[1569.5s] end of the day. And so the vibe check
+[1572.2s] tool is now asking for a check. And so
+[1576.1s] we're going to let this thing run and
+[1577.9s] see what type of output we get back. And
+[1580.6s] so we can see what this looks like where
+[1582.2s] it says, okay, this like plan is kind of
+[1584.2s] clear to start with, but then there's
+[1585.7s] all these ambiguities. And so this right
+[1588.5s] here that we see, this is vibe check
+[1590.6s] basically going back and forth with
+[1593.3s] Claude in this case telling it we need
+[1595.5s] to consider these ambiguities and based
+[1597.5s] on your feedback to me, we need to
+[1600.1s] implement certain things and not
+[1602.6s] implement other things. And so,
+[1604.4s] especially for people that are are vibe
+[1606.2s] coding and you're trying to push the
+[1607.5s] limits of your own understanding, but
+[1609.6s] you also have this thing in the back of
+[1611.1s] your head where you know you want to do
+[1612.9s] things the right way and not go way off
+[1614.8s] the rails and do something dumb. This
+[1617.3s] type of MCP is going to give a lot of
+[1619.4s] really nice checkpoints into the system
+[1622.1s] so that you know to pause and kind of
+[1624.2s] reflect and that you have this kind of
+[1626.6s] meta layer that's reflecting on exactly
+[1629.0s] what you're doing and whether or not
+[1631.3s] you're doing it right, whether you're
+[1633.0s] doing something completely wrong,
+[1634.7s] whether you need to pause and say, "Hold
+[1636.2s] on a second. There's some things I need
+[1637.8s] to think about." This is a great tool to
+[1640.6s] force that reflection on you. So this
+[1642.5s] helps us turn our coding tool into a hey
+[1645.0s] go do what I say type of relationship to
+[1648.5s] hey help me think about if this is the
+[1650.4s] right move and what I might not be
+[1652.1s] considering right now. Now the last tool
+[1654.8s] on this list I do really enjoy
+[1659.0s] especially the concept of what it is and
+[1661.2s] I think this type of tool is honestly
+[1663.8s] going to become more and more integrated
+[1665.4s] into our lives as the AI industry starts
+[1668.3s] maturing. So, I really love this tool
+[1670.5s] and it's actively developed and it's
+[1672.6s] called pieces. So, what this tool does
+[1675.2s] is you can configure any number of apps
+[1678.1s] that you have running on your machine
+[1680.1s] that you want it to basically watch,
+[1683.3s] meaning it will look at those screens
+[1686.4s] and what's happening and it will use
+[1689.4s] that information. And so maybe you're
+[1690.9s] hopping for example from your terminal
+[1692.6s] into cloud desktop into cloud code uh
+[1695.9s] into your you know simulator on iOS and
+[1698.4s] you're popping around working on the
+[1700.2s] same fundamental thing across a project
+[1703.9s] or a set of tasks. And what this system
+[1706.0s] will do is it will form memories around
+[1709.2s] what you actually did and it will allow
+[1712.3s] you to find memory. So, for example, if
+[1715.0s] I wanted to look at where I was dealing
+[1716.7s] with a tailwind configuration, I can
+[1719.6s] search through those things. And I can
+[1721.4s] also have conversations about what was
+[1724.4s] it specifically inside of this memory
+[1726.6s] that we were dealing with. Maybe it was
+[1729.4s] a bug and I want to try to remember what
+[1731.8s] type of solution we found. I can use its
+[1735.5s] system to have a conversation about
+[1738.7s] again what was happening and what we
+[1740.9s] went through and how we ultimately
+[1742.6s] solved the problem. So just imagine
+[1744.6s] there was a separate version of yourself
+[1746.4s] behind you all the time watching
+[1748.8s] everything you were doing and
+[1750.8s] remembering what solutions you came to
+[1752.9s] or blockers that you never quite got
+[1754.7s] past. Now to get out in front of it,
+[1758.3s] this is all locally processed. What that
+[1761.7s] means is everything that it's doing, all
+[1764.5s] the machine learning is actually running
+[1766.3s] on your machine. Now, you can go into
+[1769.9s] your settings and you can choose to run
+[1772.6s] those things in a cloud environment if
+[1774.6s] you want to, but I currently have it all
+[1777.0s] running on my actual local device. So,
+[1780.2s] again, really cool. Comes with a llama
+[1782.3s] on it installed and activated. So I
+[1784.4s] could come through and I could use
+[1785.8s] specific open- source models to run
+[1788.8s] through everything on or I can choose,
+[1790.7s] you know, a cloud-based provider and
+[1792.2s] send my requests through there. So
+[1794.6s] again, to give you a really concrete
+[1796.4s] example of where this would be useful, I
+[1798.7s] had to debug this authentication error
+[1800.6s] like two months ago with a GraphQL
+[1802.5s] project and how amazing it would be if I
+[1805.8s] was able to just come back and see what
+[1808.9s] that solution actually was so that I
+[1811.4s] could then integrate it into my current
+[1813.7s] project. So now on the topic of MCPs,
+[1816.8s] all of this information does get exposed
+[1819.3s] out if you want it to as an MCP. And
+[1822.1s] they have a nice little guide here
+[1824.2s] explaining to you how you can actually
+[1826.2s] integrate it into your workflow. So you
+[1828.7s] can use it with tools like cursor,
+[1830.6s] github copilot, claw desktop, or if
+[1833.4s] you're really industrious, you could
+[1836.0s] choose to actually just run the MCP
+[1837.8s] locally on your computer and hook it
+[1840.3s] into cloud code. So whichever way you
+[1843.0s] slice it, it is a super valuable tool.
+[1846.5s] Now, if you are using VS Code like I am
+[1848.9s] in this example, you can easily just use
+[1850.9s] it with GitHub's C-pilot and integrate
+[1852.9s] it into all of your systems and
+[1855.7s] processes. So, AI coding accelerates
+[1858.2s] nearly everything except learning from
+[1861.2s] your mistakes. A lot of us tend to
+[1862.9s] repeat those mistakes over and over and
+[1864.8s] over again because the AI creates the
+[1866.5s] problem, the AI solves the problem, and
+[1868.5s] then we just say, "Hey, on to the next
+[1869.8s] one." And so how great is it to have a
+[1871.4s] tool that allows us to look back and
+[1873.7s] reflect on those solutions so that we
+[1875.9s] can pull them forward in time. So again,
+[1878.4s] the difference between a beginner and an
+[1880.8s] expert is not just the skill, it's the
+[1883.4s] ability to recognize the patterns and
+[1885.8s] know how to reuse solutions. So there we
+[1888.6s] go. MCPS that are practically useful
+[1891.0s] that I use nearly every single day. So,
+[1894.4s] on this topic, let me know below if you
+[1896.4s] want to see how to actually build an MCP
+[1899.8s] server because it's a project that I've
+[1901.4s] been thinking about a little bit, but I
+[1903.2s] haven't gotten around to actually
+[1904.2s] building the one that I have in mind,
+[1905.4s] and it could be cool to do alongside
+[1907.8s] everyone. So, make sure to like and
+[1909.8s] subscribe and join the group below if
+[1912.6s] you want a dope community of people that
+[1915.4s] are building real projects and giving
+[1918.0s] each other feedback and trying to do
+[1919.8s] cool stuff. Who doesn't want to be a
+[1921.6s] part of that? That is it for this video.
+[1923.4s] I will see you in the next

@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+bun.lockb
+
+# Build output
+build
+.svelte-kit
+dist
+
+# Development
+.vscode
+.idea
+*.log
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage
+.nyc_output
+playwright-report
+test-results
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Misc
+.DS_Store
+Thumbs.db

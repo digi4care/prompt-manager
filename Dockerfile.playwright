@@ -1,0 +1,19 @@
+FROM mcr.microsoft.com/playwright:v1.57.0-jammy
+
+ENV BUN_INSTALL=/opt/bun
+ENV PATH="$BUN_INSTALL/bin:$PATH"
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+RUN apt-get update \
+  && apt-get install -y curl unzip \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://bun.sh/install | bash
+
+WORKDIR /work
+
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+COPY . .

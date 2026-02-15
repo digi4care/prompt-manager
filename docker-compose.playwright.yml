@@ -1,0 +1,25 @@
+services:
+  playwright:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    working_dir: /work
+    volumes:
+      - .:/work
+      - playwright-node-modules:/work/node_modules
+      - playwright-bun-cache:/root/.bun
+    environment:
+      - CI=1
+      - E2E_WEB_SERVER=preview-node
+      - E2E_WORKERS=4
+      - TEST_COMMAND=bun run test:e2e:all
+    command:
+      [
+        'bash',
+        '-lc',
+        'bun install --frozen-lockfile && if [[ "$${TEST_COMMAND}" == *test:e2e* || "$${TEST_COMMAND}" == *playwright* ]]; then bun run build; fi; $${TEST_COMMAND}'
+      ]
+
+volumes:
+  playwright-node-modules:
+  playwright-bun-cache:

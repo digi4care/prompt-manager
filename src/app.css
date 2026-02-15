@@ -1,0 +1,147 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+/*
+  Catppuccin Theme for Self-Improving Prompt Wallet
+  Light Mode: Frappé | Dark Mode: Mocha
+  Source: https://catppuccin.com/
+*/
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+/* Catppuccin Frappé - Light Mode */
+:root {
+  /* Primary Colors */
+  --primary: 271 68% 56%; /* Mauve */
+  --primary-foreground: 220 14% 96%; /* Crust */
+
+  /* Secondary Colors */
+  --secondary: 220 10% 89%; /* Surface */
+  --secondary-foreground: 240 11% 42%; /* Text */
+
+  /* Background & Foreground */
+  --background: 220 14% 94%; /* Crust */
+  --foreground: 240 11% 42%; /* Text */
+  --card: 0 0% 100%;
+  --card-foreground: 240 11% 42%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 11% 42%;
+
+  /* Muted & Accent */
+  --muted: 220 14% 86%; /* Surface */
+  --muted-foreground: 240 9% 51%; /* Subtext */
+  --accent: 90 6% 90%; /* Mantle */
+  --accent-foreground: 240 11% 42%;
+
+  /* Destructive & Status */
+  --destructive: 348 77% 47%; /* Red */
+  --destructive-foreground: 220 14% 96%;
+  --success: 96 57% 35%; /* Green */
+  --warning: 10 95% 72%; /* Peach */
+
+  /* Borders & Inputs */
+  --border: 220 14% 86%; /* Surface */
+  --input: 220 14% 86%;
+  --ring: 271 68% 56%; /* Mauve */
+
+  /* Chart Colors */
+  --chart-1: 271 68% 56%; /* Mauve */
+  --chart-2: 96 57% 35%; /* Green */
+  --chart-3: 10 95% 72%; /* Peach */
+  --chart-4: 15 24% 92%; /* Yellow */
+  --chart-5: 174 70% 34%; /* Teal */
+
+  /* Border Radius */
+  --radius: 0.5rem;
+
+  /* Font settings */
+  --font-size: 16px;
+  --text-length: 65ch;
+  --text-height: 1.6;
+}
+
+/* Catppuccin Mocha - Dark Mode */
+.dark {
+  /* Primary Colors */
+  --primary: 271 65% 69%; /* Mauve */
+  --primary-foreground: 240 10% 4%; /* Base */
+
+  /* Secondary Colors */
+  --secondary: 220 13% 18%; /* Surface */
+  --secondary-foreground: 240 10% 84%; /* Text */
+
+  /* Background & Foreground */
+  --background: 240 10% 4%; /* Base */
+  --foreground: 240 10% 84%; /* Text */
+  --card: 240 10% 4%;
+  --card-foreground: 240 10% 84%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 240 10% 84%;
+
+  /* Muted & Accent */
+  --muted: 237 12% 26%; /* Surface */
+  --muted-foreground: 240 5% 64%; /* Subtext */
+  --accent: 240 13% 10%; /* Mantle */
+  --accent-foreground: 240 10% 84%;
+
+  /* Destructive & Status */
+  --destructive: 350 75% 60%; /* Red */
+  --destructive-foreground: 240 10% 4%;
+  --success: 115 58% 58%; /* Green */
+  --warning: 24 94% 68%; /* Peach */
+
+  /* Borders & Inputs */
+  --border: 237 12% 26%; /* Surface */
+  --input: 237 12% 26%;
+  --ring: 271 65% 69%; /* Mauve */
+
+  /* Chart Colors */
+  --chart-1: 271 65% 69%; /* Mauve */
+  --chart-2: 115 58% 58%; /* Green */
+  --chart-3: 24 94% 68%; /* Peach */
+  --chart-4: 48 93% 69%; /* Yellow */
+  --chart-5: 174 70% 42%; /* Teal */
+}
+
+/* Smooth theme transition */
+html {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}

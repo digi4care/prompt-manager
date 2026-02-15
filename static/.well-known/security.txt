@@ -1,0 +1,6 @@
+Contact: mailto:security@promptwallet.local
+Expires: 2026-01-01T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://promptwallet.local/.well-known/security.txt
+Policy: https://promptwallet.local/security-policy
+Hiring: https://promptwallet.local/careers

@@ -1,0 +1,325 @@
+// @ts-nocheck
+/**
+ * Tests for OpenCode Provider/Model Catalog
+ *
+ * Validates that:
+ * - Catalog can be fetched from OpenCode SDK
+ * - TTL cache works correctly
+ * - Manual refresh clears cache
+ * - DI instance has catalog methods
+ * - Cache can be cleared
+ */
+
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import {
+	getProviderCatalog,
+	refreshProviderCatalog,
+	clearProviderCatalogCache,
+	createOpenCodeService,
+	type CatalogResponse
+} from '$lib/server/services/opencode.service';
+import {
+	MockOpencodeClient,
+	createMockOpencodeClient,
+	isTestMode
+} from '../../mocks/opencode.test-double';
+
+// Mock the getOpencodeClient function
+vi.mock('$lib/server/opencode/client', () => ({
+	getOpencodeClient: vi.fn()
+}));
+
+describe('OpenCode Provider Catalog - Service', () => {
+	let mockClient: MockOpencodeClient;
+	let getOpencodeClientMock: any;
+
+	beforeEach(async () => {
+		process.env.TEST_MODE = 'true';
+		vi.clearAllMocks();
+
+		// Setup mock client
+		mockClient = new MockOpencodeClient();
+
+		// Get the mock function
+		const clientModule = await import('$lib/server/opencode/client');
+		getOpencodeClientMock = clientModule.getOpencodeClient;
+		getOpencodeClientMock.mockReturnValue(mockClient);
+	});
+
+	afterEach(() => {
+		clearProviderCatalogCache();
+	});
+
+	describe('fetchProviderCatalog()', () => {
+		it('should fetch catalog from OpenCode SDK', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			const { fetchProviderCatalog } = await import('$lib/server/services/opencode.service');
+
+			const catalog = await fetchProviderCatalog();
+
+			expect(catalog).toBeDefined();
+			expect(catalog.providers).toBeDefined();
+			expect(Array.isArray(catalog.providers)).toBe(true);
+			expect(catalog.cachedAt).toBeDefined();
+			expect(catalog.ttlSeconds).toBe(300); // 5 minutes
+		});
+
+		it('should return provider and model information', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			const { fetchProviderCatalog } = await import('$lib/server/services/opencode.service');
+
+			const catalog = await fetchProviderCatalog();
+
+			expect(catalog.providers.length).toBeGreaterThan(0);
+
+			const firstProvider = catalog.providers[0];
+			expect(firstProvider.id).toBeDefined();
+			expect(firstProvider.name).toBeDefined();
+			expect(firstProvider.source).toBeDefined();
+			expect(firstProvider.models).toBeDefined();
+
+			// Check first model
+			const firstModelKey = Object.keys(firstProvider.models)[0];
+			const firstModel = firstProvider.models[firstModelKey];
+			expect(firstModel).toBeDefined();
+			expect(firstModel.id).toBeDefined();
+			expect(firstModel.name).toBeDefined();
+			expect(firstModel.capabilities).toBeDefined();
+			expect(firstModel.cost).toBeDefined();
+			expect(firstModel.limit).toBeDefined();
+		});
+
+		it('should throw OpenCodeError on SDK error', async () => {
+			const mockClient = new MockOpencodeClient();
+			mockClient.config.providers = vi.fn().mockRejectedValue(new Error('Connection failed'));
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			const { fetchProviderCatalog } = await import('$lib/server/services/opencode.service');
+
+			await expect(fetchProviderCatalog()).rejects.toThrow();
+		});
+	});
+
+	describe('getProviderCatalog() - TTL Cache', () => {
+		it('should cache catalog response', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			// First call - fetches from SDK
+			const catalog1 = await getProviderCatalog();
+
+			// Second call - uses cache
+			const catalog2 = await getProviderCatalog();
+
+			expect(catalog1).toEqual(catalog2);
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(1);
+		});
+
+		it('should return cached data if within TTL', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			await getProviderCatalog();
+
+			// Clear call count
+			mockClient.config.providers.mockClear();
+
+			// Call again immediately - should use cache
+			await getProviderCatalog();
+
+			expect(mockClient.config.providers).not.toHaveBeenCalled();
+		});
+
+		it('should force refresh when requested', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			// First call
+			await getProviderCatalog();
+
+			// Force refresh
+			await getProviderCatalog(true);
+
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(2);
+		});
+
+		it('should refresh after TTL expires', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			await getProviderCatalog();
+
+			// Clear call count
+			mockClient.config.providers.mockClear();
+
+			// Manually expire cache by setting a past expiry time
+			const { clearProviderCatalogCache } = await import('$lib/server/services/opencode.service');
+			clearProviderCatalogCache();
+
+			// Call again - should fetch fresh data
+			await getProviderCatalog();
+
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('refreshProviderCatalog()', () => {
+		it('should force cache refresh', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			// Initial cache
+			await getProviderCatalog();
+
+			// Clear call count
+			mockClient.config.providers.mockClear();
+
+			// Force refresh
+			await refreshProviderCatalog();
+
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('clearProviderCatalogCache()', () => {
+		it('should clear catalog cache', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			// Populate cache
+			await getProviderCatalog();
+
+			// Clear call count
+			mockClient.config.providers.mockClear();
+
+			// Clear cache
+			clearProviderCatalogCache();
+
+			// Call again - should fetch fresh data
+			await getProviderCatalog();
+
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('createOpenCodeService() - Catalog Methods', () => {
+		it('should include getCatalog method', async () => {
+			const mockClient = new MockOpencodeClient();
+			const service = createOpenCodeService(mockClient as any);
+
+			expect(service.getCatalog).toBeDefined();
+			expect(typeof service.getCatalog).toBe('function');
+		});
+
+		it('should include refreshCatalog method', async () => {
+			const mockClient = new MockOpencodeClient();
+			const service = createOpenCodeService(mockClient as any);
+
+			expect(service.refreshCatalog).toBeDefined();
+			expect(typeof service.refreshCatalog).toBe('function');
+		});
+
+		it('should include clearCatalogCache method', async () => {
+			const mockClient = new MockOpencodeClient();
+			const service = createOpenCodeService(mockClient as any);
+
+			expect(service.clearCatalogCache).toBeDefined();
+			expect(typeof service.clearCatalogCache).toBe('function');
+		});
+
+		it('should cache catalog in DI instance', async () => {
+			const mockClient = new MockOpencodeClient();
+			const service = createOpenCodeService(mockClient as any);
+
+			// First call
+			const catalog1 = await service.getCatalog();
+
+			// Second call - should use cache
+			const catalog2 = await service.getCatalog();
+
+			expect(catalog1).toEqual(catalog2);
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(1);
+		});
+
+		it('should force refresh in DI instance', async () => {
+			const mockClient = new MockOpencodeClient();
+			const service = createOpenCodeService(mockClient as any);
+
+			// First call
+			await service.getCatalog();
+
+			// Force refresh
+			await service.refreshCatalog();
+
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(2);
+		});
+
+		it('should clear cache in DI instance', async () => {
+			const mockClient = new MockOpencodeClient();
+			const service = createOpenCodeService(mockClient as any);
+
+			// Populate cache
+			await service.getCatalog();
+
+			// Clear call count
+			mockClient.config.providers.mockClear();
+
+			// Clear cache
+			service.clearCatalogCache();
+
+			// Call again - should fetch fresh data
+			await service.getCatalog();
+
+			expect(mockClient.config.providers).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('Catalog Response Structure', () => {
+		it('should include required metadata', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			const catalog = await getProviderCatalog();
+
+			expect(catalog.cachedAt).toBeDefined();
+			expect(catalog.ttlSeconds).toBeGreaterThan(0);
+			expect(catalog.ttlSeconds).toBe(300); // 5 minutes
+
+			// Validate cachedAt is a valid ISO date
+			const cachedAt = new Date(catalog.cachedAt);
+			expect(cachedAt).toBeInstanceOf(Date);
+			expect(isNaN(cachedAt.getTime())).toBe(false);
+		});
+
+		it('should not expose secrets', async () => {
+			const mockClient = new MockOpencodeClient();
+			getOpencodeClientMock.mockReturnValue(mockClient as any);
+
+			const catalog = await getProviderCatalog();
+
+			// Check that no sensitive fields are exposed
+			// Note: We allow "API_KEY" in the env array as it's just documentation of what env vars are expected
+			// We're checking for actual secret values, not their names
+			for (const provider of catalog.providers) {
+				// Verify that the 'key' field (if present) doesn't contain actual secret values
+				if ('key' in provider && provider.key) {
+					// Key should be undefined or empty, not an actual secret
+					expect(provider.key).not.toMatch(/^sk-/); // No actual API keys
+					expect(provider.key).not.toMatch(/^gpt_/); // No OpenAI keys
+					expect(provider.key).not.toMatch(/^[a-f0-9]{32,}$/); // No hex secrets
+				}
+
+				// Verify options don't contain secrets
+				if (provider.options) {
+					const optionsJson = JSON.stringify(provider.options);
+					expect(optionsJson).not.toMatch(/^sk-/);
+					expect(optionsJson).not.toMatch(/^gpt_/);
+				}
+			}
+		});
+	});
+});

@@ -1,0 +1,130 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import {
+		Card,
+		CardContent,
+		CardHeader,
+		CardTitle,
+		CardDescription
+	} from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
+	import { toast } from 'svelte-sonner';
+	import { cn } from '$lib/utils';
+	import type { HealthCheckResult } from '$lib/server/services/opencode.service';
+
+	interface Props {
+		class?: string;
+	}
+
+	let { class: className = '' }: Props = $props();
+
+	let health = $state<HealthCheckResult | null>(null);
+	let isLoading = $state(true);
+	let isRefreshing = $state(false);
+
+	onMount(async () => {
+		await loadHealth();
+	});
+
+	async function loadHealth() {
+		try {
+			const response = await fetch('/api/admin/health');
+			const result = await response.json();
+			health = result.data;
+		} catch (err) {
+			console.error('Failed to load health status:', err);
+			toast.error('Failed to load connection status');
+			health = {
+				healthy: false,
+				diagnostics: {
+					baseUrl: 'unknown',
+					timestamp: new Date().toISOString(),
+					error: err instanceof Error ? err.message : 'Unknown error'
+				}
+			};
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function handleRefresh() {
+		isRefreshing = true;
+		await loadHealth();
+		isRefreshing = false;
+	}
+
+	function getStatusColor(): string {
+		if (isLoading) return 'text-muted-foreground';
+		return health?.healthy
+			? 'text-green-600 dark:text-green-400'
+			: 'text-red-600 dark:text-red-400';
+	}
+
+	function getStatusText(): string {
+		if (isLoading) return 'Checking...';
+		return health?.healthy ? 'Connected' : 'Disconnected';
+	}
+</script>
+
+<Card class={className}>
+	<CardHeader>
+		<div class="flex items-center justify-between">
+			<div>
+				<CardTitle class="text-lg">Connection Status</CardTitle>
+				<CardDescription>OpenCode service health</CardDescription>
+			</div>
+			<Button
+				variant="outline"
+				size="sm"
+				onclick={handleRefresh}
+				disabled={isRefreshing || isLoading}
+			>
+				{isRefreshing ? 'Refreshing...' : 'Refresh'}
+			</Button>
+		</div>
+	</CardHeader>
+	<CardContent>
+		{#if isLoading}
+			<div class="flex items-center gap-2 text-muted-foreground">
+				<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-current"></div>
+				<span>Checking connection...</span>
+			</div>
+		{:else if health}
+			<div class="space-y-2">
+				<div class="flex items-center gap-2">
+					<span class="text-sm font-medium">Status:</span>
+					<span class={cn('text-sm font-semibold', getStatusColor())}>{getStatusText()}</span>
+				</div>
+
+				{#if health.diagnostics}
+					<div class="mt-3 space-y-1 border-t pt-3">
+						<div class="flex justify-between text-xs text-muted-foreground">
+							<span>Base URL:</span>
+							<span class="font-mono">{health.diagnostics.baseUrl}</span>
+						</div>
+						<div class="flex justify-between text-xs text-muted-foreground">
+							<span>Last Check:</span>
+							<span>
+								{new Date(health.diagnostics.timestamp).toLocaleString()}
+							</span>
+						</div>
+						{#if health.version}
+							<div class="flex justify-between text-xs text-muted-foreground">
+								<span>Version:</span>
+								<span class="font-mono">{health.version}</span>
+							</div>
+						{/if}
+						{#if health.diagnostics.error}
+							<div class="mt-2 flex justify-between text-xs text-red-600 dark:text-red-400">
+								<span>Error:</span>
+								<span class="max-w-xs truncate text-right font-mono">
+									{health.diagnostics.error}
+								</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</CardContent>
+</Card>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			// Apply user preferences BEFORE CSS loads (prevents FOUC)
+			const html = document.documentElement;
+
+			// Read from localStorage
+			const userTheme = localStorage.theme;
+			const userFontSize = localStorage.fontSize;
+			const userTextLength = localStorage.textLength;
+			const userTextHeight = localStorage.textHeight;
+
+			// Apply font settings
+			if (userFontSize) {
+				html.style.setProperty("--font-size", userFontSize);
+			}
+			if (userTextLength) {
+				html.style.setProperty("--text-length", userTextLength);
+			}
+			if (userTextHeight) {
+				html.style.setProperty("--text-height", userTextHeight);
+			}
+
+			// Apply theme
+			const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+			if (userTheme) {
+				if (userTheme === "auto") {
+					html.classList.add(prefersDark ? "dark" : "light");
+				} else {
+					html.classList.add(userTheme);
+				}
+			} else {
+				// Default to system preference
+				html.classList.add(prefersDark ? "dark" : "light");
+				localStorage.theme = "auto";
+			}
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

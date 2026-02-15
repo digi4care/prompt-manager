@@ -1,0 +1,421 @@
+[0.4s] Most vibe coders hit a wall when they
+[2.2s] need a backend. And I've got a lot of
+[3.8s] comments from you guys asking for help
+[6.4s] specifically with building backends. So,
+[9.4s] I found a cheat code that bridges that
+[11.7s] gap while everyone else is messing
+[13.8s] around with API endpoints and server
+[16.1s] configurations. You're going to be
+[18.5s] dragging and dropping your way to glory.
+[21.8s] So, what am I talking about exactly? I'm
+[24.3s] going to show you how to prototype a
+[26.6s] backend for your app without coding.
+[29.8s] Now, we're going to go through three
+[31.3s] steps in getting this thing set up. I'm
+[33.3s] going to talk about what it is, the
+[34.8s] exact implementation, and why it might
+[37.6s] change how you approach prototyping your
+[41.1s] MVPs. So, this video is for builders who
+[43.8s] want quick results and not necessarily
+[46.6s] computer science degrees because it's a
+[48.4s] difference between shipping actual MVPs
+[51.0s] in days instead of weeks or months. So,
+[53.9s] by the end, you're going to have a
+[55.1s] simple functioning AI agent without
+[58.5s] having to write a single line of
+[60.2s] back-end code. So, let's get into it.
+[62.5s] So, if you're somewhat new to coding or
+[64.8s] AIdriven coding, back-end development
+[67.3s] can be a bit of a pain in the ass. Why
+[69.4s] is that? because you don't get a lot of
+[71.7s] great visual feedback when you make
+[74.2s] changes. But the thing is the back end
+[76.6s] of your application is really the
+[78.9s] workhorse that drives the core business
+[81.5s] logic. And so this becomes a big problem
+[83.8s] because you accept all your way through
+[86.3s] major architectural decisions without
+[88.6s] thinking about it and you back yourself
+[90.7s] into a corner which kills your app. So
+[93.2s] you're left with cores errors, internal
+[95.0s] server errors, configuration issues that
+[97.1s] you don't understand, and general
+[99.0s] debugging hell. And ain't nobody got
+[102.4s] time fat. So if you're a vibe coder
+[105.5s] without extensive coding experience, you
+[107.6s] can get lost in the sauce pretty easily.
+[111.3s] So here we are inside of a tool called
+[112.8s] N8N, which you've probably heard of,
+[114.9s] especially if you are in that AI
+[116.6s] automation sphere of the internet. Now,
+[119.8s] we've got this really simple back-end
+[122.2s] agent already built for us. And by the
+[124.9s] way, if you want access to this so that
+[126.7s] you can go in and mess around with it
+[128.2s] and customize it for yourself, I will
+[130.4s] have a link to this in the description
+[133.1s] of the video. So, if you're unfamiliar
+[134.6s] with Nadn, it's a drag and drop tool
+[136.9s] that allows you to connect these like
+[138.6s] backendish
+[140.4s] tools to whatever it is that you are
+[142.7s] doing. So, a lot of use cases for this
+[145.6s] in like general automation, which again
+[148.1s] is where you tend to see most of this.
+[149.8s] But it can also be super helpful to
+[152.2s] prototype a backend for your application
+[156.7s] because it supports a lot of these tools
+[158.6s] out of the box and it's very easy to
+[161.4s] configure them. So we can easily use
+[163.4s] tools like Gemini's models, Anthropics
+[166.4s] models, interact with vector databases
+[169.6s] like Pine Cone, insert or retrieve data
+[172.6s] from a database using Superbase, and
+[175.4s] there are literally hundreds of other
+[177.8s] things that we can interact with inside
+[180.6s] of this tool. Now, one of the things
+[183.5s] that is supported inside of N&N is this
+[186.0s] idea of an AI agent node. And so the way
+[189.1s] that this thing works is that we can
+[191.0s] connect a chat model provider. So for
+[193.8s] example, in this case using OpenAI's 03,
+[197.1s] we can connect some basic memory to it.
+[200.1s] And then we can give it any number of
+[202.7s] tools. So in this basic example, I have
+[205.8s] this agent which has access to two
+[207.6s] separate tools. The first one is
+[210.0s] perplexity, right? So it can use
+[211.5s] perplexity to go research a topic. And
+[214.2s] the second one which is meaningful to
+[216.2s] note is that with N8N you can connect
+[218.6s] MCP servers as well. And so here I am
+[221.8s] connecting to the context 7 MCP which
+[225.0s] pulls up-to-date development
+[226.6s] documentation for most major frameworks
+[229.7s] or libraries. And so again I can give
+[232.4s] this agent access to any number of these
+[236.2s] tools. And so the app that we're going
+[237.8s] to be working on here we've looked at it
+[239.2s] a few times on this channel is called
+[241.2s] Prompt Wallet. And so basically I want
+[243.4s] to add in this functionality where I can
+[245.8s] take a prompt and I can have an AI
+[248.2s] actually improve that prompt. And so
+[250.8s] this thing is not yet connected to this
+[252.8s] NAND thing we've built out. And so what
+[254.6s] I'm going to do is I'm just going to go
+[255.8s] copy one of these prompts and we're
+[257.6s] going to go paste it into NADN so you
+[259.3s] can see what it looks like. And so what
+[260.6s] we did is we came over here. And the
+[262.1s] thing that's cool is that we can trigger
+[263.8s] this whole entire workflow based on a
+[266.2s] simple chat message to kind of prototype
+[268.0s] this thing out. And so I am going to
+[270.2s] again just paste over this prompt and
+[272.0s] give it a little bit of direction and
+[273.6s] say I want you to research the topic and
+[275.4s] then improve the prompt. And so the
+[277.8s] reason that NAN is nice is we can see a
+[279.7s] really nice visual of what's going on.
+[283.0s] So as soon as this thing kicks off, it
+[284.6s] goes it builds out a research plan. It
+[286.5s] knows that it needs to research the
+[288.0s] topic and so it's hitting this
+[289.3s] perplexity node generating research
+[292.2s] about UI design principles and best
+[294.8s] practices. it's sending it back to
+[296.7s] OpenAI and depending on the complexity
+[299.0s] of the task, this thing can bounce
+[301.0s] around and use dozens of different tools
+[304.1s] to solve this problem, right? And now we
+[307.0s] can see it took that original prompt
+[308.7s] that we had and it made it a lot more
+[311.0s] specific, right? So, it kept that like a
+[313.7s] aesthetics piece um it definitely dialed
+[316.2s] it in a little bit and then it created
+[318.2s] sections for how to handle
+[319.5s] interactivity,
+[321.0s] um accessibility and so on. So, how does
+[324.2s] this thing work? Inside of this AI agent
+[327.2s] in N8N, we've given it a basic
+[330.6s] definition, right? Some basic
+[332.6s] instructions. We're saying these are the
+[335.0s] tools that you have access to. This is
+[338.2s] generally your decision-making framework
+[340.6s] that you follow. If you have coding
+[342.3s] questions, you want to pull relevant
+[345.6s] documentation. If you are being asked to
+[348.2s] research a topic, you want to use that
+[350.3s] perplexity node that we had. Right? So,
+[352.4s] we're just going through and we're
+[353.6s] saying these are the different tools
+[354.8s] that you have access to and this is what
+[357.0s] they do. And then we are passing in what
+[360.2s] the user's question was, which again,
+[362.6s] the reason this is nice is this is all
+[364.2s] drag and drop. So, I can literally just
+[365.9s] drag this node over here and drop it in.
+[368.0s] And that's going to be passed through to
+[370.2s] the agent. So, here we define how the
+[372.4s] agent operates and what its instructions
+[374.9s] are. Then, we define the specific model
+[377.9s] it's going to use. In this case, it's
+[379.3s] using 03. We give it a basic memory so
+[381.8s] that it can keep memory of the chat
+[383.6s] that's going on back and forth and kind
+[385.1s] of what we're talking about. And then
+[386.6s] we've just given it two basic tools. So
+[389.1s] again, it uses perplexity to research
+[392.3s] topics. And the thing that's kind of
+[394.1s] nice about what N8N does is it's
+[396.9s] allowing our AI model to actually
+[400.1s] determine what messages are going to be
+[402.6s] sent through to Perplexity in this case
+[404.6s] to actually research this thing. So I
+[407.0s] don't have to give it a static prompt
+[408.6s] that it uses every time. It's going to
+[411.0s] define that dynamically when this thing
+[413.3s] runs based on the agent. So pretty cool.
+[416.3s] We do the same thing for connecting this
+[418.1s] MCP server context 7. So if it needs to
+[421.0s] go out and find documentation for like
+[422.7s] Tailwind CSS for example, it can do
+[425.3s] that. And so if we wanted to really beef
+[427.0s] this thing up, we could go through and
+[428.4s] add again tons of these different tools
+[430.5s] that it has access to. But for right
+[432.4s] now, we're going to keep it simple. Now
+[434.2s] the only problem right now is that this
+[436.0s] is just triggering on a chat, right? So
+[438.1s] we need some way to actually connect
+[439.5s] this into our project. I need a way to
+[442.6s] get all of this data into this N8N
+[446.4s] workflow. So that is what we are going
+[448.4s] to work on next. So let's zoom out for a
+[451.0s] second to a,000 ft view. Backend
+[453.2s] development is very important because
+[455.1s] it's typically the logic powerhouse that
+[458.7s] really drives the app. So, what we're
+[460.6s] doing here is we're prototyping a basic
+[463.5s] MVP of what that backend might look like
+[467.0s] and how it might function so that we can
+[469.5s] hook it into our front end and get
+[472.0s] immediate feedback on how it works,
+[475.5s] whether or not it's like kind of meeting
+[477.0s] our expectations and so on. And we're
+[479.4s] doing that with simple drag and drop
+[481.3s] tools that are very easy that anybody
+[483.8s] can use. The ultimate plan here is that
+[486.4s] later on in time after you have proof of
+[488.6s] concept, you would come back and beef
+[491.3s] this thing up into an actual backend.
+[494.4s] So, we're not avoiding that backend
+[496.4s] development here. We're choosing
+[498.2s] strategic abstraction so that we can get
+[500.4s] an MVP up and running quickly, which
+[502.7s] again lets us get real user feedback and
+[505.4s] start testing and iterating 10 times
+[507.4s] faster. But we still need a front end
+[509.0s] for it. So, let's go build that out
+[510.6s] quickly. So, again, we have our app here
+[512.4s] called Prompt Wallet. And for me, it
+[513.9s] solves a really big problem of always
+[516.4s] having prompts all over the place. Some
+[518.6s] of them I use in Gemini. Some of them I
+[520.4s] only use in Claw. Some of them I only
+[521.8s] use in OpenAI all over the place. I'm
+[524.0s] changing them all at the time and
+[525.4s] testing with them and experimenting with
+[527.0s] them and using different versions and
+[529.1s] testing this and testing that. And it's
+[530.9s] actually kind of difficult to track what
+[532.5s] changes worked and why they worked,
+[534.5s] right? Like stuff like that. And so I
+[536.4s] wanted to create this thing for myself
+[537.9s] really so that I could have a
+[539.6s] centralized repository of all of these
+[541.9s] things. Now, one of the features I want
+[543.8s] to add to this is the ability to improve
+[546.1s] my problems with an agent that can
+[547.8s] reason about the subject and do research
+[550.9s] and generally use intelligence to like
+[553.3s] actually improve this thing. Now, we
+[555.3s] could build this type of like agentic
+[557.8s] improver in like Python or Node.js, but
+[561.0s] then we wouldn't have this awesome video
+[562.6s] showing you how to build an MVP with no
+[564.8s] code. So, I basically want to have just
+[566.5s] a button right here that says, "Hey,
+[567.9s] enhance this thing with AI." Then the
+[569.6s] user can maybe give a little bit of
+[571.0s] feedback about what they want
+[572.2s] specifically and it passes this content
+[574.9s] plus that prompt from the user over to
+[577.4s] that NAN workflow we built and then gets
+[579.9s] the response back and saves this thing.
+[581.8s] That's the workflow that I'm looking to
+[583.6s] kind of prototype right now. So we are
+[585.6s] inside of Cloud Code and it's going to
+[587.1s] be pretty simple. I need you to build a
+[588.6s] basic button inside of prompt ID that
+[590.7s] says AI enhance. When clicked, it
+[592.6s] prompts the user for specific feedback
+[594.2s] that they might have. And then it sends
+[595.8s] the prompt plus the feedback through to
+[598.5s] this endpoint, which is our NAN
+[600.6s] endpoint. And it should send the prompt
+[603.0s] and the query as the two like pieces of
+[605.4s] that body. So it should send a value
+[607.0s] called prompt and a value called query
+[609.0s] and receives back a response called new
+[611.4s] prompt. So this is what I'm going to ask
+[613.4s] it to go build. All right guys, so this
+[616.2s] thing just finished running and now we
+[617.6s] can see we have this little AI enhance
+[619.2s] button up here. So if I were to click on
+[620.9s] this, nice little modal pops up. And so
+[622.7s] we could come in here and say research
+[625.3s] to add more design best practices as of
+[627.8s] September 2025, right? And so now what
+[630.5s] we can do is we can hop back over really
+[632.3s] quickly to our NAN and we have this web
+[635.0s] hook node. So if I were to click listen
+[637.4s] for test event, right? This is the URL
+[639.5s] that we gave it to send to and I come
+[641.4s] through here now and I actually hit this
+[642.7s] enhance button and we pop back, we're
+[645.4s] going to see that it actually received
+[647.3s] that message, right? and it has the
+[649.0s] prompt and the query just like we asked
+[651.2s] it to. So we are now able to send data
+[654.4s] from our app over into Nadn. And so the
+[658.2s] only problem is that this isn't
+[659.3s] connected yet, right? Because this is
+[660.6s] coming in through a web hook when
+[663.1s] previously we were using this little
+[665.2s] chat piece inside of N8N. So now we have
+[668.8s] a brain without a body and a body
+[672.1s] without a brain. So, let's future paste
+[674.6s] those hater Frankenstein vibe coder
+[677.8s] comments and bring our creation to life.
+[681.2s] So, time for the moment of truth because
+[682.9s] most tutorials don't actually get to the
+[685.2s] point of connecting the things together
+[687.4s] and showing you what the outputs really
+[689.0s] look like. So, first things first,
+[690.7s] inside of N8N, what do we have? So, this
+[693.9s] is that URL that we used when we coded
+[696.2s] that endpoint in our app to begin with.
+[698.9s] And then we choose this option to
+[700.8s] respond to a web hook node. Okay. And
+[704.6s] what that is is once this thing is fully
+[706.6s] done processing and doing what it's
+[708.2s] going to do, it's going to respond back
+[711.2s] to that original
+[713.4s] request that was made with whatever we
+[715.8s] tell it to respond with here. And like
+[718.1s] we mentioned earlier, we told it to
+[720.0s] expect that it's going to receive new
+[723.0s] prompt as an object, right? And that's
+[725.2s] going to have the actual new prompt in
+[727.0s] it. And so what we're doing here is
+[728.7s] we're saying hey take that output that
+[730.6s] we get and send it through in the
+[733.9s] request. So what we can do now is we can
+[735.6s] say execute workflow. Now it's waiting
+[737.4s] for us to call this test URL. So we can
+[739.6s] hop back over here and we can ask it to
+[741.9s] enhance. We can paste in what we want to
+[744.2s] do. We want to infuse more design best
+[746.0s] practices into this prompt. We can say
+[748.0s] enhance. And now instead of failing
+[750.2s] immediately we can see that it is
+[752.2s] waiting. Now, this is obviously not the
+[754.6s] most ideal scenario because we wouldn't
+[757.4s] want the user just sitting here waiting
+[759.0s] for 30, 45 seconds for this thing to
+[760.9s] process. But again, we're just proofing
+[763.4s] this thing out and prototyping. So, this
+[765.6s] thing is going through. It did its
+[766.9s] research. Now, it's formulating its
+[768.6s] response. And what we should see is that
+[770.8s] this should process and save a new copy
+[773.7s] of our prompt in just a second. And
+[775.9s] boom, there it is. And so, now if we
+[778.0s] look at this thing, we can see it added
+[781.0s] a lot in. So if we were to go down for
+[783.4s] example and look at our like git viewer
+[786.9s] which we made in our last video to view
+[790.1s] the version history we can see exactly
+[792.1s] what was changed. So as we start
+[794.7s] scrolling down we can see it added this
+[796.3s] piece about eco-conscious UI dark mode
+[799.8s] energy savings mobile first
+[801.2s] responsiveness and then we get this
+[803.1s] entire section on project specification
+[806.2s] guidelines. So zero friction onboarding,
+[808.7s] AI powered personalization,
+[811.1s] bottom sheet navigation, micro
+[812.9s] interactions, right? So we're getting
+[814.3s] all of this extra data in here that we
+[817.0s] can use. And now we have this up-to-date
+[819.4s] version of this prompt. So again, if you
+[822.4s] want this Nadn file so that you can just
+[824.5s] at least take this structure of the, you
+[826.6s] know, input web hook and the output
+[828.6s] response and then come in here and plug
+[830.3s] in all your own tools and prototype your
+[832.1s] own thing. I will have a link to this
+[834.3s] for free in the school group in the
+[837.2s] description below the video. And I would
+[839.4s] actually like to know if you guys get in
+[841.0s] there and do something like this and you
+[842.9s] use it. I would like to see what you
+[844.6s] built because I I really enjoy this
+[846.4s] stuff and I like seeing what people
+[848.2s] build with the techniques and tools that
+[851.1s] I show you guys. So, if you do build out
+[853.3s] something cool based on this, please
+[855.4s] drop a comment on this video or a future
+[857.8s] video and just let me know cuz I again,
+[859.6s] I really do like checking that stuff
+[861.2s] out. So this web hookbased approach is
+[864.0s] how most major APIs work, right? If
+[867.4s] you've ever done an integration with
+[868.6s] Stripe or with Twilio or with countless
+[871.0s] other tools, they have a similar
+[873.1s] approach where your app just sends a
+[875.6s] request to an endpoint and then receives
+[878.3s] that response. And so you're offloading
+[880.4s] all of the infrastructure and processing
+[882.3s] of what building out a payment processor
+[884.5s] would look like to Stripe's API. So this
+[887.6s] is a great approach to rapidly
+[889.7s] prototyping a backend for your app. So
+[893.0s] now that you have that backend, you can
+[894.6s] choose to migrate it into production
+[896.6s] code whenever you want or never if the
+[900.2s] approach that you have scales for what
+[902.0s] you're doing. Depends how big of an app
+[904.2s] you really are intending on building, I
+[906.9s] suppose. So, no code back-end tools are
+[909.3s] not replacing modern developers, but
+[911.6s] they are creating a new breed of
+[914.3s] builders that can rapidly prototype and
+[917.7s] get to value quickly, aka people that
+[921.1s] ship first and optimize later. So,
+[923.8s] again, if you want that NAND template
+[925.5s] from the video, it's in the school group
+[927.0s] below. I also put all of the files and
+[929.7s] prompts and agent definitions and
+[931.5s] everything from my YouTube in that
+[933.4s] group. So, if you want any of those
+[934.9s] frameworks, go check out the school
+[936.6s] group below. We'll be getting to more
+[938.2s] practical tutorials like this in
+[940.3s] upcoming videos. So, make sure you're
+[942.2s] subscribed to the channel if you want to
+[943.6s] see more practical stuff like this. That
+[945.5s] is it for this video. I will see you in
+[947.4s] the next

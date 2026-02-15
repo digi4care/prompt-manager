@@ -1,0 +1,51 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# SQLite
+*.db
+
+# Drizzle
+drizzle/
+.opencode/agent/core/
+.opencode/agent/subagents/
+.opencode/command/
+.opencode/skill/
+
+# Testing & Coverage
+coverage/
+test-results/
+.playwright-mcp/
+playwright-report/ 
+
+# Logs
+*.log
+dev.log
+.beads/.jsonl.lock
+.todos/
+
+# Sidecar
+.sidecar/shells.json.lock
+.tmp/*
+!.tmp/tasks/
+!.tmp/external-context/

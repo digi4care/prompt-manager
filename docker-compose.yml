@@ -1,0 +1,86 @@
+services:
+  # ============================================================
+  # Prompt Management Web Application
+  # ============================================================
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=${DATABASE_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENCODE_URL=http://opencode:4096
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - PUBLIC_APP_NAME=${PUBLIC_APP_NAME:-Prompt Wallet}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+    volumes:
+      - data:/app/data
+    depends_on:
+      opencode:
+        condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================
+  # OpenCode Service
+  # Internal service - not exposed publicly
+  # ============================================================
+  opencode:
+    image: node:20-alpine
+    restart: unless-stopped
+    # No ports exposed - accessible only via internal network
+    environment:
+      - NODE_ENV=production
+      # Add any OpenCode-specific environment variables here
+      # OPENCODE_API_KEY=${OPENCODE_API_KEY:-}
+    volumes:
+      - opencode-data:/home/opencode/.opencode
+      # Mount OpenCode configuration if needed
+      # - ./opencode-config:/home/opencode/.opencode/config
+    networks:
+      - internal
+    healthcheck:
+      # Check OpenCode health endpoint
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:4096/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    command:
+      - sh
+      - -c
+      - |
+        # Install OpenCode globally
+        npm install -g @opencode-ai/cli
+
+        # Start OpenCode server
+        opencode start --host 0.0.0.0 --port 4096 --no-auth
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  internal:
+    driver: bridge
+    # Internal network - services can communicate but are not exposed publicly
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  data:
+    driver: local
+  opencode-data:
+    driver: local

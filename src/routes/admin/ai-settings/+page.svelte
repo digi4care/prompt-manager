@@ -4,8 +4,6 @@
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
 	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
 	import ImprovePresets from '$lib/components/admin/ai-settings/improve-presets.svelte';
-	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
-	import Icon from '@iconify/svelte';
 
 	let isConnected = $state(false);
 </script>
@@ -28,16 +26,25 @@
 
 		{#if !isConnected}
 			<!-- Show warning when not connected -->
-			<Alert variant="destructive">
-				<Icon icon="lucide:alert-triangle" class="h-4 w-4" />
-				<AlertTitle>OpenCode niet verbonden</AlertTitle>
-				<AlertDescription>
-					Configureer eerst je OpenCode API key in de environment variables (<code
-						>OPENCODE_BASE_URL</code
-					>
-					en <code>OPENCODE_API_KEY</code>) om de functie-instellingen te kunnen configureren.
-				</AlertDescription>
-			</Alert>
+			<div
+				class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950"
+			>
+				<div class="flex items-start gap-3">
+					<span class="text-xl text-amber-600 dark:text-amber-400">⚠️</span>
+					<div>
+						<h3 class="font-semibold text-amber-800 dark:text-amber-200">
+							OpenCode niet verbonden
+						</h3>
+						<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+							Configureer eerst je OpenCode API key in de environment variables (<code
+								class="rounded bg-amber-100 px-1 dark:bg-amber-900">OPENCODE_BASE_URL</code
+							>
+							en <code class="rounded bg-amber-100 px-1 dark:bg-amber-900">OPENCODE_API_KEY</code>)
+							om de functie-instellingen te kunnen configureren.
+						</p>
+					</div>
+				</div>
+			</div>
 		{:else}
 			<!-- Function Defaults - only shown when connected -->
 			<FunctionSettingsTable />

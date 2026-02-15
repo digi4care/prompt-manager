@@ -1,4 +1,5 @@
 <script lang="ts">
+	import FunctionSettingsTable from '$lib/components/admin/function-settings/function-settings-table.svelte';
 	import ConnectionStatus from '$lib/components/admin/ai-settings/connection-status.svelte';
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
 	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
@@ -18,13 +19,16 @@
 	</div>
 
 	<div class="space-y-6">
+		<!-- Function Defaults (NEW - first) -->
+		<FunctionSettingsTable />
+
 		<!-- Connection Status -->
 		<ConnectionStatus />
 
 		<!-- Model Catalog -->
 		<CatalogView />
 
-		<!-- AI Policy -->
+		<!-- AI Policy (will be superseded by FunctionSettingsTable) -->
 		<PolicyEditor />
 
 		<!-- Improve Presets -->

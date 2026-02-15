@@ -14,9 +14,10 @@
 
 	interface Props {
 		class?: string;
+		isConnected?: boolean;
 	}
 
-	let { class: className = '' }: Props = $props();
+	let { class: className = '', isConnected = $bindable(false) }: Props = $props();
 
 	let health = $state<HealthCheckResult | null>(null);
 	let isLoading = $state(true);
@@ -31,6 +32,7 @@
 			const response = await fetch('/api/admin/health');
 			const result = await response.json();
 			health = result.data;
+			isConnected = health?.healthy ?? false;
 		} catch (err) {
 			console.error('Failed to load health status:', err);
 			toast.error('Failed to load connection status');
@@ -42,6 +44,7 @@
 					error: err instanceof Error ? err.message : 'Unknown error'
 				}
 			};
+			isConnected = false;
 		} finally {
 			isLoading = false;
 		}

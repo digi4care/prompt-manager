@@ -4,6 +4,10 @@
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
 	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
 	import ImprovePresets from '$lib/components/admin/ai-settings/improve-presets.svelte';
+	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
+	import Icon from '@iconify/svelte';
+
+	let isConnected = $state(false);
 </script>
 
 <svelte:head>
@@ -20,18 +24,32 @@
 
 	<div class="space-y-6">
 		<!-- Connection Status (FIRST - must be configured before other settings) -->
-		<ConnectionStatus />
+		<ConnectionStatus bind:isConnected />
 
-		<!-- Function Defaults -->
-		<FunctionSettingsTable />
+		{#if !isConnected}
+			<!-- Show warning when not connected -->
+			<Alert variant="destructive">
+				<Icon icon="lucide:alert-triangle" class="h-4 w-4" />
+				<AlertTitle>OpenCode niet verbonden</AlertTitle>
+				<AlertDescription>
+					Configureer eerst je OpenCode API key in de environment variables (<code
+						>OPENCODE_BASE_URL</code
+					>
+					en <code>OPENCODE_API_KEY</code>) om de functie-instellingen te kunnen configureren.
+				</AlertDescription>
+			</Alert>
+		{:else}
+			<!-- Function Defaults - only shown when connected -->
+			<FunctionSettingsTable />
 
-		<!-- Model Catalog -->
-		<CatalogView />
+			<!-- Model Catalog -->
+			<CatalogView />
 
-		<!-- AI Policy (will be superseded by FunctionSettingsTable) -->
-		<PolicyEditor />
+			<!-- AI Policy (will be superseded by FunctionSettingsTable) -->
+			<PolicyEditor />
 
-		<!-- Improve Presets -->
-		<ImprovePresets />
+			<!-- Improve Presets -->
+			<ImprovePresets />
+		{/if}
 	</div>
 </div>

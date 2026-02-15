@@ -8,18 +8,17 @@
 
 	let { errors, class: className = '' }: Props = $props();
 
-	// Flatten errors for display
-	let errorList = $derived(() => {
-		const list: Array<{ functionType: string; field: string; message: string }> = [];
-		for (const [functionType, fieldErrors] of Object.entries(errors)) {
-			for (const [field, message] of Object.entries(fieldErrors)) {
-				list.push({ functionType, field, message });
-			}
-		}
-		return list;
-	});
+	let groupedErrors = $derived(() =>
+		Object.entries(errors)
+			.filter(([, fieldErrors]) => Object.keys(fieldErrors).length > 0)
+			.map(([functionType, fieldErrors]) => ({
+				functionType,
+				isCouncilAgent: functionType.startsWith('agent-'),
+				messages: Object.values(fieldErrors)
+			}))
+	);
 
-	let hasErrors = $derived(Object.keys(errors).length > 0);
+	let hasErrors = $derived(groupedErrors().length > 0);
 </script>
 
 {#if hasErrors}
@@ -44,17 +43,24 @@
 				<p class="mt-1 text-xs text-muted-foreground">
 					Please fix the following errors before saving:
 				</p>
-				<ul class="mt-2 space-y-1">
-					{#each errorList() as error}
-						<li class="text-sm text-destructive">
-							<span class="font-medium capitalize">{error.functionType}</span>
-							{#if error.functionType.startsWith('agent-')}
-								<span class="text-muted-foreground"> (Council)</span>
-							{/if}
-							: {error.message}
-						</li>
+				<div class="mt-2 space-y-2">
+					{#each groupedErrors() as group}
+						<div>
+							<div class="text-sm font-medium text-destructive">
+								{#if group.isCouncilAgent}
+									Council Agent
+								{:else}
+									<span class="capitalize">{group.functionType}</span>
+								{/if}
+							</div>
+							<ul class="mt-1 ml-4 list-disc space-y-1">
+								{#each group.messages as message}
+									<li class="text-sm text-destructive">{message}</li>
+								{/each}
+							</ul>
+						</div>
 					{/each}
-				</ul>
+				</div>
 			</div>
 		</div>
 	</div>

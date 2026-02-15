@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
-	import type { ModelInfo } from '$lib/server/services/opencode.service';
+
+	type SettingField = 'modelId' | 'temperature' | 'maxTokens';
 
 	interface CouncilAgent {
 		id: string;
@@ -17,21 +18,37 @@
 		groupedModels: Array<{
 			providerName: string;
 			providerId: string;
-			models: ModelInfo[];
+			models: Array<{ id: string; name: string }>;
 		}>;
 		prompts: Array<{ id: number; title: string }>;
-		onValidate: (agentId: string, field: string, value: unknown, immediate: boolean) => void;
+		onValidate: (agentId: string, field: SettingField, value: unknown, immediate: boolean) => void;
 	}
 
 	let { agents = $bindable(), errors, groupedModels, prompts, onValidate }: Props = $props();
 
-	// Auto-add row when last agent has a model selected
+	// Keep minimum two rows available.
 	$effect(() => {
-		// Access agents to track reactivity
+		const currentAgents = agents;
+		if (currentAgents.length >= 2) {
+			return;
+		}
+
+		const missingRows = 2 - currentAgents.length;
+		const newRows = Array.from({ length: missingRows }, () => ({
+			id: crypto.randomUUID(),
+			modelId: '',
+			temperature: 0.5,
+			maxTokens: 8192
+		}));
+
+		agents = [...currentAgents, ...newRows];
+	});
+
+	// Auto-add row when last agent has a model selected.
+	$effect(() => {
 		const currentAgents = agents;
 		const lastAgent = currentAgents[currentAgents.length - 1];
 		if (lastAgent?.modelId) {
-			// Add new empty row
 			agents = [
 				...currentAgents,
 				{ id: crypto.randomUUID(), modelId: '', temperature: 0.5, maxTokens: 8192 }
@@ -80,12 +97,13 @@
 	function removeAgent(id: string) {
 		if (agents.length <= 2) return;
 		agents = agents.filter((a) => a.id !== id);
-		// Also clear errors for this agent
-		const functionType = `agent-${id}`;
-		if (errors[functionType]) {
-			const { [functionType]: _, ...restErrors } = errors;
-			// Note: We can't mutate errors directly from here, parent handles it
-		}
+	}
+
+	function addAgent() {
+		agents = [
+			...agents,
+			{ id: crypto.randomUUID(), modelId: '', temperature: 0.5, maxTokens: 8192 }
+		];
 	}
 </script>
 
@@ -143,7 +161,7 @@
 					{#each groupedModels as group}
 						<optgroup label={group.providerName}>
 							{#each group.models as model}
-								<option value={model.id}>{model.name}</option>
+								<option value={model.id}>{group.providerName} / {model.name}</option>
 							{/each}
 						</optgroup>
 					{/each}
@@ -218,3 +236,11 @@
 		</td>
 	</tr>
 {/each}
+
+<tr>
+	<td colspan="6" class="px-4 py-3">
+		<div class="flex justify-end">
+			<Button variant="outline" size="sm" onclick={addAgent}>Add Agent</Button>
+		</div>
+	</td>
+</tr>

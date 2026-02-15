@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	getOpencodeConnectionStatus,
-	updateOpencodeConnectionMode,
+	updateOpencodeConnection,
 	validateConnectionMode,
 	validateBaseUrl,
 	type ConnectionMode
@@ -34,8 +34,11 @@ export const GET: RequestHandler = async (event) => {
 
 /**
  * PUT /api/admin/opencode-connection
- * Update OpenCode connection mode
- * Body: { mode: 'auto' | 'custom', baseUrl?: string }
+ * Update OpenCode connection settings
+ * Body: { mode: 'local' | 'remote', baseUrl?: string, password?: string }
+ *
+ * - local: Start zelf de server (opencode serve), geen URL/password nodig
+ * - remote: Verbind met externe server, URL en password verplicht
  */
 export const PUT: RequestHandler = async (event) => {
 	// Require authentication
@@ -50,7 +53,7 @@ export const PUT: RequestHandler = async (event) => {
 
 	// Type guard for body
 	const data = body as Record<string, unknown>;
-	const { mode, baseUrl } = data;
+	const { mode, baseUrl, password } = data;
 
 	// Validate mode
 	const modeValidation = validateConnectionMode(mode);
@@ -64,8 +67,8 @@ export const PUT: RequestHandler = async (event) => {
 		);
 	}
 
-	// Validate baseUrl for custom mode
-	if (mode === 'custom') {
+	// Validate baseUrl for remote mode
+	if (mode === 'remote') {
 		const urlValidation = validateBaseUrl(baseUrl);
 		if (!urlValidation.valid) {
 			throw error(
@@ -78,15 +81,19 @@ export const PUT: RequestHandler = async (event) => {
 		}
 	}
 
+	// Validate password for remote mode (optional but recommended)
+	const passwordStr = typeof password === 'string' && password.trim() ? password.trim() : null;
+
 	try {
-		// Log the update for audit purposes
+		// Log the update for audit purposes (don't log password!)
 		console.log(
-			`[AUDIT] User ${user.userId} (${user.email}) updating OpenCode connection: mode=${mode}, baseUrl=${baseUrl || 'null'}`
+			`[AUDIT] User ${user.userId} (${user.email}) updating OpenCode connection: mode=${mode}, baseUrl=${baseUrl || 'null'}, hasPassword=${!!passwordStr}`
 		);
 
-		const updated = await updateOpencodeConnectionMode(
+		const updated = await updateOpencodeConnection(
 			mode as ConnectionMode,
-			baseUrl as string | undefined
+			baseUrl as string | null,
+			passwordStr
 		);
 
 		// Get fresh status after update

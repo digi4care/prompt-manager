@@ -278,8 +278,9 @@ export const authTwoFactor = sqliteTable('auth_two_factor', {
 // OpenCode connection singleton (id always 1)
 export const opencodeConnection = sqliteTable('opencode_connection', {
 	id: integer('id').primaryKey(),
-	mode: text('mode').$type<'auto' | 'custom'>().notNull().default('auto'),
-	baseUrl: text('base_url'), // For custom mode
+	mode: text('mode').$type<'local' | 'remote'>().notNull().default('local'),
+	baseUrl: text('base_url'), // For remote mode
+	password: text('password'), // For remote mode authentication
 	lastConnected: integer('last_connected', { mode: 'timestamp' }),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
@@ -292,7 +293,10 @@ export const opencodeConnection = sqliteTable('opencode_connection', {
 // Function defaults (4 rows max, one per function type)
 export const functionDefaults = sqliteTable('function_defaults', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
-	functionType: text('function_type').$type<'executor' | 'judge' | 'improve' | 'council'>().notNull().unique(),
+	functionType: text('function_type')
+		.$type<'executor' | 'judge' | 'improve' | 'council'>()
+		.notNull()
+		.unique(),
 	modelId: text('model_id').notNull(), // Format: 'providerID/modelID'
 	temperature: real('temperature').notNull(),
 	maxTokens: integer('max_tokens').notNull(),
@@ -306,30 +310,41 @@ export const functionDefaults = sqliteTable('function_defaults', {
 });
 
 // Per-prompt function settings overrides
-export const promptFunctionSettings = sqliteTable('prompt_function_settings', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	promptId: integer('prompt_id')
-		.notNull()
-		.references(() => prompts.id, { onDelete: 'cascade' }),
-	functionType: text('function_type').$type<'executor' | 'judge' | 'improve' | 'council'>().notNull(),
-	modelOverride: text('model_override'),
-	temperature: real('temperature'),
-	maxTokens: integer('max_tokens'),
-	promptLinkId: integer('prompt_link_id').references(() => prompts.id),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-}, (table) => ({
-	promptFunctionUnique: uniqueIndex('prompt_function_unique').on(table.promptId, table.functionType)
-}));
+export const promptFunctionSettings = sqliteTable(
+	'prompt_function_settings',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		promptId: integer('prompt_id')
+			.notNull()
+			.references(() => prompts.id, { onDelete: 'cascade' }),
+		functionType: text('function_type')
+			.$type<'executor' | 'judge' | 'improve' | 'council'>()
+			.notNull(),
+		modelOverride: text('model_override'),
+		temperature: real('temperature'),
+		maxTokens: integer('max_tokens'),
+		promptLinkId: integer('prompt_link_id').references(() => prompts.id),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => ({
+		promptFunctionUnique: uniqueIndex('prompt_function_unique').on(
+			table.promptId,
+			table.functionType
+		)
+	})
+);
 
 // Council agents for council repeater pattern
 export const councilAgents = sqliteTable('council_agents', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
-	parentType: text('parent_type').$type<'function_defaults' | 'prompt_function_settings'>().notNull(),
+	parentType: text('parent_type')
+		.$type<'function_defaults' | 'prompt_function_settings'>()
+		.notNull(),
 	parentId: integer('parent_id').notNull(),
 	agentOrder: integer('agent_order').notNull(),
 	modelId: text('model_id').notNull(),

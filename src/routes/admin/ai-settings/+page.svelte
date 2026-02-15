@@ -1,62 +1,66 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import ConnectionSettings from '$lib/components/admin/ai-settings/connection-settings.svelte';
 	import FunctionSettingsTable from '$lib/components/admin/function-settings/function-settings-table.svelte';
-	import ConnectionStatus from '$lib/components/admin/ai-settings/connection-status.svelte';
-	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
-	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
-	import ImprovePresets from '$lib/components/admin/ai-settings/improve-presets.svelte';
 
 	let isConnected = $state(false);
+
+	function handleConnectionChange(connected: boolean) {
+		isConnected = connected;
+	}
+
+	onMount(() => {
+		// Check initial connection status
+		fetch('/api/admin/opencode-connection')
+			.then((res) => res.json())
+			.then((data) => {
+				isConnected = data.data?.connected && data.data?.healthy;
+			})
+			.catch(() => {
+				isConnected = false;
+			});
+	});
 </script>
 
 <svelte:head>
-	<title>AI Settings | Prompt Management</title>
+	<title>AI Instellingen - Admin</title>
 </svelte:head>
 
-<div class="container mx-auto px-4 py-8">
-	<div class="mb-8">
-		<h1 class="text-3xl font-bold tracking-tight">AI Settings</h1>
-		<p class="mt-2 text-muted-foreground">
-			Configure OpenCode integration, model policy, and Improve presets
-		</p>
+<div class="space-y-6">
+	<div>
+		<h1 class="text-2xl font-bold">AI Instellingen</h1>
+		<p class="text-muted-foreground">Configureer OpenCode verbinding en functie-defaults</p>
 	</div>
 
-	<div class="space-y-6">
-		<!-- Connection Status (FIRST - must be configured before other settings) -->
-		<ConnectionStatus bind:isConnected />
+	<!-- Connection Settings (always visible) -->
+	<ConnectionSettings onConnectionChange={handleConnectionChange} />
 
-		{#if !isConnected}
-			<!-- Show warning when not connected -->
-			<div
-				class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950"
-			>
-				<div class="flex items-start gap-3">
-					<span class="text-xl text-amber-600 dark:text-amber-400">⚠️</span>
-					<div>
-						<h3 class="font-semibold text-amber-800 dark:text-amber-200">
-							OpenCode niet verbonden
-						</h3>
-						<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-							Configureer eerst je OpenCode API key in de environment variables (<code
-								class="rounded bg-amber-100 px-1 dark:bg-amber-900">OPENCODE_BASE_URL</code
-							>
-							en <code class="rounded bg-amber-100 px-1 dark:bg-amber-900">OPENCODE_API_KEY</code>)
-							om de functie-instellingen te kunnen configureren.
-						</p>
+	<!-- Function Settings (only when connected) -->
+	{#if isConnected}
+		<FunctionSettingsTable />
+	{:else}
+		<div
+			class="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30"
+		>
+			<div class="flex">
+				<div class="flex-shrink-0">
+					<svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+						<path
+							fill-rule="evenodd"
+							d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+							clip-rule="evenodd"
+						/>
+					</svg>
+				</div>
+				<div class="ml-3">
+					<h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">
+						Eerst verbinden met OpenCode
+					</h3>
+					<div class="mt-2 text-sm text-blue-700 dark:text-blue-300">
+						<p>Verbind met de OpenCode server om de functie-instellingen te configureren.</p>
 					</div>
 				</div>
 			</div>
-		{:else}
-			<!-- Function Defaults - only shown when connected -->
-			<FunctionSettingsTable />
-
-			<!-- Model Catalog -->
-			<CatalogView />
-
-			<!-- AI Policy (will be superseded by FunctionSettingsTable) -->
-			<PolicyEditor />
-
-			<!-- Improve Presets -->
-			<ImprovePresets />
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>

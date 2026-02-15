@@ -119,36 +119,33 @@
 		</div>
 	</div>
 
-	<!-- Local Mode Info -->
+	<!-- SDK Mode Info -->
 	{#if mode === 'local'}
 		<div
 			class="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/30"
 		>
-			<p class="text-sm font-medium text-blue-800 dark:text-blue-200">
-				Lokale modus (SDK embedded)
-			</p>
+			<p class="text-sm font-medium text-blue-800 dark:text-blue-200">SDK Modus (sdk.mdx)</p>
 			<p class="mt-1 text-xs text-blue-700 dark:text-blue-300">
-				De SDK start automatisch een embedded server. Je hoeft <strong>niets</strong> te doen!
-			</p>
-			<p class="mt-2 text-xs text-blue-600 dark:text-blue-400">
-				Heb je al <code class="rounded bg-blue-100 px-1 dark:bg-blue-900/50">opencode serve</code>
-				gedraaid? Gebruik dan <strong>Remote</strong> modus.
+				De SDK start automatisch een embedded server via <code
+					class="rounded bg-blue-100 px-1 dark:bg-blue-900/50">createOpencode()</code
+				>. Je hoeft <strong>niets</strong> te doen!
 			</p>
 		</div>
 	{/if}
 
-	<!-- Remote Mode Fields -->
+	<!-- Server Mode Fields -->
 	{#if mode === 'remote'}
 		<div
 			class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30"
 		>
 			<p class="text-sm font-medium text-amber-800 dark:text-amber-200">
-				Remote modus (externe server)
+				Server Modus (server.mdx)
 			</p>
 			<p class="mt-1 text-xs text-amber-700 dark:text-amber-300">
-				Verbind met een server die je hebt gestart met <code
-					class="rounded bg-amber-100 px-1 dark:bg-amber-900/50">opencode serve</code
-				>
+				Verbind met een externe server via <code
+					class="rounded bg-amber-100 px-1 dark:bg-amber-900/50">createOpencodeClient()</code
+				>. Start eerst een server met
+				<code class="rounded bg-amber-100 px-1 dark:bg-amber-900/50">opencode serve</code>
 			</p>
 		</div>
 		<div class="mb-4 space-y-3">

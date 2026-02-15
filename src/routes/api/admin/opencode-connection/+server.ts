@@ -12,10 +12,10 @@ import { authenticateRequest } from '$lib/server/auth/jwt';
 /**
  * GET /api/admin/opencode-connection
  * Get OpenCode connection status with health check
+ * Public endpoint - needed before login to check connection
  */
-export const GET: RequestHandler = async (event) => {
-	// Require authentication
-	authenticateRequest(event);
+export const GET: RequestHandler = async () => {
+	// No authentication required - connection status needed before login
 
 	try {
 		const status = await getOpencodeConnectionStatus();
@@ -37,12 +37,13 @@ export const GET: RequestHandler = async (event) => {
  * Update OpenCode connection settings
  * Body: { mode: 'local' | 'remote', baseUrl?: string, password?: string }
  *
- * - local: Start zelf de server (opencode serve), geen URL/password nodig
- * - remote: Verbind met externe server, URL en password verplicht
+ * - local: SDK start embedded server, geen URL/password nodig
+ * - remote: Verbind met externe server, URL en optioneel password
+ *
+ * Public endpoint - needed before login to configure connection
  */
 export const PUT: RequestHandler = async (event) => {
-	// Require authentication
-	const user = authenticateRequest(event);
+	// No authentication required - connection settings needed before login
 
 	let body: unknown;
 	try {
@@ -87,7 +88,7 @@ export const PUT: RequestHandler = async (event) => {
 	try {
 		// Log the update for audit purposes (don't log password!)
 		console.log(
-			`[AUDIT] User ${user.userId} (${user.email}) updating OpenCode connection: mode=${mode}, baseUrl=${baseUrl || 'null'}, hasPassword=${!!passwordStr}`
+			`[AUDIT] Updating OpenCode connection: mode=${mode}, baseUrl=${baseUrl || 'null'}, hasPassword=${!!passwordStr}`
 		);
 
 		const updated = await updateOpencodeConnection(

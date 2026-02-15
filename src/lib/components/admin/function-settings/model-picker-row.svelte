@@ -1,29 +1,36 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
-	import type { ModelInfo } from '$lib/server/services/opencode.service';
+
+	type FunctionType = 'executor' | 'judge' | 'improve';
+	type SettingField = 'modelId' | 'temperature' | 'maxTokens';
 
 	interface FunctionSetting {
 		id?: number;
-		functionType: string;
+		functionType: FunctionType;
 		modelId: string;
 		temperature: number;
 		maxTokens: number;
 		promptId?: number | null;
 	}
 
+	interface GroupedModel {
+		id: string;
+		name: string;
+	}
+
 	interface Props {
-		type: 'executor' | 'judge' | 'improve';
+		type: FunctionType;
 		setting: FunctionSetting;
 		error: Record<string, string>;
 		groupedModels: Array<{
 			providerName: string;
 			providerId: string;
-			models: ModelInfo[];
+			models: GroupedModel[];
 		}>;
 		prompts: Array<{ id: number; title: string }>;
 		onModelChange: (modelId: string) => void;
-		onValidate: (field: string, value: unknown, immediate: boolean) => void;
+		onValidate: (field: SettingField, value: unknown, immediate: boolean) => void;
 		onReset: () => void;
 	}
 
@@ -155,7 +162,7 @@
 				{#each groupedModels as group}
 					<optgroup label={group.providerName}>
 						{#each group.models as model}
-							<option value={model.id}>{model.name}</option>
+							<option value={model.id}>{group.providerName} / {model.name}</option>
 						{/each}
 					</optgroup>
 				{/each}

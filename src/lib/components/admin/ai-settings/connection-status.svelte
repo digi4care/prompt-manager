@@ -118,14 +118,46 @@
 							</div>
 						{/if}
 						{#if health.diagnostics.error}
-							<div class="mt-2 flex justify-between text-xs text-red-600 dark:text-red-400">
-								<span>Error:</span>
-								<span class="max-w-xs truncate text-right font-mono">
+							<div class="mt-2 text-xs text-red-600 dark:text-red-400">
+								<span class="font-medium">Error:</span>
+								<span class="ml-1 font-mono">
 									{health.diagnostics.error}
 								</span>
 							</div>
 						{/if}
 					</div>
+
+					{#if !health.healthy && !health.connected}
+						<div
+							class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30"
+						>
+							<p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+								OpenCode server is niet bereikbaar
+							</p>
+							<p class="mt-1 text-xs text-amber-700 dark:text-amber-300">
+								De OpenCode headless server draait waarschijnlijk niet. Start de server:
+							</p>
+							<code
+								class="mt-2 block rounded bg-amber-100 p-2 font-mono text-xs text-amber-900 dark:bg-amber-900/50 dark:text-amber-100"
+							>
+								opencode serve
+							</code>
+							<p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+								Geen API key nodig - OpenCode is een lokale server op {health.diagnostics.baseUrl}
+							</p>
+						</div>
+					{:else if !health.healthy && health.connected}
+						<div
+							class="mt-4 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30"
+						>
+							<p class="text-sm font-medium text-red-800 dark:text-red-200">
+								Server bereikbaar maar niet healthy
+							</p>
+							<p class="mt-1 text-xs text-red-700 dark:text-red-300">
+								De server reageert maar er is een probleem. Check de logs.
+							</p>
+						</div>
+					{/if}
 				{/if}
 			</div>
 		{/if}

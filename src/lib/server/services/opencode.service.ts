@@ -71,17 +71,26 @@ export async function checkOpencodeHealth(): Promise<HealthCheckResult> {
 	};
 
 	try {
-		const client = getOpencodeClient();
-		// Type-safe access to health endpoint
-		const healthMethod = (client as any).global?.health;
-		if (!healthMethod) {
-			throw new OpenCodeError('Health check method not available', 'HEALTH_CHECK_UNAVAILABLE');
+		// Simple HTTP health check - more reliable than SDK method
+		const response = await fetch(`${baseUrl}/health`, {
+			method: 'GET',
+			headers: { Accept: 'application/json' },
+			signal: AbortSignal.timeout(5000) // 5 second timeout
+		});
+
+		if (!response.ok) {
+			diagnostics.error = `HTTP ${response.status}: ${response.statusText}`;
+			return {
+				healthy: false,
+				connected: true,
+				diagnostics
+			};
 		}
 
-		const res: any = await healthMethod.call(client);
+		const data = await response.json();
 		return {
 			healthy: true,
-			version: res?.data?.version,
+			version: data?.version || 'unknown',
 			connected: true,
 			diagnostics
 		};
@@ -90,7 +99,7 @@ export async function checkOpencodeHealth(): Promise<HealthCheckResult> {
 		diagnostics.error = message;
 
 		// Classify the health check failure
-		if (/ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|fetch failed/i.test(message)) {
+		if (/ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|fetch failed|timeout|aborted/i.test(message)) {
 			return {
 				healthy: false,
 				connected: false,

@@ -19,11 +19,11 @@
 	</div>
 
 	<div class="space-y-6">
-		<!-- Function Defaults (NEW - first) -->
-		<FunctionSettingsTable />
-
-		<!-- Connection Status -->
+		<!-- Connection Status (FIRST - must be configured before other settings) -->
 		<ConnectionStatus />
+
+		<!-- Function Defaults -->
+		<FunctionSettingsTable />
 
 		<!-- Model Catalog -->
 		<CatalogView />

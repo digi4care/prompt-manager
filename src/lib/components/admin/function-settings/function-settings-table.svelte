@@ -165,6 +165,9 @@
 			.sort((a, b) => a.providerName.localeCompare(b.providerName));
 	}
 
+	// State for connection error
+	let connectionError = $state<string | null>(null);
+
 	// Load data
 	async function loadData() {
 		try {
@@ -174,7 +177,15 @@
 				fetch('/api/prompts?limit=200')
 			]);
 
-			catalog = await catalogRes.json();
+			// Handle catalog response - may fail if OpenCode not connected
+			if (catalogRes.ok) {
+				catalog = await catalogRes.json();
+				connectionError = null;
+			} else {
+				const errorData = await catalogRes.json();
+				connectionError = errorData.message || 'OpenCode not connected';
+				// Don't show toast - Connection Status component shows the issue
+			}
 
 			const settingsData = await settingsRes.json();
 			if (settingsData.data) {
@@ -331,6 +342,34 @@
 				<span>Loading settings...</span>
 			</div>
 		{:else}
+			<!-- Connection Warning -->
+			{#if connectionError}
+				<div
+					class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950"
+				>
+					<div class="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+							></path>
+							<line x1="12" y1="9" x2="12" y2="13"></line>
+							<line x1="12" y1="17" x2="12.01" y2="17"></line>
+						</svg>
+						<span class="font-medium">OpenCode Not Connected</span>
+					</div>
+					<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+						{connectionError}. Model selection is unavailable. Configure the connection above first.
+					</p>
+				</div>
+			{/if}
+
 			<!-- Validation Summary -->
 			<ValidationSummary {errors} class="mb-4" />
 

@@ -124,23 +124,33 @@
 		<div
 			class="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/30"
 		>
-			<p class="text-sm font-medium text-blue-800 dark:text-blue-200">Lokale modus</p>
-			<p class="mt-1 text-xs text-blue-700 dark:text-blue-300">
-				Start de OpenCode headless server zelf:
+			<p class="text-sm font-medium text-blue-800 dark:text-blue-200">
+				Lokale modus (SDK embedded)
 			</p>
-			<code
-				class="mt-2 block rounded bg-blue-100 p-2 font-mono text-xs text-blue-900 dark:bg-blue-900/50 dark:text-blue-100"
-			>
-				opencode serve
-			</code>
+			<p class="mt-1 text-xs text-blue-700 dark:text-blue-300">
+				De SDK start automatisch een embedded server. Je hoeft <strong>niets</strong> te doen!
+			</p>
 			<p class="mt-2 text-xs text-blue-600 dark:text-blue-400">
-				De server draait standaard op http://localhost:4096
+				Heb je al <code class="rounded bg-blue-100 px-1 dark:bg-blue-900/50">opencode serve</code>
+				gedraaid? Gebruik dan <strong>Remote</strong> modus.
 			</p>
 		</div>
 	{/if}
 
 	<!-- Remote Mode Fields -->
 	{#if mode === 'remote'}
+		<div
+			class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30"
+		>
+			<p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+				Remote modus (externe server)
+			</p>
+			<p class="mt-1 text-xs text-amber-700 dark:text-amber-300">
+				Verbind met een server die je hebt gestart met <code
+					class="rounded bg-amber-100 px-1 dark:bg-amber-900/50">opencode serve</code
+				>
+			</p>
+		</div>
 		<div class="mb-4 space-y-3">
 			<div>
 				<label class="mb-1 block text-sm font-medium">
@@ -149,13 +159,17 @@
 				<input
 					type="url"
 					bind:value={baseUrl}
-					placeholder="https://opencode.example.com"
+					placeholder="http://localhost:4096"
 					class="w-full rounded-md border px-3 py-2 text-sm"
 				/>
-				<p class="mt-1 text-xs text-muted-foreground">Volledige URL van de OpenCode server</p>
+				<p class="mt-1 text-xs text-muted-foreground">
+					Standaard: http://localhost:4096 (als je lokaal <code class="rounded bg-muted px-1"
+						>opencode serve</code
+					> draait)
+				</p>
 			</div>
 			<div>
-				<label class="mb-1 block text-sm font-medium"> Wachtwoord / Token </label>
+				<label class="mb-1 block text-sm font-medium"> Wachtwoord </label>
 				<input
 					type="password"
 					bind:value={password}
@@ -163,7 +177,7 @@
 					class="w-full rounded-md border px-3 py-2 text-sm"
 				/>
 				<p class="mt-1 text-xs text-muted-foreground">
-					Laat leeg om huidige wachtwoord te behouden
+					Het wachtwoord uit <code class="rounded bg-muted px-1">OPENCODE_SERVER_PASSWORD</code>
 					{#if status?.hasPassword}
 						<span class="text-green-600">(huidig wachtwoord ingesteld)</span>
 					{/if}

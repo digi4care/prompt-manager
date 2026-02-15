@@ -97,11 +97,17 @@ export function getEffectiveBaseUrl(config: OpencodeConnection): string {
 
 /**
  * Get auth headers for OpenCode requests
+ * Uses HTTP Basic Auth (username: opencode, password: from config)
  */
 export function getAuthHeaders(config: OpencodeConnection): Record<string, string> {
-	if (config.mode === 'remote' && config.password) {
+	// Both local and remote can have password auth
+	if (config.password) {
+		// HTTP Basic Auth: base64(username:password)
+		// Username defaults to 'opencode' per OpenCode docs
+		const username = process.env.OPENCODE_SERVER_USERNAME || 'opencode';
+		const credentials = Buffer.from(`${username}:${config.password}`).toString('base64');
 		return {
-			Authorization: `Bearer ${config.password}`
+			Authorization: `Basic ${credentials}`
 		};
 	}
 	return {};

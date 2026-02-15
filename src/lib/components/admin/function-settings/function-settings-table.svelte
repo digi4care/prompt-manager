@@ -3,8 +3,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
 	import ValidationSummary from './validation-summary.svelte';
-	import ModelPickerRow from './model-picker-row.svelte';
-	import CouncilRepeater from './council-repeater.svelte';
 	import {
 		validateFunctionField,
 		validateMaxTokens,
@@ -15,20 +13,10 @@
 	type SettingField = 'modelId' | 'temperature' | 'maxTokens';
 
 	interface FunctionSetting {
-		id?: number;
-		functionType: FunctionType;
 		modelId: string;
 		temperature: number;
 		maxTokens: number;
-		promptId?: number | null;
-	}
-
-	interface CouncilAgent {
-		id: string;
-		modelId: string;
-		temperature: number;
-		maxTokens: number;
-		promptId?: number | null;
+		promptId: number | null;
 	}
 
 	interface PromptOption {
@@ -54,26 +42,62 @@
 	let { class: className = '' }: Props = $props();
 
 	let settings = $state<Record<FunctionType, FunctionSetting>>({
-		executor: { functionType: 'executor', modelId: '', temperature: 0.7, maxTokens: 4096 },
-		judge: { functionType: 'judge', modelId: '', temperature: 0.3, maxTokens: 2048 },
-		improve: { functionType: 'improve', modelId: '', temperature: 0.7, maxTokens: 4096 }
+		executor: { modelId: '', temperature: 0.7, maxTokens: 4096, promptId: null },
+		judge: { modelId: '', temperature: 0.3, maxTokens: 2048, promptId: null },
+		improve: { modelId: '', temperature: 0.7, maxTokens: 4096, promptId: null }
 	});
-	let councilAgents = $state<CouncilAgent[]>([
-		{ id: crypto.randomUUID(), modelId: '', temperature: 0.5, maxTokens: 8192 },
-		{ id: crypto.randomUUID(), modelId: '', temperature: 0.5, maxTokens: 8192 }
-	]);
+
+	let councilConfiguredAgents = $state(0);
 	let errors = $state<Record<string, Record<string, string>>>({});
 	let groupedModels = $state<ProviderGroup[]>([]);
 	let prompts = $state<PromptOption[]>([]);
 	let isLoading = $state(true);
 	let isSaving = $state(false);
-	let connectionError = $state<string | null>(null);
 
-	const debounceTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 	const rowTypes: FunctionType[] = ['executor', 'judge', 'improve'];
+	const fieldDebounce = new Map<string, ReturnType<typeof setTimeout>>();
+
 	let hasErrors = $derived(
 		Object.values(errors).some((fieldErrors) => Object.keys(fieldErrors).length > 0)
 	);
+
+	function normalizeProviderGroups(payload: unknown): ProviderGroup[] {
+		const providers =
+			typeof payload === 'object' && payload !== null && 'providers' in payload
+				? (payload as { providers?: unknown[] }).providers
+				: [];
+
+		if (!Array.isArray(providers)) {
+			return [];
+		}
+
+		return providers
+			.map((provider) => {
+				const providerRecord = provider as { id?: unknown; name?: unknown; models?: unknown };
+				const modelsSource = Array.isArray(providerRecord.models)
+					? providerRecord.models
+					: Object.values((providerRecord.models as Record<string, unknown>) || {});
+
+				const models = modelsSource
+					.map((model) => model as { id?: unknown; name?: unknown })
+					.filter((model) => typeof model.id === 'string' && model.id.length > 0)
+					.map((model) => ({
+						id: model.id as string,
+						name:
+							typeof model.name === 'string' && model.name.trim().length > 0
+								? model.name
+								: (model.id as string)
+					}));
+
+				return {
+					providerName: typeof providerRecord.name === 'string' ? providerRecord.name : 'Unknown',
+					providerId: typeof providerRecord.id === 'string' ? providerRecord.id : 'unknown',
+					models
+				};
+			})
+			.filter((provider) => provider.models.length > 0)
+			.sort((a, b) => a.providerName.localeCompare(b.providerName));
+	}
 
 	function updateFieldError(functionType: string, field: string, message: string | null): void {
 		if (message) {
@@ -105,20 +129,17 @@
 	}
 
 	function createDebounce(key: string, callback: () => void, delay: number): void {
-		const existing = debounceTimeouts.get(key);
+		const existing = fieldDebounce.get(key);
 		if (existing) {
 			clearTimeout(existing);
 		}
 		const timeout = setTimeout(callback, delay);
-		debounceTimeouts.set(key, timeout);
+		fieldDebounce.set(key, timeout);
 	}
 
 	function getFieldError(field: SettingField, value: unknown): string | null {
 		if (field === 'modelId') {
-			if (typeof value !== 'string' || value.trim() === '') {
-				return null;
-			}
-			return validateFunctionField('modelId', value);
+			return validateFunctionField('modelId', typeof value === 'string' ? value : '');
 		}
 
 		if (field === 'temperature') {
@@ -146,114 +167,111 @@
 		createDebounce(`${functionType}:${field}`, runValidation, 300);
 	}
 
-	function validateCouncilAgentField(
-		agentId: string,
-		field: string,
-		value: unknown,
-		immediate = false
-	): void {
-		if (field !== 'modelId' && field !== 'temperature' && field !== 'maxTokens') {
-			return;
+	function parseApiError(payload: string): string {
+		if (!payload || payload.trim().length === 0) return 'Request failed';
+		const normalized = payload.trimStart().toLowerCase();
+		if (normalized.startsWith('<!doctype') || normalized.startsWith('<html')) {
+			return 'Login required. Open /login and refresh this page.';
 		}
 
-		validateField(`agent-${agentId}`, field, value, immediate);
+		try {
+			const parsed = JSON.parse(payload) as { message?: string; error?: string };
+			return parsed.message || parsed.error || payload;
+		} catch {
+			return payload;
+		}
 	}
 
-	function normalizeProviderGroups(payload: unknown): ProviderGroup[] {
-		const providers =
-			typeof payload === 'object' && payload !== null && 'providers' in payload
-				? (payload as { providers?: unknown[] }).providers
-				: [];
+	function validateRequiredModels(): boolean {
+		let isValid = true;
 
-		if (!Array.isArray(providers)) {
-			return [];
+		for (const type of rowTypes) {
+			const message = getFieldError('modelId', settings[type].modelId);
+			updateFieldError(type, 'modelId', message);
+			if (message) {
+				isValid = false;
+			}
 		}
 
-		return providers
-			.map((provider) => {
-				const providerRecord = provider as {
-					id?: unknown;
-					name?: unknown;
-					models?: unknown;
-				};
-
-				const modelList = Array.isArray(providerRecord.models)
-					? providerRecord.models
-					: Object.values((providerRecord.models as Record<string, unknown>) || {});
-
-				const models = modelList
-					.map((model) => model as { id?: unknown; name?: unknown })
-					.filter((model) => typeof model.id === 'string' && model.id.length > 0)
-					.map((model) => ({
-						id: model.id as string,
-						name:
-							typeof model.name === 'string' && model.name.trim().length > 0
-								? model.name
-								: (model.id as string)
-					}));
-
-				return {
-					providerName: typeof providerRecord.name === 'string' ? providerRecord.name : 'Unknown',
-					providerId: typeof providerRecord.id === 'string' ? providerRecord.id : 'unknown',
-					models
-				};
-			})
-			.filter((provider) => provider.models.length > 0)
-			.sort((a, b) => a.providerName.localeCompare(b.providerName));
+		return isValid;
 	}
 
 	async function loadData(): Promise<void> {
 		try {
-			const [catalogRes, settingsRes, promptsRes] = await Promise.all([
+			const [catalogRes, settingsRes, promptsRes, councilRes] = await Promise.all([
 				fetch('/api/opencode/providers'),
 				fetch('/api/admin/function-defaults'),
-				fetch('/api/prompts?limit=200')
+				fetch('/api/prompts?limit=200'),
+				fetch('/api/admin/function-defaults/council')
 			]);
 
+			const [catalogText, settingsText, promptsText, councilText] = await Promise.all([
+				catalogRes.text(),
+				settingsRes.text(),
+				promptsRes.text(),
+				councilRes.text()
+			]);
+
+			const settingsError = parseApiError(settingsText);
+
 			if (catalogRes.ok) {
-				groupedModels = normalizeProviderGroups(await catalogRes.json());
-				connectionError = null;
+				groupedModels = normalizeProviderGroups(JSON.parse(catalogText));
+			}
+
+			if (settingsRes.ok) {
+				const settingsData = JSON.parse(settingsText) as {
+					data?: Array<{
+						functionType: string;
+						modelId: string | null;
+						temperature: number;
+						maxTokens: number;
+						promptId: number | null;
+					}>;
+				};
+
+				for (const setting of settingsData.data || []) {
+					if (setting.functionType === 'council') {
+						continue;
+					}
+
+					if (
+						setting.functionType === 'executor' ||
+						setting.functionType === 'judge' ||
+						setting.functionType === 'improve'
+					) {
+						settings[setting.functionType] = {
+							modelId: setting.modelId || '',
+							temperature: setting.temperature,
+							maxTokens: setting.maxTokens,
+							promptId: setting.promptId ?? null
+						};
+					}
+				}
 			} else {
-				const errorData = (await catalogRes.json()) as { message?: string };
-				connectionError = errorData.message || 'OpenCode not connected';
+				console.warn('Function defaults unavailable:', settingsError || settingsRes.statusText);
 			}
 
-			const settingsData = (await settingsRes.json()) as {
-				data?: Array<{
-					id: number;
-					functionType: string;
-					modelId: string | null;
-					temperature: number;
-					maxTokens: number;
-					promptId: number | null;
-				}>;
-			};
+			if (promptsRes.ok) {
+				const promptsData = JSON.parse(promptsText) as {
+					data?: { prompts?: PromptOption[] };
+				};
+				prompts = promptsData.data?.prompts || [];
+			}
 
-			for (const setting of settingsData.data || []) {
-				if (setting.functionType === 'council') {
-					continue;
-				}
-
-				if (
-					setting.functionType === 'executor' ||
-					setting.functionType === 'judge' ||
-					setting.functionType === 'improve'
-				) {
-					settings[setting.functionType] = {
-						id: setting.id,
-						functionType: setting.functionType,
-						modelId: setting.modelId || '',
-						temperature: setting.temperature,
-						maxTokens: setting.maxTokens,
-						promptId: setting.promptId
+			if (councilRes.ok) {
+				const councilData = JSON.parse(councilText) as {
+					data?: {
+						agents?: Array<{
+							modelId: string;
+						}>;
 					};
-				}
+				};
+				councilConfiguredAgents = (councilData.data?.agents || []).filter(
+					(agent) => typeof agent.modelId === 'string' && agent.modelId.trim().length > 0
+				).length;
 			}
 
-			const promptsData = (await promptsRes.json()) as {
-				data?: { prompts?: PromptOption[] };
-			};
-			prompts = promptsData.data?.prompts || [];
+			validateRequiredModels();
 		} catch (err) {
 			console.error('Failed to load function settings data:', err);
 			toast.error('Failed to load settings');
@@ -263,7 +281,17 @@
 	}
 
 	async function handleSave(): Promise<void> {
-		if (hasErrors || isSaving) {
+		if (isSaving) {
+			return;
+		}
+
+		if (!validateRequiredModels()) {
+			toast.error('Selecteer eerst een model voor Executor, Judge en Improve.');
+			return;
+		}
+
+		if (hasErrors) {
+			toast.error('Please resolve validation errors before saving.');
 			return;
 		}
 
@@ -276,38 +304,19 @@
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						modelId: setting.modelId || null,
+						modelId: setting.modelId,
 						temperature: setting.temperature,
 						maxTokens: setting.maxTokens,
-						promptId: setting.promptId
+						promptId: setting.promptId ?? null
 					})
 				});
 
 				if (!response.ok) {
-					throw new Error(`Failed to save ${type}`);
+					throw new Error(parseApiError(await response.text()) || `Failed to save ${type}`);
 				}
 			});
 
 			await Promise.all(saveRows);
-
-			const configuredCouncilAgents = councilAgents.filter((agent) => agent.modelId);
-			if (configuredCouncilAgents.length > 0) {
-				const firstAgent = configuredCouncilAgents[0];
-				const councilResponse = await fetch('/api/admin/function-defaults/council', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						modelId: firstAgent.modelId,
-						temperature: firstAgent.temperature,
-						maxTokens: firstAgent.maxTokens,
-						promptId: firstAgent.promptId
-					})
-				});
-
-				if (!councilResponse.ok) {
-					throw new Error('Failed to save council defaults');
-				}
-			}
 
 			toast.success('Function defaults saved');
 		} catch (err) {
@@ -320,40 +329,42 @@
 		}
 	}
 
-	async function handleReset(functionType: FunctionType): Promise<void> {
-		try {
-			const response = await fetch(`/api/admin/function-defaults/${functionType}/reset`, {
-				method: 'POST'
-			});
+	function handleReset(functionType: FunctionType): void {
+		const defaults: Record<FunctionType, FunctionSetting> = {
+			executor: { modelId: '', temperature: 0.7, maxTokens: 4096, promptId: null },
+			judge: { modelId: '', temperature: 0.3, maxTokens: 2048, promptId: null },
+			improve: { modelId: '', temperature: 0.7, maxTokens: 4096, promptId: null }
+		};
+		settings[functionType] = { ...defaults[functionType] };
+		const { [functionType]: _discarded, ...rest } = errors;
+		errors = rest;
+		toast.success(`${functionType} reset to defaults`);
+	}
 
-			if (!response.ok) {
-				throw new Error(`Failed to reset ${functionType}`);
-			}
-
-			const result = (await response.json()) as {
-				data: {
-					modelId: string | null;
-					temperature: number;
-					maxTokens: number;
-					promptId: number | null;
-				};
-			};
-
-			settings[functionType] = {
-				...settings[functionType],
-				modelId: result.data.modelId || '',
-				temperature: result.data.temperature,
-				maxTokens: result.data.maxTokens,
-				promptId: result.data.promptId
-			};
-
-			const { [functionType]: _ignored, ...remainingErrors } = errors;
-			errors = remainingErrors;
-			toast.success(`${functionType} defaults reset`);
-		} catch (err) {
-			console.error('Failed to reset function defaults:', err);
-			toast.error(`Failed to reset ${functionType}`);
+	function updateSetting(
+		functionType: FunctionType,
+		field: keyof FunctionSetting,
+		value: string
+	): void {
+		if (field === 'temperature') {
+			settings[functionType].temperature = Number(value);
+			validateField(functionType, 'temperature', settings[functionType].temperature);
+			return;
 		}
+
+		if (field === 'maxTokens') {
+			settings[functionType].maxTokens = Number(value);
+			validateField(functionType, 'maxTokens', settings[functionType].maxTokens);
+			return;
+		}
+
+		if (field === 'promptId') {
+			settings[functionType].promptId = value ? Number(value) : null;
+			return;
+		}
+
+		settings[functionType].modelId = value;
+		validateField(functionType, 'modelId', value, true);
 	}
 
 	onMount(() => {
@@ -368,49 +379,105 @@
 			<span>Loading function defaults...</span>
 		</div>
 	{:else}
-		{#if connectionError}
-			<div
-				class="mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-			>
-				{connectionError}. Configure OpenCode connection to load model options.
-			</div>
-		{/if}
-
 		<ValidationSummary {errors} class="mb-4" />
 
-		<div class="overflow-x-auto rounded-md border">
+		<div class="overflow-x-auto rounded-lg border">
 			<table class="w-full text-sm">
 				<thead>
-					<tr class="border-b bg-muted/30">
-						<th class="px-4 py-3 text-left font-medium">Function</th>
-						<th class="px-4 py-3 text-left font-medium">Model</th>
-						<th class="px-4 py-3 text-left font-medium">Temperature</th>
-						<th class="px-4 py-3 text-left font-medium">Max Tokens</th>
-						<th class="px-4 py-3 text-left font-medium">Prompt</th>
-						<th class="px-4 py-3 text-left font-medium">Reset</th>
+					<tr class="bg-muted/40">
+						<th class="px-3 py-2 text-left font-medium">Function</th>
+						<th class="px-3 py-2 text-left font-medium">Model</th>
+						<th class="px-3 py-2 text-left font-medium">Temperature</th>
+						<th class="px-3 py-2 text-left font-medium">Max Tokens</th>
+						<th class="px-3 py-2 text-left font-medium">Prompt</th>
+						<th class="px-3 py-2 text-left font-medium">Reset</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each rowTypes as type}
-						<ModelPickerRow
-							{type}
-							bind:setting={settings[type]}
-							error={errors[type] || {}}
-							{groupedModels}
-							{prompts}
-							onModelChange={(modelId) => validateField(type, 'modelId', modelId, true)}
-							onValidate={(field, value, immediate) => validateField(type, field, value, immediate)}
-							onReset={() => handleReset(type)}
-						/>
+						<tr class="border-t align-top">
+							<td class="px-3 py-2 font-medium capitalize">
+								{type}
+								<div
+									class="mt-1 inline-block rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground"
+								>
+									default
+								</div>
+							</td>
+							<td class="px-3 py-2">
+								<select
+									class="h-9 w-full rounded-md border border-input bg-background px-2"
+									class:border-destructive={Boolean(errors[type]?.modelId)}
+									value={settings[type].modelId}
+									onchange={(event) =>
+										updateSetting(type, 'modelId', (event.target as HTMLSelectElement).value)}
+								>
+									<option value="">Select model...</option>
+									{#each groupedModels as provider}
+										<optgroup label={provider.providerName}>
+											{#each provider.models as model}
+												<option value={model.id}>{provider.providerName} / {model.name}</option>
+											{/each}
+										</optgroup>
+									{/each}
+								</select>
+								{#if errors[type]?.modelId}
+									<div class="mt-1 text-xs text-destructive">{errors[type].modelId}</div>
+								{/if}
+							</td>
+							<td class="px-3 py-2">
+								<input
+									type="number"
+									min="0"
+									max="2"
+									step="0.1"
+									class="h-9 w-28 rounded-md border border-input bg-background px-2"
+									class:border-destructive={Boolean(errors[type]?.temperature)}
+									value={settings[type].temperature}
+									onchange={(event) =>
+										updateSetting(type, 'temperature', (event.target as HTMLInputElement).value)}
+									onblur={() =>
+										validateField(type, 'temperature', settings[type].temperature, true)}
+								/>
+							</td>
+							<td class="px-3 py-2">
+								<input
+									type="number"
+									min="1"
+									max="1000000"
+									step="1"
+									class="h-9 w-36 rounded-md border border-input bg-background px-2"
+									class:border-destructive={Boolean(errors[type]?.maxTokens)}
+									value={settings[type].maxTokens}
+									onchange={(event) =>
+										updateSetting(type, 'maxTokens', (event.target as HTMLInputElement).value)}
+									onblur={() => validateField(type, 'maxTokens', settings[type].maxTokens, true)}
+								/>
+							</td>
+							<td class="px-3 py-2">
+								<select
+									class="h-9 w-full rounded-md border border-input bg-background px-2"
+									value={settings[type].promptId ?? ''}
+									onchange={(event) =>
+										updateSetting(type, 'promptId', (event.target as HTMLSelectElement).value)}
+								>
+									<option value="">None</option>
+									{#each prompts as prompt}
+										<option value={prompt.id}>{prompt.title}</option>
+									{/each}
+								</select>
+							</td>
+							<td class="px-3 py-2">
+								<Button variant="outline" size="sm" onclick={() => handleReset(type)}>Reset</Button>
+							</td>
+						</tr>
 					{/each}
-
-					<CouncilRepeater
-						bind:agents={councilAgents}
-						{errors}
-						{groupedModels}
-						{prompts}
-						onValidate={validateCouncilAgentField}
-					/>
+					<tr class="border-t bg-muted/20">
+						<td class="px-3 py-2 font-medium">Council</td>
+						<td colspan="5" class="px-3 py-2 text-sm text-muted-foreground">
+							Council repeater setup is available in the next task. Current configured agents: {councilConfiguredAgents}.
+						</td>
+					</tr>
 				</tbody>
 			</table>
 		</div>

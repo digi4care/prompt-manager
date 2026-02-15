@@ -8,7 +8,7 @@
 
 	let { errors, class: className = '' }: Props = $props();
 
-	let groupedErrors = $derived(() =>
+	let groupedErrors = $derived.by(() =>
 		Object.entries(errors)
 			.filter(([, fieldErrors]) => Object.keys(fieldErrors).length > 0)
 			.map(([functionType, fieldErrors]) => ({
@@ -18,7 +18,7 @@
 			}))
 	);
 
-	let hasErrors = $derived(groupedErrors().length > 0);
+	let hasErrors = $derived(groupedErrors.length > 0);
 </script>
 
 {#if hasErrors}
@@ -44,7 +44,7 @@
 					Please fix the following errors before saving:
 				</p>
 				<div class="mt-2 space-y-2">
-					{#each groupedErrors() as group}
+					{#each groupedErrors as group}
 						<div>
 							<div class="text-sm font-medium text-destructive">
 								{#if group.isCouncilAgent}

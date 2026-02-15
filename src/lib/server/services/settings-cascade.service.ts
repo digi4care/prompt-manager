@@ -1,5 +1,9 @@
 import { db } from '../db/client';
-import { promptFunctionSettings, type PromptFunctionSetting } from '../db/schema';
+import {
+	promptFunctionSettings,
+	type PromptFunctionSetting,
+	type NewPromptFunctionSetting
+} from '../db/schema';
 import { and, eq } from 'drizzle-orm';
 import { getFunctionDefault, type FunctionType } from './function-defaults.service';
 
@@ -203,4 +207,73 @@ export async function getAllPromptFunctionSettings(
 		.where(eq(promptFunctionSettings.promptId, promptId));
 
 	return result;
+}
+
+// Update type for prompt function settings
+export type UpdatePromptFunctionSetting = Partial<
+	Omit<NewPromptFunctionSetting, 'id' | 'promptId' | 'functionType' | 'createdAt' | 'updatedAt'>
+>;
+
+/**
+ * Upsert prompt function settings (create or update)
+ */
+export async function upsertPromptFunctionSettings(
+	promptId: number,
+	functionType: FunctionType,
+	data: UpdatePromptFunctionSetting
+): Promise<PromptFunctionSetting> {
+	// Check if settings already exist
+	const existing = await getPromptFunctionSettings(promptId, functionType);
+
+	if (existing) {
+		// Update existing
+		const updated = await db
+			.update(promptFunctionSettings)
+			.set({
+				...data,
+				updatedAt: new Date()
+			})
+			.where(eq(promptFunctionSettings.id, existing.id))
+			.returning();
+
+		if (updated.length === 0) {
+			throw new Error(`Failed to update prompt function settings for prompt ${promptId}`);
+		}
+
+		return updated[0];
+	}
+
+	// Create new
+	const inserted = await db
+		.insert(promptFunctionSettings)
+		.values({
+			promptId,
+			functionType,
+			...data
+		})
+		.returning();
+
+	if (inserted.length === 0) {
+		throw new Error(`Failed to create prompt function settings for prompt ${promptId}`);
+	}
+
+	return inserted[0];
+}
+
+/**
+ * Delete prompt function settings (remove override)
+ */
+export async function deletePromptFunctionSettings(
+	promptId: number,
+	functionType: FunctionType
+): Promise<boolean> {
+	const existing = await getPromptFunctionSettings(promptId, functionType);
+
+	if (!existing) {
+		return false; // Nothing to delete
+	}
+
+	await db.delete(promptFunctionSettings).where(eq(promptFunctionSettings.id, existing.id));
+
+	return true;
 }

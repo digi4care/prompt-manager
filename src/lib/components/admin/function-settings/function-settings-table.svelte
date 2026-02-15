@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
 	import ValidationSummary from './validation-summary.svelte';
+	import ModelPickerRow from './model-picker-row.svelte';
 	import {
 		validateFunctionField,
 		validateMaxTokens,
@@ -24,17 +25,6 @@
 		title: string;
 	}
 
-	interface GroupedModel {
-		id: string;
-		name: string;
-	}
-
-	interface ProviderGroup {
-		providerName: string;
-		providerId: string;
-		models: GroupedModel[];
-	}
-
 	interface Props {
 		class?: string;
 	}
@@ -49,7 +39,6 @@
 
 	let councilConfiguredAgents = $state(0);
 	let errors = $state<Record<string, Record<string, string>>>({});
-	let groupedModels = $state<ProviderGroup[]>([]);
 	let prompts = $state<PromptOption[]>([]);
 	let isLoading = $state(true);
 	let isSaving = $state(false);
@@ -60,44 +49,6 @@
 	let hasErrors = $derived(
 		Object.values(errors).some((fieldErrors) => Object.keys(fieldErrors).length > 0)
 	);
-
-	function normalizeProviderGroups(payload: unknown): ProviderGroup[] {
-		const providers =
-			typeof payload === 'object' && payload !== null && 'providers' in payload
-				? (payload as { providers?: unknown[] }).providers
-				: [];
-
-		if (!Array.isArray(providers)) {
-			return [];
-		}
-
-		return providers
-			.map((provider) => {
-				const providerRecord = provider as { id?: unknown; name?: unknown; models?: unknown };
-				const modelsSource = Array.isArray(providerRecord.models)
-					? providerRecord.models
-					: Object.values((providerRecord.models as Record<string, unknown>) || {});
-
-				const models = modelsSource
-					.map((model) => model as { id?: unknown; name?: unknown })
-					.filter((model) => typeof model.id === 'string' && model.id.length > 0)
-					.map((model) => ({
-						id: model.id as string,
-						name:
-							typeof model.name === 'string' && model.name.trim().length > 0
-								? model.name
-								: (model.id as string)
-					}));
-
-				return {
-					providerName: typeof providerRecord.name === 'string' ? providerRecord.name : 'Unknown',
-					providerId: typeof providerRecord.id === 'string' ? providerRecord.id : 'unknown',
-					models
-				};
-			})
-			.filter((provider) => provider.models.length > 0)
-			.sort((a, b) => a.providerName.localeCompare(b.providerName));
-	}
 
 	function updateFieldError(functionType: string, field: string, message: string | null): void {
 		if (message) {
@@ -198,25 +149,17 @@
 
 	async function loadData(): Promise<void> {
 		try {
-			const [catalogRes, settingsRes, promptsRes, councilRes] = await Promise.all([
-				fetch('/api/opencode/providers'),
+			const [settingsRes, promptsRes, councilRes] = await Promise.all([
 				fetch('/api/admin/function-defaults'),
 				fetch('/api/prompts?limit=200'),
 				fetch('/api/admin/function-defaults/council')
 			]);
 
-			const [catalogText, settingsText, promptsText, councilText] = await Promise.all([
-				catalogRes.text(),
+			const [settingsText, promptsText, councilText] = await Promise.all([
 				settingsRes.text(),
 				promptsRes.text(),
 				councilRes.text()
 			]);
-
-			const settingsError = parseApiError(settingsText);
-
-			if (catalogRes.ok) {
-				groupedModels = normalizeProviderGroups(JSON.parse(catalogText));
-			}
 
 			if (settingsRes.ok) {
 				const settingsData = JSON.parse(settingsText) as {
@@ -230,10 +173,6 @@
 				};
 
 				for (const setting of settingsData.data || []) {
-					if (setting.functionType === 'council') {
-						continue;
-					}
-
 					if (
 						setting.functionType === 'executor' ||
 						setting.functionType === 'judge' ||
@@ -248,7 +187,7 @@
 					}
 				}
 			} else {
-				console.warn('Function defaults unavailable:', settingsError || settingsRes.statusText);
+				console.warn('Function defaults unavailable:', parseApiError(settingsText));
 			}
 
 			if (promptsRes.ok) {
@@ -317,7 +256,6 @@
 			});
 
 			await Promise.all(saveRows);
-
 			toast.success('Function defaults saved');
 		} catch (err) {
 			console.error('Failed to save function defaults:', err);
@@ -341,34 +279,8 @@
 		toast.success(`${functionType} reset to defaults`);
 	}
 
-	function updateSetting(
-		functionType: FunctionType,
-		field: keyof FunctionSetting,
-		value: string
-	): void {
-		if (field === 'temperature') {
-			settings[functionType].temperature = Number(value);
-			validateField(functionType, 'temperature', settings[functionType].temperature);
-			return;
-		}
-
-		if (field === 'maxTokens') {
-			settings[functionType].maxTokens = Number(value);
-			validateField(functionType, 'maxTokens', settings[functionType].maxTokens);
-			return;
-		}
-
-		if (field === 'promptId') {
-			settings[functionType].promptId = value ? Number(value) : null;
-			return;
-		}
-
-		settings[functionType].modelId = value;
-		validateField(functionType, 'modelId', value, true);
-	}
-
 	onMount(() => {
-		loadData();
+		void loadData();
 	});
 </script>
 
@@ -395,82 +307,14 @@
 				</thead>
 				<tbody>
 					{#each rowTypes as type}
-						<tr class="border-t align-top">
-							<td class="px-3 py-2 font-medium capitalize">
-								{type}
-								<div
-									class="mt-1 inline-block rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground"
-								>
-									default
-								</div>
-							</td>
-							<td class="px-3 py-2">
-								<select
-									class="h-9 w-full rounded-md border border-input bg-background px-2"
-									class:border-destructive={Boolean(errors[type]?.modelId)}
-									value={settings[type].modelId}
-									onchange={(event) =>
-										updateSetting(type, 'modelId', (event.target as HTMLSelectElement).value)}
-								>
-									<option value="">Select model...</option>
-									{#each groupedModels as provider}
-										<optgroup label={provider.providerName}>
-											{#each provider.models as model}
-												<option value={model.id}>{provider.providerName} / {model.name}</option>
-											{/each}
-										</optgroup>
-									{/each}
-								</select>
-								{#if errors[type]?.modelId}
-									<div class="mt-1 text-xs text-destructive">{errors[type].modelId}</div>
-								{/if}
-							</td>
-							<td class="px-3 py-2">
-								<input
-									type="number"
-									min="0"
-									max="2"
-									step="0.1"
-									class="h-9 w-28 rounded-md border border-input bg-background px-2"
-									class:border-destructive={Boolean(errors[type]?.temperature)}
-									value={settings[type].temperature}
-									onchange={(event) =>
-										updateSetting(type, 'temperature', (event.target as HTMLInputElement).value)}
-									onblur={() =>
-										validateField(type, 'temperature', settings[type].temperature, true)}
-								/>
-							</td>
-							<td class="px-3 py-2">
-								<input
-									type="number"
-									min="1"
-									max="1000000"
-									step="1"
-									class="h-9 w-36 rounded-md border border-input bg-background px-2"
-									class:border-destructive={Boolean(errors[type]?.maxTokens)}
-									value={settings[type].maxTokens}
-									onchange={(event) =>
-										updateSetting(type, 'maxTokens', (event.target as HTMLInputElement).value)}
-									onblur={() => validateField(type, 'maxTokens', settings[type].maxTokens, true)}
-								/>
-							</td>
-							<td class="px-3 py-2">
-								<select
-									class="h-9 w-full rounded-md border border-input bg-background px-2"
-									value={settings[type].promptId ?? ''}
-									onchange={(event) =>
-										updateSetting(type, 'promptId', (event.target as HTMLSelectElement).value)}
-								>
-									<option value="">None</option>
-									{#each prompts as prompt}
-										<option value={prompt.id}>{prompt.title}</option>
-									{/each}
-								</select>
-							</td>
-							<td class="px-3 py-2">
-								<Button variant="outline" size="sm" onclick={() => handleReset(type)}>Reset</Button>
-							</td>
-						</tr>
+						<ModelPickerRow
+							{type}
+							bind:setting={settings[type]}
+							error={errors[type] || {}}
+							{prompts}
+							onValidate={(field, value, immediate) => validateField(type, field, value, immediate)}
+							onReset={() => handleReset(type)}
+						/>
 					{/each}
 					<tr class="border-t bg-muted/20">
 						<td class="px-3 py-2 font-medium">Council</td>

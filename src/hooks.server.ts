@@ -99,7 +99,15 @@ function requiresAuthentication(pathname: string): boolean {
 		return false;
 	}
 
-	const publicRoutes = ['/login', '/api/health', '/favicon.ico', '/static/', '/.well-known/'];
+	const publicRoutes = [
+		'/login',
+		'/api/health',
+		'/api/admin/health', // OpenCode connection status - needed before login
+		'/api/admin/opencode-connection', // Connection settings - needed before login
+		'/favicon.ico',
+		'/static/',
+		'/.well-known/'
+	];
 	return !publicRoutes.some((route) => pathname.startsWith(route));
 }
 
@@ -108,6 +116,12 @@ function requiresAuthentication(pathname: string): boolean {
  */
 function requiresJwtAuthentication(pathname: string): boolean {
 	if (dev && pathname.startsWith('/api/admin/setup')) {
+		return false;
+	}
+
+	// Public admin endpoints - connection settings needed before login
+	const publicAdminRoutes = ['/api/admin/health', '/api/admin/opencode-connection'];
+	if (publicAdminRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
 		return false;
 	}
 

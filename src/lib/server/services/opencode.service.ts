@@ -78,6 +78,7 @@ export function resetOpencodeClient(): void {
  */
 export async function checkOpencodeHealth(): Promise<{
 	healthy: boolean;
+	connected: boolean;
 	version?: string;
 	baseUrl?: string;
 	error?: string;
@@ -92,6 +93,7 @@ export async function checkOpencodeHealth(): Promise<{
 		if (result.error) {
 			return {
 				healthy: false,
+				connected: false,
 				baseUrl: config.baseUrl || 'http://127.0.0.1:4096',
 				error: result.error.message || 'Failed to get providers'
 			};
@@ -99,6 +101,7 @@ export async function checkOpencodeHealth(): Promise<{
 
 		return {
 			healthy: true,
+			connected: true,
 			baseUrl: config.baseUrl || localInstance?.server.url || 'http://127.0.0.1:4096',
 			version: result.data?.default?.model
 				? `SDK (${result.data.providers?.length || 0} providers)`
@@ -108,6 +111,7 @@ export async function checkOpencodeHealth(): Promise<{
 		const config = await getOpencodeConnectionConfig();
 		return {
 			healthy: false,
+			connected: false,
 			baseUrl: config.baseUrl || 'http://127.0.0.1:4096',
 			error: error instanceof Error ? error.message : 'Unknown error'
 		};

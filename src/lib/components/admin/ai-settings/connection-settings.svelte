@@ -95,10 +95,8 @@
 	</div>
 
 	{#if error}
-		<div
-			class="mb-4 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30"
-		>
-			<p class="text-sm text-red-700 dark:text-red-300">{error}</p>
+		<div class="mb-4 rounded-md border border-destructive/40 bg-destructive/10 p-3">
+			<p class="text-sm text-destructive">{error}</p>
 		</div>
 	{/if}
 
@@ -121,13 +119,11 @@
 
 	<!-- SDK Mode Info -->
 	{#if mode === 'local'}
-		<div
-			class="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/30"
-		>
-			<p class="text-sm font-medium text-blue-800 dark:text-blue-200">SDK Modus (sdk.mdx)</p>
-			<p class="mt-1 text-xs text-blue-700 dark:text-blue-300">
+		<div class="mb-4 rounded-md border border-border bg-muted/30 p-3">
+			<p class="text-sm font-medium text-foreground">SDK Modus (sdk.mdx)</p>
+			<p class="mt-1 text-xs text-muted-foreground">
 				De SDK start automatisch een embedded server via <code
-					class="rounded bg-blue-100 px-1 dark:bg-blue-900/50">createOpencode()</code
+					class="rounded border border-border bg-background px-1">createOpencode()</code
 				>. Je hoeft <strong>niets</strong> te doen!
 			</p>
 		</div>
@@ -135,29 +131,25 @@
 
 	<!-- Server Mode Fields -->
 	{#if mode === 'remote'}
-		<div
-			class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30"
-		>
-			<p class="text-sm font-medium text-amber-800 dark:text-amber-200">
-				Server Modus (server.mdx)
-			</p>
-			<p class="mt-1 text-xs text-amber-700 dark:text-amber-300">
+		<div class="mb-4 rounded-md border border-border bg-muted/30 p-3">
+			<p class="text-sm font-medium text-foreground">Server Modus (server.mdx)</p>
+			<p class="mt-1 text-xs text-muted-foreground">
 				Verbind met een externe server via <code
-					class="rounded bg-amber-100 px-1 dark:bg-amber-900/50">createOpencodeClient()</code
+					class="rounded border border-border bg-background px-1">createOpencodeClient()</code
 				>. Start eerst een server met
-				<code class="rounded bg-amber-100 px-1 dark:bg-amber-900/50">opencode serve</code>
+				<code class="rounded border border-border bg-background px-1">opencode serve</code>
 			</p>
 		</div>
 		<div class="mb-4 space-y-3">
 			<div>
 				<label class="mb-1 block text-sm font-medium">
-					Server URL <span class="text-red-500">*</span>
+					Server URL <span class="text-destructive">*</span>
 				</label>
 				<input
 					type="url"
 					bind:value={baseUrl}
 					placeholder="http://localhost:4096"
-					class="w-full rounded-md border px-3 py-2 text-sm"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
 				/>
 				<p class="mt-1 text-xs text-muted-foreground">
 					Standaard: http://localhost:4096 (als je lokaal <code class="rounded bg-muted px-1"
@@ -171,12 +163,12 @@
 					type="password"
 					bind:value={password}
 					placeholder="••••••••"
-					class="w-full rounded-md border px-3 py-2 text-sm"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
 				/>
 				<p class="mt-1 text-xs text-muted-foreground">
 					Het wachtwoord uit <code class="rounded bg-muted px-1">OPENCODE_SERVER_PASSWORD</code>
 					{#if status?.hasPassword}
-						<span class="text-green-600">(huidig wachtwoord ingesteld)</span>
+						<span class="text-primary">(huidig wachtwoord ingesteld)</span>
 					{/if}
 				</p>
 			</div>
@@ -206,23 +198,23 @@
 			<div class="flex items-center gap-2">
 				{#if status.healthy && status.connected}
 					<span
-						class="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300"
+						class="inline-flex items-center rounded-full border border-primary/35 bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
 					>
-						<span class="mr-1 h-2 w-2 rounded-full bg-green-500"></span>
+						<span class="mr-1 h-2 w-2 rounded-full bg-primary"></span>
 						Verbonden
 					</span>
 				{:else if status.connected && !status.healthy}
 					<span
-						class="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+						class="inline-flex items-center rounded-full border border-secondary bg-secondary/70 px-2 py-1 text-xs font-medium text-secondary-foreground"
 					>
-						<span class="mr-1 h-2 w-2 rounded-full bg-amber-500"></span>
+						<span class="mr-1 h-2 w-2 rounded-full bg-secondary-foreground"></span>
 						Verbonden (niet healthy)
 					</span>
 				{:else}
 					<span
-						class="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-300"
+						class="inline-flex items-center rounded-full border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive"
 					>
-						<span class="mr-1 h-2 w-2 rounded-full bg-red-500"></span>
+						<span class="mr-1 h-2 w-2 rounded-full bg-destructive"></span>
 						Niet verbonden
 					</span>
 				{/if}

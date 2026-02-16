@@ -4,144 +4,529 @@
 
 /*
   Catppuccin Theme for Self-Improving Prompt Wallet
-  Light Mode: Frappé | Dark Mode: Mocha
+  Light Mode: Latte | Dark Mode: Mocha
   Source: https://catppuccin.com/
 */
 
 @theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+	/* Base Colors */
+	--color-background: hsl(var(--background));
+	--color-foreground: hsl(var(--foreground));
+	--color-card: hsl(var(--card));
+	--color-card-foreground: hsl(var(--card-foreground));
+	--color-popover: hsl(var(--popover));
+	--color-popover-foreground: hsl(var(--popover-foreground));
+	--color-muted: hsl(var(--muted));
+	--color-muted-foreground: hsl(var(--muted-foreground));
+	--color-border: hsl(var(--border));
+	--color-input: hsl(var(--input));
+	--color-ring: hsl(var(--ring));
+
+	/* Semantic Colors */
+	--color-primary: hsl(var(--primary));
+	--color-primary-foreground: hsl(var(--primary-foreground));
+	--color-secondary: hsl(var(--secondary));
+	--color-secondary-foreground: hsl(var(--secondary-foreground));
+	--color-accent: hsl(var(--accent));
+	--color-accent-foreground: hsl(var(--accent-foreground));
+	--color-destructive: hsl(var(--destructive));
+	--color-destructive-foreground: hsl(var(--destructive-foreground));
+
+	/* Catppuccin Accent Colors - The fun stuff! */
+	--color-rose: hsl(var(--rose));
+	--color-flamingo: hsl(var(--flamingo));
+	--color-pink: hsl(var(--pink));
+	--color-mauve: hsl(var(--mauve));
+	--color-red: hsl(var(--red));
+	--color-maroon: hsl(var(--maroon));
+	--color-peach: hsl(var(--peach));
+	--color-yellow: hsl(var(--yellow));
+	--color-green: hsl(var(--green));
+	--color-teal: hsl(var(--teal));
+	--color-sky: hsl(var(--sky));
+	--color-sapphire: hsl(var(--sapphire));
+	--color-blue: hsl(var(--blue));
+	--color-lavender: hsl(var(--lavender));
+
+	/* Catppuccin Surface Colors */
+	--color-surface0: hsl(var(--surface0));
+	--color-surface1: hsl(var(--surface1));
+	--color-surface2: hsl(var(--surface2));
+	--color-overlay0: hsl(var(--overlay0));
+	--color-overlay1: hsl(var(--overlay1));
+	--color-overlay2: hsl(var(--overlay2));
+	--color-crust: hsl(var(--crust));
+	--color-mantle: hsl(var(--mantle));
+	--color-base: hsl(var(--base));
+
+	/* Text Colors */
+	--color-text: hsl(var(--text));
+	--color-subtext0: hsl(var(--subtext0));
+	--color-subtext1: hsl(var(--subtext1));
+
+	/* Radius */
+	--radius-lg: var(--radius);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-sm: calc(var(--radius) - 4px);
 }
 
-/* Catppuccin Frappé - Light Mode */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CATPPUCCIN LATTE - Light Mode
+   ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Primary Colors */
-  --primary: 271 68% 56%; /* Mauve */
-  --primary-foreground: 220 14% 96%; /* Crust */
+	/* Base Colors */
+	--base: 220 16% 94%; /* #eff1f5 */
+	--mantle: 220 16% 90%; /* #e6e9ef */
+	--crust: 220 16% 86%; /* #dce0e8 */
 
-  /* Secondary Colors */
-  --secondary: 220 10% 89%; /* Surface */
-  --secondary-foreground: 240 11% 42%; /* Text */
+	/* Surface Colors */
+	--surface0: 223 12% 83%; /* #ccd0da */
+	--surface1: 223 12% 79%; /* #bcc0cc */
+	--surface2: 225 11% 75%; /* #acb0be */
 
-  /* Background & Foreground */
-  --background: 220 14% 94%; /* Crust */
-  --foreground: 240 11% 42%; /* Text */
-  --card: 0 0% 100%;
-  --card-foreground: 240 11% 42%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 11% 42%;
+	/* Overlay Colors */
+	--overlay0: 226 11% 66%; /* #9ca0b0 */
+	--overlay1: 223 10% 72%; /* #bcc0cc */
+	--overlay2: 223 12% 78%; /* #ccd0da */
 
-  /* Muted & Accent */
-  --muted: 220 14% 86%; /* Surface */
-  --muted-foreground: 240 9% 51%; /* Subtext */
-  --accent: 90 6% 90%; /* Mantle */
-  --accent-foreground: 240 11% 42%;
+	/* Text Colors */
+	--text: 240 12% 36%; /* #4c4f69 */
+	--subtext0: 240 9% 48%; /* #6c6f85 */
+	--subtext1: 240 7% 58%; /* #8c8fa1 */
 
-  /* Destructive & Status */
-  --destructive: 348 77% 47%; /* Red */
-  --destructive-foreground: 220 14% 96%;
-  --success: 96 57% 35%; /* Green */
-  --warning: 10 95% 72%; /* Peach */
+	/* ═══════════════════════════════════════════════════════════════════════
+	   CATPPUCCIN ACCENT COLORS - LATTE
+	   ═══════════════════════════════════════════════════════════════════════ */
 
-  /* Borders & Inputs */
-  --border: 220 14% 86%; /* Surface */
-  --input: 220 14% 86%;
-  --ring: 271 68% 56%; /* Mauve */
+	/* Warm Accent Colors */
+	--rose: 2 74% 67%; /* #dc8a78 */
+	--flamingo: 0 65% 67%; /* #dd7878 */
+	--red: 347 87% 44%; /* #d20f39 */
+	--maroon: 351 76% 58%; /* #e64553 */
+	--peach: 20 99% 54%; /* #fe640b */
+	--yellow: 35 82% 49%; /* #df8e1d */
 
-  /* Chart Colors */
-  --chart-1: 271 68% 56%; /* Mauve */
-  --chart-2: 96 57% 35%; /* Green */
-  --chart-3: 10 95% 72%; /* Peach */
-  --chart-4: 15 24% 92%; /* Yellow */
-  --chart-5: 174 70% 34%; /* Teal */
+	/* Cool Accent Colors */
+	--green: 131 46% 40%; /* #40a02b */
+	--teal: 175 74% 35%; /* #179299 */
+	--sky: 197 95% 46%; /* #04a5e5 */
+	--sapphire: 189 71% 42%; /* #209fb5 */
+	--blue: 220 91% 54%; /* #1e66f5 */
 
-  /* Border Radius */
-  --radius: 0.5rem;
+	/* Purple/Pink Accent Colors */
+	--pink: 316 73% 69%; /* #ea76cb */
+	--mauve: 276 100% 58%; /* #8839ef */
+	--lavender: 231 97% 72%; /* #7287fd */
 
-  /* Font settings */
-  --font-size: 16px;
-  --text-length: 65ch;
-  --text-height: 1.6;
+	/* ═══════════════════════════════════════════════════════════════════════
+	   SEMANTIC MAPPINGS - LATTE
+	   ═══════════════════════════════════════════════════════════════════════ */
+
+	/* Background & Foreground */
+	--background: var(--base);
+	--foreground: var(--text);
+	--card: var(--mantle);
+	--card-foreground: var(--text);
+	--popover: var(--mantle);
+	--popover-foreground: var(--text);
+
+	/* Muted & Border */
+	--muted: var(--surface0);
+	--muted-foreground: var(--subtext0);
+	--border: var(--surface1);
+	--input: var(--surface0);
+
+	/* Primary - Using Mauve as the main brand color */
+	--primary: var(--mauve);
+	--primary-foreground: var(--crust);
+
+	/* Secondary */
+	--secondary: var(--surface1);
+	--secondary-foreground: var(--text);
+
+	/* Accent - Using Sapphire for interactive elements */
+	--accent: var(--sapphire);
+	--accent-foreground: var(--crust);
+
+	/* Destructive */
+	--destructive: var(--red);
+	--destructive-foreground: var(--crust);
+
+	/* Ring */
+	--ring: var(--mauve);
+
+	/* Border Radius */
+	--radius: 0.625rem;
+
+	/* Font settings */
+	--font-size: 16px;
+	--text-length: 65ch;
+	--text-height: 1.6;
 }
 
-/* Catppuccin Mocha - Dark Mode */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CATPPUCCIN MOCHA - Dark Mode
+   ═══════════════════════════════════════════════════════════════════════════ */
 .dark {
-  /* Primary Colors */
-  --primary: 271 65% 69%; /* Mauve */
-  --primary-foreground: 240 10% 4%; /* Base */
+	/* Base Colors */
+	--base: 240 10% 7%; /* #1e1e2e */
+	--mantle: 240 10% 4%; /* #181825 */
+	--crust: 240 10% 2%; /* #11111b */
 
-  /* Secondary Colors */
-  --secondary: 220 13% 18%; /* Surface */
-  --secondary-foreground: 240 10% 84%; /* Text */
+	/* Surface Colors */
+	--surface0: 240 8% 20%; /* #313244 */
+	--surface1: 240 7% 25%; /* #45475a */
+	--surface2: 240 6% 31%; /* #585b70 */
 
-  /* Background & Foreground */
-  --background: 240 10% 4%; /* Base */
-  --foreground: 240 10% 84%; /* Text */
-  --card: 240 10% 4%;
-  --card-foreground: 240 10% 84%;
-  --popover: 240 10% 4%;
-  --popover-foreground: 240 10% 84%;
+	/* Overlay Colors */
+	--overlay0: 240 5% 41%; /* #6c7086 */
+	--overlay1: 240 5% 49%; /* #7f849c */
+	--overlay2: 240 5% 57%; /* #9399b2 */
 
-  /* Muted & Accent */
-  --muted: 237 12% 26%; /* Surface */
-  --muted-foreground: 240 5% 64%; /* Subtext */
-  --accent: 240 13% 10%; /* Mantle */
-  --accent-foreground: 240 10% 84%;
+	/* Text Colors */
+	--text: 227 33% 89%; /* #cdd6f4 */
+	--subtext0: 230 15% 71%; /* #a6adc8 */
+	--subtext1: 232 15% 78%; /* #bac2de */
 
-  /* Destructive & Status */
-  --destructive: 350 75% 60%; /* Red */
-  --destructive-foreground: 240 10% 4%;
-  --success: 115 58% 58%; /* Green */
-  --warning: 24 94% 68%; /* Peach */
+	/* ═══════════════════════════════════════════════════════════════════════
+	   CATPPUCCIN ACCENT COLORS - MOCHA
+	   ═══════════════════════════════════════════════════════════════════════ */
 
-  /* Borders & Inputs */
-  --border: 237 12% 26%; /* Surface */
-  --input: 237 12% 26%;
-  --ring: 271 65% 69%; /* Mauve */
+	/* Warm Accent Colors */
+	--rose: 2 90% 91%; /* #f5e0dc */
+	--flamingo: 0 84% 88%; /* #f2cdcd */
+	--red: 343 81% 75%; /* #f38ba8 */
+	--maroon: 350 65% 77%; /* #eba0ac */
+	--peach: 26 99% 75%; /* #fab387 */
+	--yellow: 41 86% 83%; /* #f9e2af */
 
-  /* Chart Colors */
-  --chart-1: 271 65% 69%; /* Mauve */
-  --chart-2: 115 58% 58%; /* Green */
-  --chart-3: 24 94% 68%; /* Peach */
-  --chart-4: 48 93% 69%; /* Yellow */
-  --chart-5: 174 70% 42%; /* Teal */
+	/* Cool Accent Colors */
+	--green: 115 54% 76%; /* #a6e3a1 */
+	--teal: 170 57% 73%; /* #94e2d5 */
+	--sky: 189 71% 73%; /* #89dceb */
+	--sapphire: 199 76% 69%; /* #74c7ec */
+	--blue: 217 91% 73%; /* #89b4fa */
+
+	/* Purple/Pink Accent Colors */
+	--pink: 316 72% 86%; /* #f5c2e7 */
+	--mauve: 267 84% 81%; /* #cba6f7 */
+	--lavender: 230 69% 83%; /* #b4befe */
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	   SEMANTIC MAPPINGS - MOCHA
+	   ═══════════════════════════════════════════════════════════════════════ */
+
+	/* Background & Foreground */
+	--background: var(--base);
+	--foreground: var(--text);
+	--card: var(--surface0);
+	--card-foreground: var(--text);
+	--popover: var(--surface0);
+	--popover-foreground: var(--text);
+
+	/* Muted & Border */
+	--muted: var(--surface1);
+	--muted-foreground: var(--subtext0);
+	--border: var(--surface1);
+	--input: var(--surface0);
+
+	/* Primary - Using Mauve as the main brand color */
+	--primary: var(--mauve);
+	--primary-foreground: var(--crust);
+
+	/* Secondary */
+	--secondary: var(--surface1);
+	--secondary-foreground: var(--text);
+
+	/* Accent - Using Sapphire for interactive elements */
+	--accent: var(--sapphire);
+	--accent-foreground: var(--base);
+
+	/* Destructive */
+	--destructive: var(--red);
+	--destructive-foreground: var(--base);
+
+	/* Ring */
+	--ring: var(--mauve);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Smooth theme transition */
 html {
-  transition: background-color 0.3s, color 0.3s;
+	transition:
+		background-color 0.3s ease,
+		color 0.3s ease;
 }
 
+/* Minimal border defaults - less borders = cleaner look */
 * {
-  border-color: hsl(var(--border));
+	border-color: transparent;
+}
+
+/* Only show borders explicitly requested */
+.border,
+[class*='border-'] {
+	border-color: hsl(var(--border));
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+	background-color: hsl(var(--background));
+	color: hsl(var(--foreground));
+	font-feature-settings:
+		'rlig' 1,
+		'calt' 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION ACCENT COLORS
+   Use these to differentiate settings sections visually
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Connection - Teal */
+.section-connection {
+	--section-accent: var(--teal);
+	--section-accent-soft: var(--surface0);
+}
+
+/* Policy - Mauve */
+.section-policy {
+	--section-accent: var(--mauve);
+	--section-accent-soft: var(--surface0);
+}
+
+/* Defaults - Sapphire */
+.section-defaults {
+	--section-accent: var(--sapphire);
+	--section-accent-soft: var(--surface0);
+}
+
+/* Catalog - Sky */
+.section-catalog {
+	--section-accent: var(--sky);
+	--section-accent-soft: var(--surface0);
+}
+
+/* Presets - Peach */
+.section-presets {
+	--section-accent: var(--peach);
+	--section-accent-soft: var(--surface0);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES FOR CATPPUCCIN COLORS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Background utilities */
+.bg-rose {
+	background-color: hsl(var(--rose));
+}
+.bg-flamingo {
+	background-color: hsl(var(--flamingo));
+}
+.bg-pink {
+	background-color: hsl(var(--pink));
+}
+.bg-mauve {
+	background-color: hsl(var(--mauve));
+}
+.bg-red {
+	background-color: hsl(var(--red));
+}
+.bg-maroon {
+	background-color: hsl(var(--maroon));
+}
+.bg-peach {
+	background-color: hsl(var(--peach));
+}
+.bg-yellow {
+	background-color: hsl(var(--yellow));
+}
+.bg-green {
+	background-color: hsl(var(--green));
+}
+.bg-teal {
+	background-color: hsl(var(--teal));
+}
+.bg-sky {
+	background-color: hsl(var(--sky));
+}
+.bg-sapphire {
+	background-color: hsl(var(--sapphire));
+}
+.bg-blue {
+	background-color: hsl(var(--blue));
+}
+.bg-lavender {
+	background-color: hsl(var(--lavender));
+}
+
+/* Text color utilities */
+.text-rose {
+	color: hsl(var(--rose));
+}
+.text-flamingo {
+	color: hsl(var(--flamingo));
+}
+.text-pink {
+	color: hsl(var(--pink));
+}
+.text-mauve {
+	color: hsl(var(--mauve));
+}
+.text-red {
+	color: hsl(var(--red));
+}
+.text-maroon {
+	color: hsl(var(--maroon));
+}
+.text-peach {
+	color: hsl(var(--peach));
+}
+.text-yellow {
+	color: hsl(var(--yellow));
+}
+.text-green {
+	color: hsl(var(--green));
+}
+.text-teal {
+	color: hsl(var(--teal));
+}
+.text-sky {
+	color: hsl(var(--sky));
+}
+.text-sapphire {
+	color: hsl(var(--sapphire));
+}
+.text-blue {
+	color: hsl(var(--blue));
+}
+.text-lavender {
+	color: hsl(var(--lavender));
+}
+
+/* Border color utilities */
+.border-rose {
+	border-color: hsl(var(--rose));
+}
+.border-flamingo {
+	border-color: hsl(var(--flamingo));
+}
+.border-pink {
+	border-color: hsl(var(--pink));
+}
+.border-mauve {
+	border-color: hsl(var(--mauve));
+}
+.border-red {
+	border-color: hsl(var(--red));
+}
+.border-maroon {
+	border-color: hsl(var(--maroon));
+}
+.border-peach {
+	border-color: hsl(var(--peach));
+}
+.border-yellow {
+	border-color: hsl(var(--yellow));
+}
+.border-green {
+	border-color: hsl(var(--green));
+}
+.border-teal {
+	border-color: hsl(var(--teal));
+}
+.border-sky {
+	border-color: hsl(var(--sky));
+}
+.border-sapphire {
+	border-color: hsl(var(--sapphire));
+}
+.border-blue {
+	border-color: hsl(var(--blue));
+}
+.border-lavender {
+	border-color: hsl(var(--lavender));
+}
+
+/* Soft backgrounds - using surface colors */
+.bg-surface-0 {
+	background-color: hsl(var(--surface0));
+}
+.bg-surface-1 {
+	background-color: hsl(var(--surface1));
+}
+.bg-surface-2 {
+	background-color: hsl(var(--surface2));
+}
+.bg-overlay-0 {
+	background-color: hsl(var(--overlay0));
+}
+.bg-overlay-1 {
+	background-color: hsl(var(--overlay1));
+}
+.bg-mantle {
+	background-color: hsl(var(--mantle));
+}
+.bg-crust {
+	background-color: hsl(var(--crust));
+}
+
+/* Dashboard shadows - subtle and elegant */
+.shadow-card {
+	box-shadow:
+		0 1px 3px hsl(var(--surface0) / 0.12),
+		0 1px 2px hsl(var(--surface0) / 0.08);
+}
+.shadow-card-hover {
+	box-shadow:
+		0 4px 12px hsl(var(--surface0) / 0.15),
+		0 2px 6px hsl(var(--surface0) / 0.1);
+}
+.shadow-elevated {
+	box-shadow:
+		0 8px 24px hsl(var(--surface0) / 0.2),
+		0 4px 12px hsl(var(--surface0) / 0.12);
+}
+.shadow-glow-mauve {
+	box-shadow:
+		0 0 20px hsl(var(--mauve) / 0.15),
+		0 0 40px hsl(var(--mauve) / 0.1);
+}
+.shadow-glow-sapphire {
+	box-shadow:
+		0 0 20px hsl(var(--sapphire) / 0.15),
+		0 0 40px hsl(var(--sapphire) / 0.1);
+}
+.shadow-glow-green {
+	box-shadow:
+		0 0 20px hsl(var(--green) / 0.15),
+		0 0 40px hsl(var(--green) / 0.1);
+}
+.shadow-glow-peach {
+	box-shadow:
+		0 0 20px hsl(var(--peach) / 0.15),
+		0 0 40px hsl(var(--peach) / 0.1);
+}
+
+/* Gradient backgrounds for cards */
+.bg-gradient-mauve {
+	background: linear-gradient(135deg, hsl(var(--mauve) / 0.1) 0%, hsl(var(--lavender) / 0.05) 100%);
+}
+.bg-gradient-sapphire {
+	background: linear-gradient(135deg, hsl(var(--sapphire) / 0.1) 0%, hsl(var(--sky) / 0.05) 100%);
+}
+.bg-gradient-green {
+	background: linear-gradient(135deg, hsl(var(--green) / 0.1) 0%, hsl(var(--teal) / 0.05) 100%);
+}
+.bg-gradient-peach {
+	background: linear-gradient(135deg, hsl(var(--peach) / 0.1) 0%, hsl(var(--rose) / 0.05) 100%);
+}
+.bg-gradient-yellow {
+	background: linear-gradient(135deg, hsl(var(--yellow) / 0.1) 0%, hsl(var(--peach) / 0.05) 100%);
+}
+.bg-gradient-pink {
+	background: linear-gradient(135deg, hsl(var(--pink) / 0.1) 0%, hsl(var(--mauve) / 0.05) 100%);
 }

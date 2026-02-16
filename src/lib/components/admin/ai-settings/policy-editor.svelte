@@ -678,15 +678,16 @@
 			</div>
 
 			{#if matrixRows.length === 0}
-				<div class="rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-900">
-					AI Policy matrix is empty. That means every catalog model is currently allowed for all
-					functions.
+				<div class="rounded-lg bg-muted px-4 py-3 text-sm">
+					<p class="text-muted-foreground">
+						AI Policy matrix is empty. Every catalog model is currently allowed for all functions.
+					</p>
 				</div>
 			{:else}
-				<div class="overflow-x-auto rounded-md border">
+				<div class="overflow-x-auto rounded-xl shadow-sm">
 					<table class="w-full text-sm">
 						<thead>
-							<tr class="border-b bg-muted/30">
+							<tr class="bg-muted/50">
 								<th class="px-3 py-2 text-left font-medium">Model</th>
 								<th class="px-3 py-2 text-left font-medium">Variants</th>
 								<th class="px-3 py-2 text-center font-medium">Judge</th>
@@ -698,7 +699,7 @@
 						</thead>
 						<tbody>
 							{#each matrixRows as row (row.modelId)}
-								<tr class="border-b">
+								<tr class="border-b border-border/50 transition-colors hover:bg-muted/30">
 									<td class="px-3 py-2">
 										<div class="space-y-0.5">
 											{#if row.model}

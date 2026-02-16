@@ -10,13 +10,33 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import Collapsible from './collapsible.svelte';
+	import ModelPickerModal from '$lib/components/admin/function-settings/model-picker-modal.svelte';
 	import { toast } from 'svelte-sonner';
 	import type { ImprovePreset } from '$lib/server/db/schema';
 	import type { CatalogResponse, ModelInfo } from '$lib/server/services/opencode.service';
+	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
 
 	interface Props {
 		class?: string;
 		onSave?: () => void;
+	}
+
+	interface ImprovePresetExample {
+		name: string;
+		description: string;
+		instruction: string;
+		temperature: number;
+	}
+
+	interface GroupedModel {
+		id: string;
+		name: string;
+	}
+
+	interface ProviderGroup {
+		providerName: string;
+		providerId: string;
+		models: GroupedModel[];
 	}
 
 	let { class: className = '', onSave }: Props = $props();
@@ -40,15 +60,171 @@
 	let formAllowedModels = $state<string[]>([]);
 	let formIsDefault = $state(false);
 	let showAdvanced = $state(false);
+	let groupedModels = $state<ProviderGroup[]>([]);
+	let isModelOverrideModalOpen = $state(false);
+	let isAllowedModelsModalOpen = $state(false);
+
+	const presetExamples: ImprovePresetExample[] = [
+		{
+			name: 'NL Clarity Polish',
+			description: 'Maak tekst helderder en strakker zonder betekenis te veranderen.',
+			instruction:
+				'Herschrijf de volgende tekst in helder, correct Nederlands. Verbeter grammatica, zinsbouw en leesbaarheid, maar verander de inhoud niet. Behoud alle feiten en nuances.\n\nTekst:\n{content}',
+			temperature: 0.3
+		},
+		{
+			name: 'Professional Tone',
+			description: 'Maak de toon professioneler en consistenter.',
+			instruction:
+				'Herschrijf de tekst in een professionele, zakelijke toon. Vermijd vage formuleringen, wees concreet en bondig. Behoud de originele boodschap.\n\nTekst:\n{content}',
+			temperature: 0.4
+		},
+		{
+			name: 'Concise Rewrite',
+			description: 'Korter maken met behoud van kernboodschap.',
+			instruction:
+				'Maak de tekst 25-40% korter zonder essentiële informatie te verliezen. Verwijder herhaling, houd de structuur logisch en lever een compacte eindversie.\n\nTekst:\n{content}',
+			temperature: 0.2
+		},
+		{
+			name: 'Structure and Formatting',
+			description: 'Verbeter structuur met duidelijke koppen en bullets.',
+			instruction:
+				'Herstructureer de tekst voor betere scanbaarheid. Gebruik duidelijke sectiekoppen, korte alineas en bullets waar passend. Behoud inhoud en intentie.\n\nTekst:\n{content}',
+			temperature: 0.3
+		},
+		{
+			name: 'Actionable Output',
+			description: 'Zet tekst om in concrete acties en volgende stappen.',
+			instruction:
+				'Herschrijf de tekst naar een actiegerichte versie. Eindig met een korte lijst van concrete volgende stappen (max 5) met duidelijke werkwoorden.\n\nTekst:\n{content}',
+			temperature: 0.5
+		},
+		{
+			name: 'Technical Precision',
+			description: 'Voor technische content met focus op juistheid en consistentie.',
+			instruction:
+				'Verbeter de tekst met focus op technische precisie en consistente terminologie. Corrigeer ambigu taalgebruik, maak aannames expliciet en behoud exacte technische betekenis.\n\nTekst:\n{content}',
+			temperature: 0.2
+		}
+	];
 
 	onMount(async () => {
 		await Promise.all([loadPresets(), loadCatalog()]);
 	});
 
+	function parseApiError(payload: string): string {
+		const normalized = payload.trimStart().toLowerCase();
+		if (normalized.startsWith('<!doctype') || normalized.startsWith('<html')) {
+			return 'Login required. Open /login and refresh this page.';
+		}
+
+		try {
+			const parsed = JSON.parse(payload) as {
+				message?: string;
+				errors?: string[] | string;
+				error?: string;
+			};
+
+			if (Array.isArray(parsed.errors)) {
+				return parsed.errors.join(', ');
+			}
+			if (typeof parsed.errors === 'string') {
+				return parsed.errors;
+			}
+
+			return parsed.message || parsed.error || payload;
+		} catch {
+			return payload;
+		}
+	}
+
+	function normalizeProviderGroups(payload: CatalogResponse): ProviderGroup[] {
+		if (!Array.isArray(payload.providers)) {
+			return [];
+		}
+
+		return payload.providers
+			.map((provider) => {
+				const source = provider.models;
+				const models = Array.isArray(source)
+					? source
+					: (Object.values(source || {}) as ModelInfo[]);
+
+				const normalizedModels = models
+					.filter((model) => model?.id && (!model.status || model.status === 'active'))
+					.map((model) => ({
+						id: model.id,
+						name: model.name || model.id
+					}))
+					.sort((a, b) => a.name.localeCompare(b.name));
+
+				return {
+					providerName: provider.name,
+					providerId: provider.id,
+					models: normalizedModels
+				};
+			})
+			.filter((provider) => provider.models.length > 0)
+			.sort((a, b) => a.providerName.localeCompare(b.providerName));
+	}
+
+	let allModels = $derived.by(() => {
+		const models: Array<{ id: string; name: string; providerName: string; providerId: string }> =
+			[];
+		for (const provider of groupedModels) {
+			for (const model of provider.models) {
+				models.push({
+					id: model.id,
+					name: model.name,
+					providerName: provider.providerName,
+					providerId: provider.providerId
+				});
+			}
+		}
+		return models;
+	});
+
+	function resolveModelById(modelId: string): {
+		id: string;
+		name: string;
+		providerName: string;
+		providerId: string;
+	} | null {
+		if (!modelId) {
+			return null;
+		}
+
+		for (const model of allModels) {
+			if (model.id === modelId) {
+				return model;
+			}
+		}
+
+		return null;
+	}
+
+	let selectedOverrideModel = $derived(resolveModelById(formModel));
+
+	let selectedAllowedModels = $derived.by(() => {
+		const selectedSet = new Set(formAllowedModels);
+		return allModels.filter((model) => selectedSet.has(model.id));
+	});
+
 	async function loadPresets() {
 		try {
 			const response = await fetch('/api/admin/improve-presets');
-			const result = await response.json();
+			const payload = await response.text();
+
+			if (parseApiError(payload).startsWith('Login required')) {
+				throw new Error('Login required. Open /login and refresh this page.');
+			}
+
+			if (!response.ok) {
+				throw new Error(parseApiError(payload));
+			}
+
+			const result = JSON.parse(payload) as { data?: ImprovePreset[] };
 			presets = result.data || [];
 			error = null;
 		} catch (err) {
@@ -62,34 +238,46 @@
 
 	async function loadCatalog() {
 		try {
+			const cachedCatalog = getCachedModelCatalog();
+			if (cachedCatalog) {
+				catalog = cachedCatalog as CatalogResponse;
+				groupedModels = normalizeProviderGroups(catalog);
+				return;
+			}
+
 			const response = await fetch('/api/opencode/providers');
-			const result = await response.json();
+			const payload = await response.text();
+
+			if (parseApiError(payload).startsWith('Login required')) {
+				throw new Error('Login required. Open /login and refresh this page.');
+			}
+
+			if (!response.ok) {
+				throw new Error(parseApiError(payload));
+			}
+
+			const result = JSON.parse(payload) as CatalogResponse;
 			catalog = result;
+			groupedModels = normalizeProviderGroups(result);
+			setCachedModelCatalog(result);
 		} catch (err) {
 			console.error('Failed to load catalog:', err);
 		}
-	}
-
-	function getAllModels(): ModelInfo[] {
-		if (!catalog?.providers) return [];
-
-		const allModels: ModelInfo[] = [];
-		for (const provider of catalog.providers) {
-			for (const modelId in provider.models) {
-				const model = provider.models[modelId];
-				if (model.status === 'active') {
-					allModels.push(model);
-				}
-			}
-		}
-
-		return allModels.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
 	function startCreate() {
 		isCreating = true;
 		editingPreset = null;
 		resetForm();
+	}
+
+	function startCreateFromExample(example: ImprovePresetExample) {
+		startCreate();
+		formName = example.name;
+		formDescription = example.description;
+		formInstruction = example.instruction;
+		formTemperature = example.temperature;
+		showAdvanced = true;
 	}
 
 	function startEdit(preset: ImprovePreset) {
@@ -150,8 +338,8 @@
 				});
 
 				if (!response.ok) {
-					const errorData = await response.json();
-					throw new Error(errorData.errors?.join(', ') || 'Failed to create preset');
+					const errorPayload = await response.text();
+					throw new Error(parseApiError(errorPayload) || 'Failed to create preset');
 				}
 
 				toast.success('Preset created successfully');
@@ -163,8 +351,8 @@
 				});
 
 				if (!response.ok) {
-					const errorData = await response.json();
-					throw new Error(errorData.errors?.join(', ') || 'Failed to update preset');
+					const errorPayload = await response.text();
+					throw new Error(parseApiError(errorPayload) || 'Failed to update preset');
 				}
 
 				toast.success('Preset updated successfully');
@@ -197,7 +385,8 @@
 			});
 
 			if (!response.ok) {
-				throw new Error('Failed to delete preset');
+				const errorPayload = await response.text();
+				throw new Error(parseApiError(errorPayload) || 'Failed to delete preset');
 			}
 
 			toast.success('Preset deleted successfully');
@@ -208,16 +397,18 @@
 		}
 	}
 
-	function toggleModelInForm(modelId: string) {
-		if (formAllowedModels.includes(modelId)) {
-			formAllowedModels = formAllowedModels.filter((m) => m !== modelId);
-		} else {
-			formAllowedModels = [...formAllowedModels, modelId];
-		}
+	function handleModelOverrideSave(modelId: string): void {
+		formModel = modelId;
 	}
 
-	function isModelInForm(modelId: string): boolean {
-		return formAllowedModels.includes(modelId);
+	function clearModelOverride(): void {
+		formModel = '';
+	}
+
+	function handleAllowedModelsSave(modelIds: string[]): void {
+		formAllowedModels = Array.from(
+			new Set(modelIds.filter((id) => typeof id === 'string' && id.trim().length > 0))
+		);
 	}
 </script>
 
@@ -239,6 +430,34 @@
 		</div>
 	</CardHeader>
 	<CardContent class="space-y-4">
+		{#if !isLoading && !error && !isCreating && !editingPreset}
+			<div class="rounded-lg border bg-muted/20 p-3">
+				<div class="mb-3">
+					<div class="text-sm font-medium">Preset examples</div>
+					<div class="text-xs text-muted-foreground">
+						Start snel met een template en pas daarna details aan.
+					</div>
+				</div>
+				<div class="grid gap-2 md:grid-cols-2">
+					{#each presetExamples as example}
+						<div class="rounded-md border bg-card p-3">
+							<div class="text-sm font-medium">{example.name}</div>
+							<p class="mt-1 text-xs text-muted-foreground">{example.description}</p>
+							<div class="mt-2 flex items-center justify-between">
+								<span
+									class="rounded-md border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+									>Temp {example.temperature}</span
+								>
+								<Button variant="outline" size="sm" onclick={() => startCreateFromExample(example)}>
+									Use template
+								</Button>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 		{#if isLoading}
 			<div class="flex items-center gap-2 text-muted-foreground">
 				<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-current"></div>
@@ -282,17 +501,40 @@
 				<Collapsible title="Advanced Settings" defaultOpen={showAdvanced}>
 					<div class="space-y-4">
 						<div class="space-y-2">
-							<label for="preset-model" class="text-sm font-medium"> Model Override </label>
-							<select
-								id="preset-model"
-								class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-								bind:value={formModel}
-							>
-								<option value="">Use policy default</option>
-								{#each getAllModels() as model}
-									<option value={model.id}>{model.name}</option>
-								{/each}
-							</select>
+							<p class="text-sm font-medium">Model Override</p>
+							<div class="rounded-md border bg-background px-3 py-2">
+								<dl class="space-y-1">
+									<dt class="text-[11px] tracking-wide text-muted-foreground uppercase">
+										Selected model
+									</dt>
+									<dd class="text-sm">
+										{#if selectedOverrideModel}
+											{selectedOverrideModel.providerName} / {selectedOverrideModel.name}
+										{:else}
+											<span class="text-muted-foreground">Use policy default</span>
+										{/if}
+									</dd>
+									{#if selectedOverrideModel}
+										<dd class="font-mono text-[11px] text-muted-foreground">
+											{selectedOverrideModel.id}
+										</dd>
+									{/if}
+								</dl>
+							</div>
+							<div class="flex flex-wrap gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onclick={() => (isModelOverrideModalOpen = true)}
+								>
+									{formModel ? 'Change model' : 'Select model'}
+								</Button>
+								{#if formModel}
+									<Button variant="ghost" size="sm" onclick={clearModelOverride}>
+										Use policy default
+									</Button>
+								{/if}
+							</div>
 						</div>
 
 						<div class="space-y-2">
@@ -321,28 +563,32 @@
 
 						<div class="space-y-2">
 							<p class="text-sm font-medium">Allowed Models</p>
-							<div class="max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
-								{#each getAllModels() as model}
-									<label
-										class="flex cursor-pointer items-start gap-2 rounded p-2 hover:bg-muted/50"
-									>
-										<input
-											type="checkbox"
-											checked={isModelInForm(model.id)}
-											onchange={() => toggleModelInForm(model.id)}
-											class="mt-1"
-										/>
-										<div class="min-w-0 flex-1">
-											<div class="truncate text-sm font-medium">
-												{model.name}
-											</div>
-											<div class="truncate font-mono text-xs text-muted-foreground">
-												{model.id}
-											</div>
-										</div>
-									</label>
-								{/each}
+							<div class="rounded-md border bg-background px-3 py-2">
+								<div class="text-sm">
+									{formAllowedModels.length > 0
+										? `${formAllowedModels.length} models selected`
+										: 'No model allowlist (all policy-allowed models)'}
+								</div>
+								{#if selectedAllowedModels.length > 0}
+									<div class="mt-2 flex flex-wrap gap-1">
+										{#each selectedAllowedModels.slice(0, 6) as model}
+											<span class="rounded-md border bg-muted px-1.5 py-0.5 text-[10px]">
+												{model.providerName} / {model.name}
+											</span>
+										{/each}
+										{#if selectedAllowedModels.length > 6}
+											<span
+												class="rounded-md border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+											>
+												+{selectedAllowedModels.length - 6} more
+											</span>
+										{/if}
+									</div>
+								{/if}
 							</div>
+							<Button variant="outline" size="sm" onclick={() => (isAllowedModelsModalOpen = true)}>
+								Select allowed models
+							</Button>
 						</div>
 					</div>
 				</Collapsible>
@@ -400,3 +646,22 @@
 		{/if}
 	</CardContent>
 </Card>
+
+<ModelPickerModal
+	bind:open={isModelOverrideModalOpen}
+	title="Select model override"
+	{groupedModels}
+	selectedModelId={formModel}
+	onSave={handleModelOverrideSave}
+	onClose={() => (isModelOverrideModalOpen = false)}
+/>
+
+<ModelPickerModal
+	bind:open={isAllowedModelsModalOpen}
+	title="Select allowed models"
+	{groupedModels}
+	selectedModelIds={formAllowedModels}
+	multiSelect={true}
+	onSaveMultiple={handleAllowedModelsSave}
+	onClose={() => (isAllowedModelsModalOpen = false)}
+/>

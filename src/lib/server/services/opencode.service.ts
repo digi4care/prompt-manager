@@ -91,11 +91,15 @@ export async function checkOpencodeHealth(): Promise<{
 		const result = await client.config.providers();
 
 		if (result.error) {
+			const errorMsg =
+				typeof result.error === 'object' && result.error && 'message' in result.error
+					? String((result.error as { message?: unknown }).message)
+					: 'Failed to get providers';
 			return {
 				healthy: false,
 				connected: false,
 				baseUrl: config.baseUrl || 'http://127.0.0.1:4096',
-				error: result.error.message || 'Failed to get providers'
+				error: errorMsg
 			};
 		}
 
@@ -126,10 +130,87 @@ export async function getProviders() {
 	const result = await client.config.providers();
 
 	if (result.error) {
-		throw new Error(`Failed to get providers: ${result.error.message}`);
+		const errorMsg =
+			typeof result.error === 'object' && result.error && 'message' in result.error
+				? String((result.error as { message?: unknown }).message)
+				: 'Unknown error';
+		throw new Error(`Failed to get providers: ${errorMsg}`);
 	}
 
 	return result.data;
+}
+
+// In-memory catalog cache
+let catalogCache: {
+	data: unknown;
+	timestamp: number;
+	ttlSeconds: number;
+} | null = null;
+
+const DEFAULT_CATALOG_TTL_SECONDS = 300; // 5 minutes
+
+/**
+ * Get the provider/model catalog (with in-memory TTL cache)
+ */
+export async function getProviderCatalog(forceRefresh = false): Promise<{
+	providers: unknown[];
+	default?: { model?: string };
+	ttlSeconds: number;
+	cached: boolean;
+}> {
+	const now = Date.now();
+
+	// Return cached if valid and not forcing refresh
+	if (!forceRefresh && catalogCache) {
+		const age = (now - catalogCache.timestamp) / 1000;
+		if (age < catalogCache.ttlSeconds) {
+			const data = catalogCache.data as {
+				providers?: unknown[];
+				default?: { model?: string };
+			};
+			return {
+				providers: data.providers || [],
+				default: data.default,
+				ttlSeconds: catalogCache.ttlSeconds,
+				cached: true
+			};
+		}
+	}
+
+	// Fetch fresh data
+	const data = await getProviders();
+
+	catalogCache = {
+		data,
+		timestamp: now,
+		ttlSeconds: DEFAULT_CATALOG_TTL_SECONDS
+	};
+
+	return {
+		providers: (data as { providers?: unknown[] }).providers || [],
+		default: (data as { default?: { model?: string } }).default,
+		ttlSeconds: DEFAULT_CATALOG_TTL_SECONDS,
+		cached: false
+	};
+}
+
+/**
+ * Force refresh the provider catalog
+ */
+export async function refreshProviderCatalog(): Promise<{
+	providers: unknown[];
+	default?: { model?: string };
+	ttlSeconds: number;
+	cached: boolean;
+}> {
+	return getProviderCatalog(true);
+}
+
+/**
+ * Clear the catalog cache (call when connection settings change)
+ */
+export function clearCatalogCache(): void {
+	catalogCache = null;
 }
 
 // Types

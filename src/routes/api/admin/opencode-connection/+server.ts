@@ -2,12 +2,12 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	getOpencodeConnectionStatus,
-	updateOpencodeConnection,
-	validateConnectionMode,
-	validateBaseUrl,
-	type ConnectionMode
+	updateOpencodeConnectionSettings
 } from '$lib/server/services/opencode-connection.service';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import {
+	OpenCodeSettingsValidationError,
+	validateSettings
+} from '$lib/server/opencode/validate-settings';
 
 /**
  * GET /api/admin/opencode-connection
@@ -35,10 +35,7 @@ export const GET: RequestHandler = async () => {
 /**
  * PUT /api/admin/opencode-connection
  * Update OpenCode connection settings
- * Body: { mode: 'local' | 'remote', baseUrl?: string, password?: string }
- *
- * - local: SDK start embedded server, geen URL/password nodig
- * - remote: Verbind met externe server, URL en optioneel password
+ * Body: { settings: OpenCodeConnectionSettings }
  *
  * Public endpoint - needed before login to configure connection
  */
@@ -52,56 +49,44 @@ export const PUT: RequestHandler = async (event) => {
 		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
 	}
 
-	// Type guard for body
 	const data = body as Record<string, unknown>;
-	const { mode, baseUrl, password } = data;
 
-	// Validate mode
-	const modeValidation = validateConnectionMode(mode);
-	if (!modeValidation.valid) {
-		throw error(
-			400,
-			JSON.stringify({
-				message: 'Validation failed',
-				errors: { mode: modeValidation.error }
-			})
-		);
-	}
-
-	// Validate baseUrl for remote mode
-	if (mode === 'remote') {
-		const urlValidation = validateBaseUrl(baseUrl);
-		if (!urlValidation.valid) {
-			throw error(
-				400,
-				JSON.stringify({
-					message: 'Validation failed',
-					errors: { baseUrl: urlValidation.error }
-				})
-			);
-		}
-	}
-
-	// Validate password for remote mode (optional but recommended)
-	const passwordStr = typeof password === 'string' && password.trim() ? password.trim() : null;
+	const resolvedSettings = data.settings ?? {
+		mode: data.mode,
+		remote:
+			data.mode === 'remote'
+				? {
+						baseUrl: data.baseUrl,
+						password: data.password
+					}
+				: undefined,
+		local: data.mode === 'local' ? data.local : undefined
+	};
 
 	try {
-		// Log the update for audit purposes (don't log password!)
+		const normalizedSettings = validateSettings(resolvedSettings);
+
 		console.log(
-			`[AUDIT] Updating OpenCode connection: mode=${mode}, baseUrl=${baseUrl || 'null'}, hasPassword=${!!passwordStr}`
+			`[AUDIT] Updating OpenCode connection: mode=${normalizedSettings.mode}, hasPassword=${Boolean(normalizedSettings.remote?.password)}`
 		);
 
-		const updated = await updateOpencodeConnection(
-			mode as ConnectionMode,
-			baseUrl as string | null,
-			passwordStr
-		);
+		await updateOpencodeConnectionSettings(normalizedSettings);
 
 		// Get fresh status after update
 		const status = await getOpencodeConnectionStatus();
 
-		return json({ data: status, config: updated });
+		return json({ data: status });
 	} catch (err) {
+		if (err instanceof OpenCodeSettingsValidationError) {
+			throw error(
+				400,
+				JSON.stringify({
+					message: 'Validation failed',
+					errors: err.errors
+				})
+			);
+		}
+
 		console.error('Failed to update OpenCode connection:', err);
 		throw error(
 			500,

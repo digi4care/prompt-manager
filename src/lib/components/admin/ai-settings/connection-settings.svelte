@@ -214,7 +214,7 @@
 			class="rounded px-3 py-1 text-sm text-muted-foreground hover:bg-muted disabled:opacity-50"
 		>
 			{#if loading}
-				Laden...
+				Loading...
 			{:else}
 				Refresh
 			{/if}
@@ -228,7 +228,7 @@
 	{/if}
 
 	<fieldset class="mb-4">
-		<legend class="mb-2 block text-sm font-medium">Verbindingsmodus</legend>
+		<legend class="mb-2 block text-sm font-medium">Connection mode</legend>
 		<div class="flex gap-4">
 			<label class="flex items-center gap-2">
 				<input
@@ -259,8 +259,8 @@
 		<div class="mb-4 space-y-3 rounded-md border border-border bg-muted/30 p-3">
 			<p class="text-sm font-medium text-foreground">Local mode</p>
 			<p class="text-xs text-muted-foreground">
-				Local mode start een embedded OpenCode server met een random vrije poort. Poort 4096 wordt
-				niet geforceerd.
+				Local mode starts an embedded OpenCode server on a random free port. Port 4096 is not
+				enforced.
 			</p>
 			<div class="grid gap-3 md:grid-cols-3">
 				<div>
@@ -308,9 +308,8 @@
 		<div class="mb-4 space-y-3 rounded-md border border-border bg-muted/30 p-3">
 			<p class="text-sm font-medium text-foreground">Remote mode</p>
 			<p class="text-xs text-muted-foreground">
-				Gebruik <code class="rounded border border-border bg-background px-1">baseUrl</code> of vul
-				<code class="rounded border border-border bg-background px-1">protocol + host + port</code>
-				in.
+				Use <code class="rounded border border-border bg-background px-1">baseUrl</code> or fill in
+				<code class="rounded border border-border bg-background px-1">protocol + host + port</code>.
 			</p>
 
 			<div class="grid gap-3 md:grid-cols-3">
@@ -354,7 +353,7 @@
 			<div class="grid gap-3 md:grid-cols-2">
 				<div>
 					<label for="opencode-remote-base-path" class="mb-1 block text-sm font-medium"
-						>Base path (optioneel)</label
+						>Base path (optional)</label
 					>
 					<input
 						id="opencode-remote-base-path"
@@ -366,7 +365,7 @@
 				</div>
 				<div>
 					<label for="opencode-remote-base-url" class="mb-1 block text-sm font-medium"
-						>Base URL override (optioneel)</label
+						>Base URL override (optional)</label
 					>
 					<input
 						id="opencode-remote-base-url"
@@ -381,7 +380,7 @@
 			<div class="grid gap-3 md:grid-cols-2">
 				<div>
 					<label for="opencode-remote-username" class="mb-1 block text-sm font-medium"
-						>Username (optioneel)</label
+						>Username (optional)</label
 					>
 					<input
 						id="opencode-remote-username"
@@ -393,7 +392,7 @@
 				</div>
 				<div>
 					<label for="opencode-remote-password" class="mb-1 block text-sm font-medium"
-						>Password (optioneel)</label
+						>Password (optional)</label
 					>
 					<input
 						id="opencode-remote-password"
@@ -403,9 +402,9 @@
 						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
 					/>
 					<p class="mt-1 text-xs text-muted-foreground">
-						Laat leeg om bestaand wachtwoord te behouden.
+						Leave empty to keep existing password.
 						{#if status?.hasPassword}
-							<span class="text-primary">(reeds ingesteld)</span>
+							<span class="text-primary">(already set)</span>
 						{/if}
 					</p>
 				</div>
@@ -421,7 +420,7 @@
 			class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
 		>
 			{#if saving}
-				Opslaan...
+				Saving...
 			{:else}
 				Save Changes
 			{/if}
@@ -444,7 +443,7 @@
 						class="inline-flex items-center rounded-full border border-secondary bg-secondary/70 px-2 py-1 text-xs font-medium text-secondary-foreground"
 					>
 						<span class="mr-1 h-2 w-2 rounded-full bg-secondary-foreground"></span>
-						Connected (niet healthy)
+						Connected (not healthy)
 					</span>
 				{:else}
 					<span
@@ -457,10 +456,10 @@
 
 				<span class="text-xs text-muted-foreground">{status.mode}</span>
 				{#if status.port !== null}
-					<span class="text-xs text-muted-foreground">poort {status.port}</span>
+					<span class="text-xs text-muted-foreground">port {status.port}</span>
 				{/if}
 				{#if status.version}
-					<span class="text-xs text-muted-foreground">v{status.version}</span>
+					<span class="text-xs text-muted-foreground">{status.version}</span>
 				{/if}
 			</div>
 
@@ -468,7 +467,7 @@
 
 			{#if status.lastConnected}
 				<p class="mt-1 text-xs text-muted-foreground">
-					Laatste verbinding: {new Date(status.lastConnected).toLocaleString()}
+					Last connected: {new Date(status.lastConnected).toLocaleString()}
 				</p>
 			{/if}
 		</div>

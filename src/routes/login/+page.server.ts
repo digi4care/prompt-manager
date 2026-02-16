@@ -6,9 +6,9 @@ import { auth } from '$lib/auth';
 export const ssr = false;
 
 export const load: PageServerLoad = async ({ locals }) => {
-	// If already authenticated, redirect to admin
+	// If already authenticated, redirect to settings
 	if (locals?.auth?.session) {
-		throw redirect(302, '/admin');
+		throw redirect(302, '/settings');
 	}
 
 	return {};
@@ -38,7 +38,7 @@ export const actions: Actions = {
 					};
 				}
 
-				throw redirect(302, '/admin');
+				throw redirect(302, '/settings');
 			} catch (err: any) {
 				if (err?.status === 302) throw err;
 
@@ -58,7 +58,7 @@ export const actions: Actions = {
 				body: { code, trustDevice: true }
 			});
 
-			throw redirect(302, '/admin');
+			throw redirect(302, '/settings');
 		} catch (err: any) {
 			if (err?.status === 302) throw err;
 

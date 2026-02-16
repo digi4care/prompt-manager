@@ -21,7 +21,7 @@
 			icon: 'analytics'
 		},
 		{
-			href: '/admin',
+			href: '/settings',
 			label: 'Settings',
 			icon: 'admin'
 		}
@@ -35,9 +35,10 @@
 	};
 
 	// Conditionally add test link in development
-	const allNavItems: NavItem[] = import.meta.env.DEV || process.env.NODE_ENV === 'development'
-		? [...navItems, testNavItem]
-		: navItems;
+	const allNavItems: NavItem[] =
+		import.meta.env.DEV || process.env.NODE_ENV === 'development'
+			? [...navItems, testNavItem]
+			: navItems;
 
 	// Helper to check if a route is active
 	function isActive(href: string, currentPath: string): boolean {
@@ -62,7 +63,7 @@
 </script>
 
 <aside
-	class="hidden w-64 flex-shrink-0 border-r bg-background md:block sticky top-0 self-start h-[calc(100vh-4rem)]"
+	class="sticky top-0 hidden h-[calc(100vh-4rem)] w-64 flex-shrink-0 self-start border-r bg-background md:block"
 >
 	<div class="flex h-full flex-col">
 		<!-- Navigation section -->
@@ -71,10 +72,7 @@
 				{@const active = isActive(item.href, $page.url.pathname)}
 				<Button
 					variant={active ? 'secondary' : 'ghost'}
-					class={cn(
-						'w-full justify-start gap-2',
-						active ? '' : 'text-muted-foreground'
-					)}
+					class={cn('w-full justify-start gap-2', active ? '' : 'text-muted-foreground')}
 					href={item.href}
 				>
 					{#if icons[item.icon]}
@@ -87,9 +85,7 @@
 
 		<!-- Footer with version info -->
 		<div class="border-t p-4">
-			<p class="text-xs text-muted-foreground text-center">
-				Prompt Wallet v1.0
-			</p>
+			<p class="text-center text-xs text-muted-foreground">Prompt Wallet v1.0</p>
 		</div>
 	</div>
 </aside>

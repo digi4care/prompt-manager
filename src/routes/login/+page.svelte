@@ -45,10 +45,10 @@
 	});
 
 	onMount(() => {
-		// If already authenticated, redirect to admin
+		// If already authenticated, redirect to settings
 		const unsubscribe = authStore.subscribe((state) => {
 			if (state.isAuthenticated) {
-				goto('/admin');
+				goto('/settings');
 			}
 		});
 
@@ -73,7 +73,7 @@
 					showTwoFactor = true;
 					userEmail = data.email;
 				} else if (data.success) {
-					window.location.href = '/admin';
+					window.location.href = '/settings';
 				}
 			}
 		};

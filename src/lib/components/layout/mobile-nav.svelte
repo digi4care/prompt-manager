@@ -13,7 +13,7 @@
 	const navItems = [
 		{ href: '/prompts', label: 'Prompts', icon: 'prompts' },
 		{ href: '/analytics', label: 'Analytics', icon: 'analytics' },
-		{ href: '/admin', label: 'Settings', icon: 'admin' }
+		{ href: '/settings', label: 'Settings', icon: 'admin' }
 	];
 
 	function isActive(href: string, currentPath: string): boolean {
@@ -106,10 +106,7 @@
 				{@const active = isActive(item.href, $page.url.pathname)}
 				<Button
 					variant={active ? 'secondary' : 'ghost'}
-					class={cn(
-						'w-full justify-start gap-2',
-						active ? '' : 'text-muted-foreground'
-					)}
+					class={cn('w-full justify-start gap-2', active ? '' : 'text-muted-foreground')}
 					href={item.href}
 					onclick={close}
 				>
@@ -121,7 +118,7 @@
 
 		<!-- Footer -->
 		<div class="border-t p-4">
-			<p class="text-xs text-muted-foreground text-center">Prompt Wallet v1.0</p>
+			<p class="text-center text-xs text-muted-foreground">Prompt Wallet v1.0</p>
 		</div>
 	</div>
 </div>

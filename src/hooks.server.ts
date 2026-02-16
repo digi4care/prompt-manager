@@ -63,7 +63,8 @@ const RATE_LIMIT_MAX_AUTH_REQUESTS = 30; // 30 requests per minute for auth rout
 function isRateLimited(event: RequestEvent): { limited: boolean; retryAfter: number } {
 	const clientIP = event.getClientAddress?.() || 'unknown';
 	const route = event.url.pathname;
-	const isAuthRoute = route.includes('/login') || route.includes('/admin');
+	const isAuthRoute =
+		route.includes('/login') || route.includes('/admin') || route.includes('/settings');
 	const maxRequests = isAuthRoute ? RATE_LIMIT_MAX_AUTH_REQUESTS : RATE_LIMIT_MAX_REQUESTS;
 	const key = `${clientIP}:${route}`;
 	const now = Date.now();

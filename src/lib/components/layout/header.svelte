@@ -24,7 +24,7 @@
 	const navItems: NavItem[] = [
 		{ href: '/prompts', label: 'Prompts' },
 		{ href: '/analytics', label: 'Analytics' },
-		{ href: '/admin', label: 'Settings' }
+		{ href: '/settings', label: 'Settings' }
 	];
 
 	// Suppress hydration by only showing nav on client mount

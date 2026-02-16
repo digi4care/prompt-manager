@@ -118,3 +118,35 @@ export function requireAdmin(event: RequestEvent): JwtPayload {
 
 	return user;
 }
+
+/**
+ * Authenticate request using Better Auth session (preferred) or JWT fallback
+ * This is the recommended way to authenticate API requests
+ */
+export function authenticateWithBetterAuth(event: RequestEvent): {
+	userId: string;
+	email: string;
+	role: 'user' | 'admin';
+} {
+	// First check Better Auth session (source of truth)
+	if (event.locals.auth?.session && event.locals.auth?.user) {
+		return {
+			userId: event.locals.auth.user.id,
+			email: event.locals.auth.user.email ?? '',
+			role: (event.locals.auth.user as { role?: 'user' | 'admin' }).role ?? 'user'
+		};
+	}
+
+	// Fallback to JWT token for backward compatibility
+	try {
+		return authenticateRequest(event);
+	} catch {
+		throw error(
+			401,
+			JSON.stringify({
+				message: 'Authentication required',
+				code: 'AUTH_REQUIRED'
+			})
+		);
+	}
+}

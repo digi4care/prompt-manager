@@ -6,7 +6,7 @@ import {
 	type FunctionType
 } from '$lib/server/services/function-defaults.service';
 import { validateFunctionSettingUpdate } from '$lib/validators/function-settings';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
 
 // Valid function types
 const VALID_FUNCTION_TYPES: FunctionType[] = ['executor', 'judge', 'improve', 'council'];
@@ -16,8 +16,8 @@ const VALID_FUNCTION_TYPES: FunctionType[] = ['executor', 'judge', 'improve', 'c
  * Fetch a single function default by type
  */
 export const GET: RequestHandler = async (event) => {
-	// Require authentication
-	authenticateRequest(event);
+	// Require authentication via Better Auth
+	authenticateWithBetterAuth(event);
 
 	const { type } = event.params;
 
@@ -67,8 +67,8 @@ export const GET: RequestHandler = async (event) => {
  * Update a function default by type with validation
  */
 export const PUT: RequestHandler = async (event) => {
-	// Require authentication
-	const user = authenticateRequest(event);
+	// Require authentication via Better Auth
+	authenticateWithBetterAuth(event);
 
 	const { type } = event.params;
 
@@ -105,8 +105,9 @@ export const PUT: RequestHandler = async (event) => {
 
 	try {
 		// Log the update for audit purposes
+		const authUser = event.locals.auth?.user;
 		console.log(
-			`[AUDIT] User ${user.userId} (${user.email}) updating function default: ${type}`,
+			`[AUDIT] User ${authUser?.id || 'unknown'} (${authUser?.email || 'unknown'}) updating function default: ${type}`,
 			validation.data
 		);
 

@@ -64,23 +64,6 @@
 		agents = [...currentAgents, ...newRows];
 	});
 
-	$effect(() => {
-		const currentAgents = agents;
-		const lastAgent = currentAgents[currentAgents.length - 1];
-		if (lastAgent?.modelId) {
-			agents = [
-				...currentAgents,
-				{
-					id: crypto.randomUUID(),
-					modelId: '',
-					modelVariant: null,
-					temperature: 0.5,
-					maxTokens: 8192
-				}
-			];
-		}
-	});
-
 	function getVariantOptionsForModel(modelId: string): string[] {
 		if (!modelId) {
 			return [];

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import { innerWidth } from 'svelte/reactivity/window';
 
 	interface GroupedModel {
 		id: string;
@@ -47,6 +48,8 @@
 	let draftModelIds = $state<string[]>([]);
 	let showSelectedOnly = $state(false);
 	let dialogElement = $state<HTMLDivElement | null>(null);
+
+	let isMobile = $derived(innerWidth.current < 768);
 
 	$effect(() => {
 		if (!open) {
@@ -181,7 +184,12 @@
 </script>
 
 {#if open}
-	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-4"
+		class:items-end={isMobile}
+		class:p-0={isMobile}
+	>
 		<button
 			type="button"
 			class="absolute inset-0 h-full w-full bg-black/40"
@@ -191,7 +199,11 @@
 
 		<div
 			bind:this={dialogElement}
-			class="relative z-10 max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-xl border bg-background shadow-xl"
+			class="relative z-10 w-full overflow-hidden border bg-background shadow-xl md:max-w-3xl md:rounded-xl"
+			class:max-h-[90vh]={isMobile}
+			class:max-h-[85vh]={!isMobile}
+			class:rounded-t-2xl={isMobile}
+			class:rounded-none={isMobile}
 			role="dialog"
 			aria-modal="true"
 			aria-label={title}
@@ -339,7 +351,12 @@
 				{/if}
 			</div>
 
-			<div class="flex justify-end gap-2 border-t px-4 py-3">
+			<div
+				class="flex justify-end gap-2 border-t px-4 py-3"
+				class:sticky={isMobile}
+				class:bottom-0={isMobile}
+				class:bg-background={isMobile}
+			>
 				<Button variant="outline" onclick={handleClose}>Cancel</Button>
 				<Button onclick={handleSave} disabled={multiSelect ? false : !draftModelId}
 					>Save Selection</Button

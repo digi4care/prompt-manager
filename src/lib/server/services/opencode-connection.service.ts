@@ -216,7 +216,7 @@ async function syncLegacyConfig(
 	return updated[0];
 }
 
-async function resetCachedConnection(): Promise<void> {
+export async function resetCachedConnection(): Promise<void> {
 	if (cachedConnection) {
 		try {
 			await cachedConnection.close();
@@ -229,7 +229,9 @@ async function resetCachedConnection(): Promise<void> {
 	cachedSettingsKey = null;
 }
 
-async function getConnection(settings: OpenCodeConnectionSettings): Promise<OpenCodeConnection> {
+export async function getConnection(
+	settings: OpenCodeConnectionSettings
+): Promise<OpenCodeConnection> {
 	const nextKey = getSettingsKey(settings);
 
 	if (cachedConnection && cachedSettingsKey === nextKey) {

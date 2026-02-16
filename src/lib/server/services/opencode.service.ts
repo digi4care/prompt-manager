@@ -1,80 +1,49 @@
 /**
  * OpenCode SDK Service
  *
- * Two connection modes:
- * - LOCAL: Uses createOpencode() - embedded server + client (NO separate server needed!)
- * - REMOTE: Uses createOpencodeClient() - connects to existing server with auth
+ * This service delegates to opencode-connection.service for client management.
+ * The connection service handles:
+ * - Local mode: embedded server on random port from portRange
+ * - Remote mode: connects to external server with auth
+ *
+ * This file provides convenience wrappers for common operations.
  */
-import { createOpencode, createOpencodeClient, type OpencodeClient } from '@opencode-ai/sdk';
-import { getOpencodeConnectionConfig } from './opencode-connection.service.js';
+import {
+	getOpencodeConnectionSettings,
+	resetCachedConnection
+} from './opencode-connection.service.js';
+import { getConnection } from './opencode-connection.service.js';
+import type { OpencodeClient } from '@opencode-ai/sdk';
 
-// Singleton instances
-let localInstance: Awaited<ReturnType<typeof createOpencode>> | null = null;
-let remoteClient: OpencodeClient | null = null;
-let currentMode: 'local' | 'remote' | null = null;
+// In-memory catalog cache
+let catalogCache: {
+	data: unknown;
+	timestamp: number;
+	ttlSeconds: number;
+} | null = null;
+
+const DEFAULT_CATALOG_TTL_SECONDS = 300; // 5 minutes
 
 /**
- * Get or create the OpenCode client based on connection mode
+ * Get the OpenCode client using the current connection settings
+ * Delegates to opencode-connection.service which handles random ports
  */
 export async function getOpencodeClient(): Promise<OpencodeClient> {
-	const config = await getOpencodeConnectionConfig();
-
-	// Reset if mode changed
-	if (currentMode && currentMode !== config.mode) {
-		resetOpencodeClient();
-	}
-	currentMode = config.mode;
-
-	if (config.mode === 'local') {
-		// LOCAL mode: Use createOpencode() - starts embedded server automatically
-		// NO need for user to run `opencode serve`!
-		if (!localInstance) {
-			console.log('[OpenCode] Starting embedded server...');
-			localInstance = await createOpencode({
-				hostname: '127.0.0.1',
-				port: 4096
-			});
-			console.log('[OpenCode] Embedded server started at:', localInstance.server.url);
-		}
-		return localInstance.client;
-	} else {
-		// REMOTE mode: Use createOpencodeClient() with auth
-		if (!remoteClient) {
-			const baseUrl = config.baseUrl || 'http://localhost:4096';
-			console.log('[OpenCode] Connecting to remote server:', baseUrl);
-
-			remoteClient = createOpencodeClient({
-				baseUrl,
-				// Custom fetch with Basic Auth if password is set
-				...(config.password && {
-					fetch: (request: Request) => {
-						const headers = new Headers(request.headers);
-						headers.set('Authorization', `Basic ${btoa(`opencode:${config.password}`)}`);
-						return fetch(new Request(request, { headers }));
-					}
-				})
-			});
-		}
-		return remoteClient;
-	}
+	const settings = await getOpencodeConnectionSettings();
+	const connection = await getConnection(settings);
+	return connection.client;
 }
 
 /**
  * Reset clients (call when connection settings change)
  */
 export function resetOpencodeClient(): void {
-	if (localInstance) {
-		console.log('[OpenCode] Closing embedded server...');
-		localInstance.server.close();
-		localInstance = null;
-	}
-	remoteClient = null;
-	currentMode = null;
+	resetCachedConnection();
+	clearCatalogCache();
 }
 
 /**
  * Check OpenCode health by trying to get providers
- * (The SDK doesn't have a health() method despite docs saying so)
  */
 export async function checkOpencodeHealth(): Promise<{
 	healthy: boolean;
@@ -84,10 +53,7 @@ export async function checkOpencodeHealth(): Promise<{
 	error?: string;
 }> {
 	try {
-		const config = await getOpencodeConnectionConfig();
 		const client = await getOpencodeClient();
-
-		// Try to get providers as a health check
 		const result = await client.config.providers();
 
 		if (result.error) {
@@ -98,7 +64,6 @@ export async function checkOpencodeHealth(): Promise<{
 			return {
 				healthy: false,
 				connected: false,
-				baseUrl: config.baseUrl || 'http://127.0.0.1:4096',
 				error: errorMsg
 			};
 		}
@@ -106,17 +71,14 @@ export async function checkOpencodeHealth(): Promise<{
 		return {
 			healthy: true,
 			connected: true,
-			baseUrl: config.baseUrl || localInstance?.server.url || 'http://127.0.0.1:4096',
 			version: result.data?.default?.model
 				? `SDK (${result.data.providers?.length || 0} providers)`
 				: 'Connected'
 		};
 	} catch (error) {
-		const config = await getOpencodeConnectionConfig();
 		return {
 			healthy: false,
 			connected: false,
-			baseUrl: config.baseUrl || 'http://127.0.0.1:4096',
 			error: error instanceof Error ? error.message : 'Unknown error'
 		};
 	}
@@ -139,15 +101,6 @@ export async function getProviders() {
 
 	return result.data;
 }
-
-// In-memory catalog cache
-let catalogCache: {
-	data: unknown;
-	timestamp: number;
-	ttlSeconds: number;
-} | null = null;
-
-const DEFAULT_CATALOG_TTL_SECONDS = 300; // 5 minutes
 
 /**
  * Get the provider/model catalog (with in-memory TTL cache)
@@ -217,8 +170,40 @@ export function clearCatalogCache(): void {
 export interface ProviderInfo {
 	id: string;
 	name: string;
-	type: string;
-	models?: ModelInfo[];
+	description?: string;
+	source?: string;
+	env?: string[];
+	models?: Record<string, ModelInfo>;
+}
+
+export interface ModelInfo {
+	id: string;
+	name: string;
+	provider: string;
+	description?: string;
+	context_window?: number;
+	supports_vision?: boolean;
+	status?: string;
+	limit?: {
+		context: number;
+		output: number;
+	};
+}
+
+export interface HealthCheckResult {
+	healthy: boolean;
+	connected?: boolean;
+	version?: string;
+	baseUrl?: string;
+	error?: string;
+	diagnostics?: {
+		baseUrl?: string;
+		error?: string;
+	};
+}
+
+export interface CatalogResponse {
+	providers: ProviderInfo[];
 }
 
 export interface ModelInfo {
@@ -226,4 +211,218 @@ export interface ModelInfo {
 	name: string;
 	context_window?: number;
 	supports_vision?: boolean;
+}
+
+/**
+ * Model selection for agent execution
+ */
+export interface ModelSelection {
+	providerID: string;
+	modelID: string;
+}
+
+/**
+ * Part of a message for agent execution
+ */
+export interface AgentPart {
+	type: 'text' | 'image';
+	text?: string;
+	imageUrl?: string;
+}
+
+/**
+ * Parameters for executeAgentWithSession
+ */
+export interface ExecuteAgentParams {
+	model: ModelSelection;
+	agent: string;
+	parts: AgentPart[];
+	temperature?: number;
+	maxTokens?: number;
+}
+
+/**
+ * Validation error for OpenCode operations
+ */
+export class OpenCodeError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'OpenCodeError';
+	}
+}
+
+export class OpenCodeConnectionError extends OpenCodeError {
+	constructor(message: string) {
+		super(message);
+		this.name = 'OpenCodeConnectionError';
+	}
+}
+
+export class OpenCodeAuthenticationError extends OpenCodeError {
+	constructor(message: string) {
+		super(message);
+		this.name = 'OpenCodeAuthenticationError';
+	}
+}
+
+export class OpenCodeExecutionError extends OpenCodeError {
+	constructor(message: string) {
+		super(message);
+		this.name = 'OpenCodeExecutionError';
+	}
+}
+
+export class OpenCodeValidationError extends OpenCodeError {
+	constructor(
+		message: string,
+		public readonly field?: string,
+		public readonly value?: unknown
+	) {
+		super(message);
+		this.name = 'OpenCodeValidationError';
+	}
+}
+
+/**
+ * Execute an agent with the given input
+ */
+export async function executeAgent<TInput, TOutput>(
+	agentType: string,
+	input: TInput,
+	modelSelection?: ModelSelection
+): Promise<{ data?: TOutput; error?: { message: string } }> {
+	try {
+		const client = await getOpencodeClient();
+
+		// Use the agent API if available
+		const agentClient = client as unknown as {
+			agent?: {
+				execute?: (params: {
+					agentType: string;
+					input: TInput;
+					model?: ModelSelection;
+				}) => Promise<{ data?: TOutput; error?: { message: string } }>;
+			};
+		};
+
+		if (agentClient.agent?.execute) {
+			return agentClient.agent.execute({
+				agentType,
+				input,
+				model: modelSelection
+			});
+		}
+
+		// Fallback: use rawRequest to /chat/completions endpoint
+		const settings = await getOpencodeConnectionSettings();
+		const connection = await getConnection(settings);
+
+		const response = await connection.rawRequest('/chat/completions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				messages: [
+					{
+						role: 'system',
+						content: `You are a ${agentType} agent. Process the input and respond appropriately.`
+					},
+					{ role: 'user', content: JSON.stringify(input) }
+				],
+				model: modelSelection?.modelID || 'default'
+			})
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			return { error: { message: errorText || 'Request failed' } };
+		}
+
+		const data = (await response.json()) as {
+			choices?: Array<{ message?: { content?: string } }>;
+		};
+		const content = data.choices?.[0]?.message?.content;
+		return {
+			data: content ? (JSON.parse(content) as TOutput) : (content as unknown as TOutput)
+		};
+	} catch (error) {
+		return {
+			error: { message: error instanceof Error ? error.message : 'Unknown error' }
+		};
+	}
+}
+
+/**
+ * Execute an agent with session support for multi-turn conversations
+ */
+export async function executeAgentWithSession<TOutput>(
+	params: ExecuteAgentParams
+): Promise<{ data?: TOutput; error?: { message: string }; sessionId?: string }> {
+	try {
+		const client = await getOpencodeClient();
+
+		// Use the agent API with session if available
+		const agentClient = client as unknown as {
+			agent?: {
+				executeWithSession?: (p: {
+					agent: string;
+					parts: AgentPart[];
+					model: ModelSelection;
+					temperature?: number;
+					maxTokens?: number;
+				}) => Promise<{
+					data?: TOutput;
+					error?: { message: string };
+					sessionId?: string;
+				}>;
+			};
+		};
+
+		if (agentClient.agent?.executeWithSession) {
+			return agentClient.agent.executeWithSession(params);
+		}
+
+		// Fallback: use rawRequest to /chat/completions endpoint
+		const settings = await getOpencodeConnectionSettings();
+		const connection = await getConnection(settings);
+
+		const sessionId = crypto.randomUUID();
+
+		const response = await connection.rawRequest('/chat/completions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				messages: [
+					{
+						role: 'system',
+						content: `You are a ${params.agent} agent. Process the input and respond appropriately.`
+					},
+					...params.parts.map((p) => ({
+						role: 'user' as const,
+						content: p.text || ''
+					}))
+				],
+				model: params.model?.modelID || 'default',
+				temperature: params.temperature,
+				max_tokens: params.maxTokens
+			})
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			return { error: { message: errorText || 'Request failed' }, sessionId };
+		}
+
+		const data = (await response.json()) as {
+			choices?: Array<{ message?: { content?: string } }>;
+		};
+		const content = data.choices?.[0]?.message?.content;
+		return {
+			data: content ? (JSON.parse(content) as TOutput) : (content as unknown as TOutput),
+			sessionId
+		};
+	} catch (error) {
+		return {
+			error: { message: error instanceof Error ? error.message : 'Unknown error' }
+		};
+	}
 }

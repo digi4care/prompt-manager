@@ -7,7 +7,10 @@ export interface OpencodeClientOptions {
 }
 
 // Singleton for embedded server mode
-let embeddedInstance: { client: OpencodeClient; close: () => void } | null = null;
+let embeddedInstance: {
+	client: OpencodeClient;
+	server: { url: string; close(): void };
+} | null = null;
 
 /**
  * Get OpenCode client for LOCAL mode
@@ -56,7 +59,7 @@ export function getRemoteOpencodeClient(baseUrl: string, password?: string | nul
  */
 export function closeEmbeddedServer(): void {
 	if (embeddedInstance) {
-		embeddedInstance.close();
+		embeddedInstance.server.close();
 		embeddedInstance = null;
 	}
 }

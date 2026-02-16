@@ -15,7 +15,6 @@
 
 	// Responsive breakpoint (< 768px = mobile)
 	const MOBILE_BREAKPOINT = 768;
-	let isMobile = $derived((innerWidth.current ?? 0) < MOBILE_BREAKPOINT);
 
 	type FunctionType = 'executor' | 'judge' | 'improve';
 	type PolicyScope = FunctionType | 'council';
@@ -59,9 +58,13 @@
 
 	interface Props {
 		class?: string;
+		containerWidth?: number;
 	}
 
-	let { class: className = '' }: Props = $props();
+	let { class: className = '', containerWidth = 0 }: Props = $props();
+
+	// Responsive: use container width if available, otherwise fall back to viewport width
+	let isMobile = $derived((containerWidth || innerWidth.current || 0) < MOBILE_BREAKPOINT);
 
 	let settings = $state<Record<FunctionType, FunctionSetting>>({
 		executor: {

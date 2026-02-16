@@ -31,6 +31,10 @@
 		title: string;
 	}
 
+	// Local types to match parent signatures
+	type SettingField = 'modelId' | 'temperature' | 'maxTokens' | 'prompt' | 'modelVariant';
+	type PolicyScope = 'shared' | 'council';
+
 	interface Props {
 		rowTypes: readonly FunctionType[];
 		settings: Record<string, FunctionSetting>;
@@ -40,12 +44,12 @@
 		prompts: PromptOption[];
 		validateField: (
 			functionType: string,
-			field: string,
-			scope: string,
+			field: SettingField,
+			scope: PolicyScope,
 			value: unknown,
 			immediate?: boolean
 		) => void;
-		handleReset: (functionType: string) => Promise<void>;
+		handleReset: (functionType: FunctionType) => Promise<void>;
 	}
 
 	let {

@@ -21,6 +21,7 @@
 
 	let activeSection = $state<AccordionSection>('connection');
 	let hasLoadedStoredSection = $state(false);
+	let contentWidth = $state(0);
 
 	onMount(() => {
 		try {
@@ -125,6 +126,7 @@
 			role="region"
 			aria-labelledby={`ai-settings-trigger-${activeSection}`}
 			class="min-w-0"
+			bind:clientWidth={contentWidth}
 		>
 			{#if activeSection === 'connection'}
 				<ConnectionSettings />
@@ -138,7 +140,7 @@
 							Configure default model, temperature, and token limits for each function type.
 						</p>
 					</div>
-					<FunctionSettingsTable />
+					<FunctionSettingsTable containerWidth={contentWidth} />
 				</div>
 			{:else if activeSection === 'catalog'}
 				<CatalogView />

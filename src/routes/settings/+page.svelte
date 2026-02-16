@@ -21,7 +21,22 @@
 
 	let activeSection = $state<AccordionSection>('connection');
 	let hasLoadedStoredSection = $state(false);
+	let contentPanel: HTMLDivElement;
 	let contentWidth = $state(0);
+
+	$effect(() => {
+		if (!contentPanel) return;
+
+		const observer = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				contentWidth = entry.contentRect.width;
+			}
+		});
+
+		observer.observe(contentPanel);
+
+		return () => observer.disconnect();
+	});
 
 	onMount(() => {
 		try {
@@ -126,7 +141,7 @@
 			role="region"
 			aria-labelledby={`ai-settings-trigger-${activeSection}`}
 			class="min-w-0"
-			bind:clientWidth={contentWidth}
+			bind:this={contentPanel}
 		>
 			{#if activeSection === 'connection'}
 				<ConnectionSettings />

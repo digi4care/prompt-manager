@@ -64,23 +64,23 @@
 		</p>
 	</div>
 
-	<!-- Mobile: horizontal scrollable tabs -->
-	<div class="flex gap-2 overflow-x-auto pb-2 md:hidden">
+	<!-- Mobile: horizontal scrollable tabs (< 768px) -->
+	<div class="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-3 md:hidden">
 		{#each sections as section}
 			<button
 				type="button"
-				class="flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors {activeSection ===
+				class="flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors {activeSection ===
 				section.id
-					? 'border-primary bg-primary/10 text-foreground'
-					: 'border-border bg-card text-muted-foreground hover:bg-muted/50'}"
+					? 'bg-primary text-primary-foreground'
+					: 'bg-muted text-muted-foreground hover:bg-muted/80'}"
 				onclick={() => openSection(section.id)}
 			>
 				<span
-					class="inline-flex h-5 min-w-5 items-center justify-center rounded border px-1 text-[9px] font-bold"
+					class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/20 text-[10px] font-bold"
 				>
 					{section.tag}
 				</span>
-				<span class="hidden sm:inline">{section.title}</span>
+				<span>{section.title}</span>
 			</button>
 		{/each}
 	</div>

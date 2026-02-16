@@ -21,7 +21,7 @@
 
 	let activeSection = $state<AccordionSection>('connection');
 	let hasLoadedStoredSection = $state(false);
-	let contentPanel: HTMLDivElement;
+	let contentPanel = $state<HTMLDivElement | null>(null);
 	let contentWidth = $state(0);
 
 	$effect(() => {

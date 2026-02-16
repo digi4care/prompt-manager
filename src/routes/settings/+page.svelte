@@ -9,7 +9,7 @@
 	type AccordionSection = 'connection' | 'policy' | 'defaults' | 'catalog' | 'presets';
 
 	const sections: Array<{ id: AccordionSection; title: string; tag: string }> = [
-		{ id: 'connection', title: 'OpenCode Verbinding', tag: 'OC' },
+		{ id: 'connection', title: 'Connection', tag: 'OC' },
 		{ id: 'policy', title: 'AI Policy', tag: 'AP' },
 		{ id: 'defaults', title: 'Function Defaults', tag: 'FD' },
 		{ id: 'catalog', title: 'Model Catalog', tag: 'MC' },

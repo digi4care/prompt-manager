@@ -49,7 +49,7 @@
 	let showSelectedOnly = $state(false);
 	let dialogElement = $state<HTMLDivElement | null>(null);
 
-	let isMobile = $derived(innerWidth.current < 768);
+	let isMobile = $derived((innerWidth.current ?? 0) < 768);
 
 	$effect(() => {
 		if (!open) {

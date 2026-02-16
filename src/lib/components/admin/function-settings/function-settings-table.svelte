@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { innerWidth } from 'svelte/reactivity/window';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
 	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
@@ -11,6 +12,10 @@
 		validateMaxTokens,
 		validateTemperature
 	} from '$lib/validators/function-settings';
+
+	// Responsive breakpoint (< 768px = mobile)
+	const MOBILE_BREAKPOINT = 768;
+	let isMobile = $derived((innerWidth.current ?? 0) < MOBILE_BREAKPOINT);
 
 	type FunctionType = 'executor' | 'judge' | 'improve';
 	type PolicyScope = FunctionType | 'council';
@@ -1162,32 +1167,49 @@
 
 		<ValidationSummary {errors} class="mb-4" />
 
-		<div class="space-y-4">
-			{#each rowTypes as type}
-				<ModelPickerRow
-					{type}
-					bind:setting={settings[type]}
-					error={errors[type] || {}}
-					groupedModels={displayGroupedModelsByScope[type]}
-					allGroupedModels={allGroupedModelsWithVariantPolicy}
-					{prompts}
-					onModelChange={(modelId) => validateField(type, 'modelId', type, modelId, true)}
-					onValidate={(field, value, immediate) =>
-						validateField(type, field, type, value, immediate)}
-					onReset={() => handleReset(type)}
-				/>
-			{/each}
-
-			<div class="rounded-lg border border-border/60 bg-card/40 p-2">
-				<CouncilRepeater
-					bind:agents={councilAgents}
+		{#if isMobile}
+			<!-- Mobile: Lazy-loaded cards layout -->
+			{#await import('./function-settings-cards.svelte') then { default: FunctionSettingsCards }}
+				<FunctionSettingsCards
+					{rowTypes}
+					{settings}
 					{errors}
-					groupedModels={displayGroupedModelsByScope.council}
-					allGroupedModels={allGroupedModelsWithVariantPolicy}
+					{displayGroupedModelsByScope}
+					{allGroupedModelsWithVariantPolicy}
 					{prompts}
-					onValidate={validateCouncilAgentField}
+					{validateField}
+					{handleReset}
 				/>
+			{/await}
+		{:else}
+			<!-- Desktop: Table rows layout -->
+			<div class="space-y-4">
+				{#each rowTypes as type}
+					<ModelPickerRow
+						{type}
+						bind:setting={settings[type]}
+						error={errors[type] || {}}
+						groupedModels={displayGroupedModelsByScope[type]}
+						allGroupedModels={allGroupedModelsWithVariantPolicy}
+						{prompts}
+						onModelChange={(modelId) => validateField(type, 'modelId', type, modelId, true)}
+						onValidate={(field, value, immediate) =>
+							validateField(type, field, type, value, immediate)}
+						onReset={() => handleReset(type)}
+					/>
+				{/each}
 			</div>
+		{/if}
+
+		<div class="rounded-lg border border-border/60 bg-card/40 p-2">
+			<CouncilRepeater
+				bind:agents={councilAgents}
+				{errors}
+				groupedModels={displayGroupedModelsByScope.council}
+				allGroupedModels={allGroupedModelsWithVariantPolicy}
+				{prompts}
+				onValidate={validateCouncilAgentField}
+			/>
 		</div>
 
 		<div class="mt-4 flex justify-end">

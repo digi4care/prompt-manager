@@ -56,42 +56,70 @@
 	<title>Settings - Admin</title>
 </svelte:head>
 
-<div class="container mx-auto space-y-6 px-4 py-8">
+<div class="container mx-auto space-y-4 px-4 py-6 md:space-y-6 md:py-8">
 	<div>
-		<h1 class="text-2xl font-bold">Settings</h1>
-		<p class="text-muted-foreground">Configureer OpenCode verbinding en functie-defaults</p>
+		<h1 class="text-xl font-bold md:text-2xl">Settings</h1>
+		<p class="text-sm text-muted-foreground md:text-base">
+			Configureer OpenCode verbinding en functie-defaults
+		</p>
 	</div>
 
-	<div class="grid gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
-		<div class="overflow-hidden rounded-lg border bg-card">
-			{#each sections as section, index}
-				<button
-					type="button"
-					id={`ai-settings-trigger-${section.id}`}
-					aria-controls={`ai-settings-panel-${section.id}`}
-					aria-expanded={activeSection === section.id}
-					class="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-semibold transition-colors hover:bg-muted/50 {activeSection ===
-					section.id
-						? 'bg-muted text-foreground'
-						: 'text-muted-foreground'} {index > 0 ? 'border-t' : ''}"
-					onclick={() => openSection(section.id)}
+	<!-- Mobile: horizontal scrollable tabs -->
+	<div class="flex gap-2 overflow-x-auto pb-2 md:hidden">
+		{#each sections as section}
+			<button
+				type="button"
+				class="flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors {activeSection ===
+				section.id
+					? 'border-primary bg-primary/10 text-foreground'
+					: 'border-border bg-card text-muted-foreground hover:bg-muted/50'}"
+				onclick={() => openSection(section.id)}
+			>
+				<span
+					class="inline-flex h-5 min-w-5 items-center justify-center rounded border px-1 text-[9px] font-bold"
 				>
-					<span class="flex items-center gap-2">
-						<span
-							class="inline-flex h-6 min-w-6 items-center justify-center rounded border px-1.5 text-[10px] leading-none font-bold {activeSection ===
-							section.id
-								? 'border-primary text-foreground'
-								: 'border-border text-muted-foreground'}"
-						>
-							{section.tag}
-						</span>
-						<span>{section.title}</span>
-					</span>
-					<span class="text-xs">{activeSection === section.id ? 'v' : '>'}</span>
-				</button>
-			{/each}
-		</div>
+					{section.tag}
+				</span>
+				<span class="hidden sm:inline">{section.title}</span>
+			</button>
+		{/each}
+	</div>
 
+	<!-- Desktop/Tablet: sidebar + content grid -->
+	<div class="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]">
+		<!-- Sidebar navigation (hidden on mobile) -->
+		<aside class="hidden overflow-hidden rounded-lg border bg-card md:block">
+			<nav class="flex flex-col">
+				{#each sections as section, index}
+					<button
+						type="button"
+						id={`ai-settings-trigger-${section.id}`}
+						aria-controls={`ai-settings-panel-${section.id}`}
+						aria-expanded={activeSection === section.id}
+						class="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-semibold transition-colors hover:bg-muted/50 {activeSection ===
+						section.id
+							? 'bg-muted text-foreground'
+							: 'text-muted-foreground'} {index > 0 ? 'border-t' : ''}"
+						onclick={() => openSection(section.id)}
+					>
+						<span class="flex items-center gap-2">
+							<span
+								class="inline-flex h-6 min-w-6 items-center justify-center rounded border px-1.5 text-[10px] leading-none font-bold {activeSection ===
+								section.id
+									? 'border-primary text-foreground'
+									: 'border-border text-muted-foreground'}"
+							>
+								{section.tag}
+							</span>
+							<span>{section.title}</span>
+						</span>
+						<span class="text-xs">{activeSection === section.id ? '▾' : '›'}</span>
+					</button>
+				{/each}
+			</nav>
+		</aside>
+
+		<!-- Content panel -->
 		<div
 			id={`ai-settings-panel-${activeSection}`}
 			role="region"

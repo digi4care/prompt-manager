@@ -70,70 +70,66 @@
 	}
 </script>
 
-<Card class={className}>
-	<CardHeader>
-		<div class="flex items-center justify-between">
-			<div>
-				<CardTitle class="text-lg">Model Catalog</CardTitle>
-				<CardDescription>Read-only view of available providers and models</CardDescription>
-			</div>
-			<Button
-				variant="outline"
-				size="sm"
-				onclick={handleRefresh}
-				disabled={isRefreshing || isLoading}
-			>
-				{isRefreshing ? 'Refreshing...' : 'Refresh'}
-			</Button>
+<div class={className}>
+	<div class="flex items-center justify-between">
+		<div>
+			<h3 class="text-lg font-semibold">Model Catalog</h3>
+			<p class="text-sm text-muted-foreground">Read-only view of available providers and models</p>
 		</div>
-	</CardHeader>
-	<CardContent>
-		{#if isLoading}
-			<div class="flex items-center gap-2 text-muted-foreground">
-				<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-current"></div>
-				<span>Loading catalog...</span>
+		<Button
+			variant="outline"
+			size="sm"
+			onclick={handleRefresh}
+			disabled={isRefreshing || isLoading}
+		>
+			{isRefreshing ? 'Refreshing...' : 'Refresh'}
+		</Button>
+	</div>
+	{#if isLoading}
+		<div class="flex items-center gap-2 text-muted-foreground">
+			<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-current"></div>
+			<span>Loading catalog...</span>
+		</div>
+	{:else if error}
+		<div class="text-sm text-red-600 dark:text-red-400">
+			<p>Failed to load catalog: {error}</p>
+		</div>
+	{:else if catalog}
+		<div class="space-y-4">
+			<div class="flex items-center gap-4 text-sm text-muted-foreground">
+				<span><strong>{getProviders().length}</strong> providers</span>
+				<span>•</span>
+				<span><strong>{getModelCount()}</strong> active models</span>
+				<span>•</span>
+				{#if catalog.cachedAt}
+					<span>Cached: {new Date(catalog.cachedAt).toLocaleTimeString()}</span>
+				{/if}
 			</div>
-		{:else if error}
-			<div class="text-sm text-red-600 dark:text-red-400">
-				<p>Failed to load catalog: {error}</p>
-			</div>
-		{:else if catalog}
-			<div class="space-y-4">
-				<div class="flex items-center gap-4 text-sm text-muted-foreground">
-					<span><strong>{getProviders().length}</strong> providers</span>
-					<span>•</span>
-					<span><strong>{getModelCount()}</strong> active models</span>
-					<span>•</span>
-					{#if catalog.cachedAt}
-						<span>Cached: {new Date(catalog.cachedAt).toLocaleTimeString()}</span>
-					{/if}
-				</div>
 
-				{#each getProviders() as provider}
-					<Collapsible title="{provider.name} ({Object.keys(provider.models).length} models)">
-						<div class="space-y-4">
-							<div class="flex flex-wrap items-center gap-2">
-								{#if provider.source}
-									<Badge variant="outline" class="text-xs">
-										{provider.source}
-									</Badge>
-								{/if}
-								{#if provider.env && provider.env.length > 0}
-									<Badge variant="secondary" class="text-xs">
-										{provider.env.length} env vars
-									</Badge>
-								{/if}
-							</div>
-
-							<div class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-								{#each getModelsForProvider(provider) as model}
-									<ModelCatalogCard {model} {provider} />
-								{/each}
-							</div>
+			{#each getProviders() as provider}
+				<Collapsible title="{provider.name} ({Object.keys(provider.models).length} models)">
+					<div class="space-y-4">
+						<div class="flex flex-wrap items-center gap-2">
+							{#if provider.source}
+								<Badge variant="outline" class="text-xs">
+									{provider.source}
+								</Badge>
+							{/if}
+							{#if provider.env && provider.env.length > 0}
+								<Badge variant="secondary" class="text-xs">
+									{provider.env.length} env vars
+								</Badge>
+							{/if}
 						</div>
-					</Collapsible>
-				{/each}
-			</div>
-		{/if}
-	</CardContent>
-</Card>
+
+						<div class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+							{#each getModelsForProvider(provider) as model}
+								<ModelCatalogCard {model} {provider} />
+							{/each}
+						</div>
+					</div>
+				</Collapsible>
+			{/each}
+		</div>
+	{/if}
+</div>

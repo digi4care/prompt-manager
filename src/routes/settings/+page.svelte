@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ConnectionSettings from '$lib/components/admin/ai-settings/connection-settings.svelte';
-	import ConnectionStatus from '$lib/components/admin/ai-settings/connection-status.svelte';
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
 	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
 	import ImprovePresets from '$lib/components/admin/ai-settings/improve-presets.svelte';
@@ -12,12 +11,6 @@
 		CardHeader,
 		CardTitle
 	} from '$lib/components/ui/card';
-
-	let isConnected = $state(false);
-
-	function handleConnectionChange(connected: boolean) {
-		isConnected = connected;
-	}
 </script>
 
 <svelte:head>
@@ -30,7 +23,7 @@
 		<p class="text-muted-foreground">Configureer OpenCode verbinding en functie-defaults</p>
 	</div>
 
-	<ConnectionSettings onConnectionChange={handleConnectionChange} />
+	<ConnectionSettings />
 
 	<div class="space-y-6">
 		<Card>
@@ -45,7 +38,6 @@
 			</CardContent>
 		</Card>
 
-		<ConnectionStatus bind:isConnected />
 		<CatalogView />
 		<PolicyEditor />
 		<ImprovePresets />

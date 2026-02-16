@@ -105,12 +105,7 @@ export async function getProviders() {
 /**
  * Get the provider/model catalog (with in-memory TTL cache)
  */
-export async function getProviderCatalog(forceRefresh = false): Promise<{
-	providers: unknown[];
-	default?: { model?: string };
-	ttlSeconds: number;
-	cached: boolean;
-}> {
+export async function getProviderCatalog(forceRefresh = false): Promise<CatalogResponse> {
 	const now = Date.now();
 
 	// Return cached if valid and not forcing refresh
@@ -125,7 +120,8 @@ export async function getProviderCatalog(forceRefresh = false): Promise<{
 				providers: data.providers || [],
 				default: data.default,
 				ttlSeconds: catalogCache.ttlSeconds,
-				cached: true
+				cached: true,
+				cachedAt: catalogCache.timestamp
 			};
 		}
 	}
@@ -143,19 +139,15 @@ export async function getProviderCatalog(forceRefresh = false): Promise<{
 		providers: (data as { providers?: unknown[] }).providers || [],
 		default: (data as { default?: { model?: string } }).default,
 		ttlSeconds: DEFAULT_CATALOG_TTL_SECONDS,
-		cached: false
+		cached: false,
+		cachedAt: now
 	};
 }
 
 /**
  * Force refresh the provider catalog
  */
-export async function refreshProviderCatalog(): Promise<{
-	providers: unknown[];
-	default?: { model?: string };
-	ttlSeconds: number;
-	cached: boolean;
-}> {
+export async function refreshProviderCatalog(): Promise<CatalogResponse> {
 	return getProviderCatalog(true);
 }
 
@@ -203,7 +195,11 @@ export interface HealthCheckResult {
 }
 
 export interface CatalogResponse {
-	providers: ProviderInfo[];
+	providers: unknown[];
+	default?: { model?: string };
+	ttlSeconds: number;
+	cached: boolean;
+	cachedAt?: number;
 }
 
 export interface ModelInfo {

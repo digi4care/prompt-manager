@@ -184,9 +184,7 @@
 	};
 </script>
 
-<div
-	class={cn('rounded-lg border bg-card p-4', hasError && 'border-destructive/40 bg-destructive/5')}
->
+<div class={cn(hasError && 'border-destructive/40 bg-destructive/5')}>
 	<div class="mb-3 flex items-start justify-between gap-3">
 		<div>
 			<div class="flex items-center gap-2">

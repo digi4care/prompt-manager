@@ -1170,39 +1170,19 @@
 
 		<ValidationSummary {errors} class="mb-4" />
 
-		{#if isMobile}
-			<!-- Mobile: Lazy-loaded cards layout -->
-			{#await import('./function-settings-cards.svelte') then { default: FunctionSettingsCards }}
-				<FunctionSettingsCards
-					{rowTypes}
-					{settings}
-					{errors}
-					{displayGroupedModelsByScope}
-					{allGroupedModelsWithVariantPolicy}
-					{prompts}
-					{validateField}
-					{handleReset}
-				/>
-			{/await}
-		{:else}
-			<!-- Desktop: Table rows layout -->
-			<div class="space-y-4">
-				{#each rowTypes as type}
-					<ModelPickerRow
-						{type}
-						bind:setting={settings[type]}
-						error={errors[type] || {}}
-						groupedModels={displayGroupedModelsByScope[type]}
-						allGroupedModels={allGroupedModelsWithVariantPolicy}
-						{prompts}
-						onModelChange={(modelId) => validateField(type, 'modelId', type, modelId, true)}
-						onValidate={(field, value, immediate) =>
-							validateField(type, field, type, value, immediate)}
-						onReset={() => handleReset(type)}
-					/>
-				{/each}
-			</div>
-		{/if}
+		<!-- Cards layout -->
+		{#await import('./function-settings-cards.svelte') then { default: FunctionSettingsCards }}
+			<FunctionSettingsCards
+				{rowTypes}
+				{settings}
+				{errors}
+				{displayGroupedModelsByScope}
+				{allGroupedModelsWithVariantPolicy}
+				{prompts}
+				{validateField}
+				{handleReset}
+			/>
+		{/await}
 
 		<div class="rounded-lg border border-border/60 bg-card/40 p-2">
 			<CouncilRepeater

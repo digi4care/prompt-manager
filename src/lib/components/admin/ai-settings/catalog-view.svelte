@@ -9,6 +9,8 @@
 	} from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import Collapsible from './collapsible.svelte';
+	import ModelCatalogCard from './model-catalog-card.svelte';
+	import { Badge } from '$lib/components/ui/badge';
 	import { toast } from 'svelte-sonner';
 	import type {
 		CatalogResponse,
@@ -109,30 +111,23 @@
 
 				{#each getProviders() as provider}
 					<Collapsible title="{provider.name} ({Object.keys(provider.models).length} models)">
-						<div class="space-y-2">
-							<div class="mb-2 text-xs text-muted-foreground">
-								<div>Source: {provider.source}</div>
+						<div class="space-y-4">
+							<div class="flex flex-wrap items-center gap-2">
+								{#if provider.source}
+									<Badge variant="outline" class="text-xs">
+										{provider.source}
+									</Badge>
+								{/if}
 								{#if provider.env && provider.env.length > 0}
-									<div>Env vars: {provider.env.join(', ')}</div>
+									<Badge variant="secondary" class="text-xs">
+										{provider.env.length} env vars
+									</Badge>
 								{/if}
 							</div>
 
-							<div class="space-y-1">
+							<div class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 								{#each getModelsForProvider(provider) as model}
-									<div class="flex items-start gap-2 rounded bg-muted/30 p-2 text-xs">
-										<div class="flex-1">
-											<div class="font-medium">{model.name}</div>
-											<div class="font-mono text-[10px] text-muted-foreground">
-												{model.id}
-											</div>
-										</div>
-										{#if model.limit}
-											<div class="text-right text-[10px] text-muted-foreground">
-												<div>Context: {model.limit.context.toLocaleString()}</div>
-												<div>Output: {model.limit.output.toLocaleString()}</div>
-											</div>
-										{/if}
-									</div>
+									<ModelCatalogCard {model} {provider} />
 								{/each}
 							</div>
 						</div>

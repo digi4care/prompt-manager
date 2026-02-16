@@ -102,7 +102,9 @@
 					<span>•</span>
 					<span><strong>{getModelCount()}</strong> active models</span>
 					<span>•</span>
-					<span>Cached: {new Date(catalog.cachedAt).toLocaleTimeString()}</span>
+					{#if catalog.cachedAt}
+						<span>Cached: {new Date(catalog.cachedAt).toLocaleTimeString()}</span>
+					{/if}
 				</div>
 
 				{#each getProviders() as provider}
@@ -110,7 +112,7 @@
 						<div class="space-y-2">
 							<div class="mb-2 text-xs text-muted-foreground">
 								<div>Source: {provider.source}</div>
-								{#if provider.env.length > 0}
+								{#if provider.env && provider.env.length > 0}
 									<div>Env vars: {provider.env.join(', ')}</div>
 								{/if}
 							</div>
@@ -124,10 +126,12 @@
 												{model.id}
 											</div>
 										</div>
-										<div class="text-right text-[10px] text-muted-foreground">
-											<div>Context: {model.limit.context.toLocaleString()}</div>
-											<div>Output: {model.limit.output.toLocaleString()}</div>
-										</div>
+										{#if model.limit}
+											<div class="text-right text-[10px] text-muted-foreground">
+												<div>Context: {model.limit.context.toLocaleString()}</div>
+												<div>Output: {model.limit.output.toLocaleString()}</div>
+											</div>
+										{/if}
 									</div>
 								{/each}
 							</div>

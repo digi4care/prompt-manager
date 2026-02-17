@@ -20,6 +20,7 @@
 	let { class: className = '', isConnected = $bindable(false) }: Props = $props();
 
 	let health = $state<HealthCheckResult | null>(null);
+	let lastCheck = $state<Date | null>(null);
 	let isLoading = $state(true);
 	let isRefreshing = $state(false);
 
@@ -32,6 +33,7 @@
 			const response = await fetch('/api/admin/health');
 			const result = await response.json();
 			health = result.data;
+			lastCheck = new Date();
 			isConnected = health?.healthy ?? false;
 		} catch (err) {
 			console.error('Failed to load health status:', err);
@@ -40,7 +42,6 @@
 				healthy: false,
 				diagnostics: {
 					baseUrl: 'unknown',
-					timestamp: new Date().toISOString(),
 					error: err instanceof Error ? err.message : 'Unknown error'
 				}
 			};
@@ -108,7 +109,7 @@
 						<div class="flex justify-between text-xs text-muted-foreground">
 							<span>Last Check:</span>
 							<span>
-								{new Date(health.diagnostics.timestamp).toLocaleString()}
+								{lastCheck?.toLocaleString() ?? 'Never'}
 							</span>
 						</div>
 						{#if health.version}

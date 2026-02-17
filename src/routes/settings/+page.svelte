@@ -7,18 +7,21 @@
 		Database,
 		Sparkles,
 		ChevronDown,
-		ChevronUp
+		ChevronUp,
+		Server
 	} from 'lucide-svelte';
 	import ConnectionSettings from '$lib/components/admin/ai-settings/connection-settings.svelte';
+	import ProvidersBlock from '$lib/components/admin/ai-settings/providers-block.svelte';
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
 	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
 	import ImprovePresets from '$lib/components/admin/ai-settings/improve-presets.svelte';
 	import FunctionSettingsCard from '$lib/components/admin/function-settings/FunctionSettingsCard.svelte';
 
-	type Section = 'connection' | 'policy' | 'defaults' | 'catalog' | 'presets';
+	type Section = 'connection' | 'providers' | 'policy' | 'defaults' | 'catalog' | 'presets';
 
 	const sectionIcons = {
 		connection: Plug,
+		providers: Server,
 		policy: Shield,
 		defaults: Settings,
 		catalog: Database,
@@ -36,6 +39,12 @@
 			title: 'Connection',
 			color: 'sapphire',
 			description: 'API credentials & endpoints'
+		},
+		{
+			id: 'providers',
+			title: 'Providers',
+			color: 'teal',
+			description: 'Manage AI providers & API keys'
 		},
 		{
 			id: 'policy',
@@ -98,6 +107,32 @@
 
 	// Get data from server
 	let data = $derived($page.data);
+
+	// Connection state for providers block visibility
+	let isConnected = $state(false);
+
+	// Initialize connection status from API
+	async function checkConnectionStatus() {
+		try {
+			const res = await fetch('/api/admin/opencode-connection');
+			if (res.ok) {
+				const result = await res.json();
+				if (result.data?.connected || result.data?.healthy) {
+					isConnected = true;
+				}
+			}
+		} catch (e) {
+			console.error('Failed to check connection status:', e);
+		}
+	}
+
+	$effect(() => {
+		checkConnectionStatus();
+	});
+
+	function handleConnectionChange(connected: boolean) {
+		isConnected = connected;
+	}
 
 	function toggleAccordion(sectionId: Section) {
 		const newSet = new Set(openAccordions);
@@ -206,7 +241,19 @@
 					{#if isOpen}
 						<div class="border-surface-2 border-t p-4 md:p-5">
 							{#if section.id === 'connection'}
-								<ConnectionSettings />
+								<ConnectionSettings onConnectionChange={handleConnectionChange} />
+							{:else if section.id === 'providers'}
+								{#if isConnected}
+									<ProvidersBlock
+										allProviders={data.allProviders ?? []}
+										connectedProviderIds={data.connectedProviderIds ?? []}
+										connected={isConnected}
+									/>
+								{:else}
+									<div class="rounded-lg bg-muted/30 p-4 text-center text-sm text-muted-foreground">
+										Please establish a connection first to manage providers.
+									</div>
+								{/if}
 							{:else if section.id === 'policy'}
 								<PolicyEditor />
 							{:else if section.id === 'defaults'}

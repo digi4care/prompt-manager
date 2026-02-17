@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/client';
 import { adminSettings, opencodeConnection } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { getProviderCatalog } from '$lib/server/services/opencode.service';
+import { getAllProviders, getProviderCatalog } from '$lib/server/services/opencode.service';
 import { error, json } from '@sveltejs/kit';
 
 const SETTINGS_KEY = 'function_defaults';
@@ -72,13 +72,25 @@ export const load: PageServerLoad = async () => {
 
 	const connection = connectionRow[0] ?? null;
 
-	// Load model catalog
+	// Load all providers directly from OpenCode server
 	let models: unknown[] = [];
+	let allProviders: unknown[] = [];
+	let connectedProviderIds: string[] = [];
 	try {
-		const catalog = await getProviderCatalog();
+		console.log('[Settings] Loading all providers from OpenCode...');
+		const opencodeUrl = connection?.baseUrl ?? 'http://127.0.0.1:10000';
+		const response = await fetch(`${opencodeUrl}/provider`);
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		const catalog = await response.json();
+		console.log('[Settings] All providers loaded:', catalog.all?.length ?? 0);
+		// Store all providers
+		allProviders = catalog.all ?? [];
+		connectedProviderIds = catalog.connected ?? [];
 		// Flatten providers to get all models
-		if (catalog.providers && Array.isArray(catalog.providers)) {
-			models = catalog.providers.flatMap((p: unknown) => {
+		if (catalog.all && Array.isArray(catalog.all)) {
+			models = catalog.all.flatMap((p: unknown) => {
 				const provider = p as Record<string, unknown>;
 				const providerModels = (provider.models as unknown[]) ?? [];
 				return providerModels.map((m: unknown) => ({
@@ -87,14 +99,16 @@ export const load: PageServerLoad = async () => {
 				}));
 			});
 		}
-	} catch {
-		// Empty catalog on error
+	} catch (err) {
+		console.error('[Settings] FAILED to load all providers:', err);
 	}
 
 	return {
 		settings,
 		connection,
-		models
+		models,
+		allProviders,
+		connectedProviderIds
 	};
 };
 

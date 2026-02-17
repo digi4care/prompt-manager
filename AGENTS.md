@@ -110,11 +110,11 @@ Example:
 
 ```typescript
 try {
- const result = await db.insert(prompts).values(data).returning();
- return json(result);
+	const result = await db.insert(prompts).values(data).returning();
+	return json(result);
 } catch (err) {
- console.error('Failed to create prompt:', err);
- throw error(500, 'Failed to create prompt');
+	console.error('Failed to create prompt:', err);
+	throw error(500, 'Failed to create prompt');
 }
 ```
 
@@ -126,6 +126,12 @@ try {
 - Use `isNull()` for checking deleted records
 - Return null for not found: `return prompt || null`
 - Use transactions for multi-statement operations
+
+### OpenCode Integration
+
+- **SDK (`@opencode-ai/sdk`)** = primary method for OpenCode communication
+- **Server REST endpoints** = fallback when SDK doesn't support a specific function
+- Always try SDK first, fall back to direct HTTP calls if needed
 
 ### API Design
 

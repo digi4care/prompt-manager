@@ -85,7 +85,7 @@ export async function checkOpencodeHealth(): Promise<{
 }
 
 /**
- * Get available providers from OpenCode
+ * Get available providers from OpenCode (SDK - configured providers only)
  */
 export async function getProviders() {
 	const client = await getOpencodeClient();
@@ -100,6 +100,41 @@ export async function getProviders() {
 	}
 
 	return result.data;
+}
+
+/**
+ * Get ALL providers from OpenCode (Server endpoint - SDK fallback)
+ * Returns all available providers + connected provider IDs
+ */
+export async function getAllProviders(): Promise<{
+	all: ProviderInfo[];
+	connected: string[];
+	default?: { model?: string };
+}> {
+	const settings = await getOpencodeConnectionSettings();
+	const connection = await getConnection(settings);
+
+	const response = await connection.rawRequest('/provider', {
+		method: 'GET',
+		headers: { 'Content-Type': 'application/json' }
+	});
+
+	if (!response.ok) {
+		const errorText = await response.text();
+		throw new Error(`Failed to get all providers: ${errorText}`);
+	}
+
+	const data = (await response.json()) as {
+		all?: ProviderInfo[];
+		connected?: string[];
+		default?: { model?: string };
+	};
+
+	return {
+		all: data.all || [],
+		connected: data.connected || [],
+		default: data.default
+	};
 }
 
 /**

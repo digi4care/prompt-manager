@@ -1,0 +1,70 @@
+{
+	"mode": "yolo",
+	"depth": "comprehensive",
+	"parallelization": true,
+	"commit_docs": true,
+	"model_profile": "balanced",
+	"workflow": {
+		"research": true,
+		"plan_check": true,
+		"verifier": true,
+		"auto_advance": true
+	},
+	"model_profiles": {
+		"gsd-planner": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-roadmapper": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-executor": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-phase-researcher": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-project-researcher": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-research-synthesizer": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-debugger": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-codebase-mapper": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "minimax-coding-plan/MINIMAX-M2.5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-verifier": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-plan-checker": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		},
+		"gsd-integration-checker": {
+			"quality": "zai-coding-plan/glm-5",
+			"balanced": "zai-coding-plan/glm-5",
+			"budget": "minimax-coding-plan/MINIMAX-M2.5"
+		}
+	}
+}

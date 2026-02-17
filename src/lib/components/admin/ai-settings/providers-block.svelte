@@ -71,9 +71,133 @@
 		}
 	}
 
-	function handleConnectProvider(providerId: string) {
-		// TODO: Implement auth flow
-		console.log('Connect provider:', providerId);
+	// Auth modal state
+	let showAuthModal = $state(false);
+	let authProviderId = $state('');
+	let authProviderName = $state('');
+	let authMethods: { type: string; label: string }[] = $state([]);
+	let selectedMethod = $state<{ type: string; label: string } | null>(null);
+	let authLoading = $state(false);
+	let authError = $state('');
+	let apiKeyInput = $state('');
+
+	async function handleConnectProvider(providerId: string) {
+		console.log('handleConnectProvider called with:', providerId);
+		authProviderId = providerId;
+		authProviderName = allProviders.find((p) => p.id === providerId)?.name || providerId;
+		authError = '';
+		apiKeyInput = '';
+		selectedMethod = null;
+
+		try {
+			// Fetch auth methods from OpenCode server
+			console.log('Fetching auth methods for:', providerId);
+			const response = await fetch('/api/opencode/providers/auth');
+			const data = await response.json();
+			console.log('Auth data received:', Object.keys(data));
+			console.log('Auth methods for', providerId + ':', data[providerId]);
+
+			// Get auth methods for this provider
+			authMethods = data[providerId] || [];
+			console.log('authMethods set to:', authMethods);
+
+			// Fallback: if no auth methods, create default API key method
+			if (authMethods.length === 0) {
+				console.log('No auth methods, using default API key method');
+				authMethods = [
+					{
+						type: 'api',
+						label: 'API Key'
+					} as any
+				];
+			}
+
+			// Auto-select if only one method
+			if (authMethods.length === 1) {
+				selectedMethod = authMethods[0];
+			}
+
+			console.log('Setting showAuthModal to true');
+			showAuthModal = true;
+		} catch (err) {
+			console.error('Failed to fetch auth methods:', err);
+			authError = 'Failed to load authentication methods';
+		}
+	}
+
+	async function submitAuth() {
+		if (!selectedMethod || !authProviderId) return;
+
+		authLoading = true;
+		authError = '';
+
+		try {
+			if (selectedMethod.type === 'api') {
+				// API key authentication - use PUT /auth/:providerID
+				const response = await fetch(`/api/opencode/providers/auth/${authProviderId}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						type: 'api',
+						key: apiKeyInput
+					})
+				});
+
+				if (!response.ok) {
+					const error = await response.json();
+					authError = error.message || 'Failed to connect provider';
+					return;
+				}
+
+				console.log('Provider connected:', authProviderId);
+				showAuthModal = false;
+				showProviderModal = false;
+				await handleRefresh(true);
+			} else if (selectedMethod.type === 'oauth') {
+				// OAuth authentication - start flow
+				const response = await fetch(`/api/opencode/providers/oauth/authorize`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						providerId: authProviderId,
+						method: 0
+					})
+				});
+
+				if (!response.ok) {
+					const error = await response.json();
+					authError = error.message || 'Failed to start OAuth flow';
+					return;
+				}
+
+				const oauthData = await response.json();
+				console.log('OAuth started:', oauthData);
+
+				// Open OAuth URL in new window/tab
+				if (oauthData.url) {
+					window.open(oauthData.url, '_blank');
+				}
+
+				// Show message to complete auth
+				authError =
+					'Please complete the OAuth authorization in the opened window, then click Continue';
+			}
+		} catch (err) {
+			console.error('Auth error:', err);
+			authError = 'Authentication failed';
+		} finally {
+			authLoading = false;
+		}
+	}
+
+	function closeAuthModal() {
+		showAuthModal = false;
+		authProviderId = '';
+		authProviderName = '';
+		authMethods = [];
+		selectedMethod = null;
+		authError = '';
+		apiKeyInput = '';
 	}
 
 	async function handleDisconnectProvider(providerId: string) {
@@ -274,6 +398,106 @@
 				>
 					Close
 				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Auth Modal (for API key or OAuth) -->
+{#if showAuthModal}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+		onclick={closeAuthModal}
+		role="dialog"
+		aria-modal="true"
+	>
+		<div
+			class="relative w-full max-w-md overflow-hidden rounded-xl border bg-background shadow-xl"
+			onclick={(e) => e.stopPropagation()}
+		>
+			<!-- Header -->
+			<div class="border-b px-4 py-3">
+				<div class="flex items-center justify-between">
+					<div>
+						<h3 class="text-lg font-semibold">Connect {authProviderName}</h3>
+						<p class="text-sm text-muted-foreground">Authentication required</p>
+					</div>
+					<button onclick={closeAuthModal} class="rounded p-1 text-muted-foreground hover:bg-muted">
+						<X class="h-5 w-5" />
+					</button>
+				</div>
+			</div>
+
+			<!-- Content -->
+			<div class="space-y-4 p-4">
+				{#if authError}
+					<div class="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+						{authError}
+					</div>
+				{/if}
+
+				<!-- Auth method selection -->
+				{#if !selectedMethod && authMethods.length > 1}
+					<div class="space-y-2">
+						<label class="text-sm font-medium">Select authentication method</label>
+						<div class="space-y-1">
+							{#each authMethods as method, i (method.type + '-' + i)}
+								<option value={method.type}>{method.label}</option>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<!-- API Key input -->
+				{#if selectedMethod?.type === 'api'}
+					<div class="space-y-2">
+						<label for="apiKey" class="text-sm font-medium">API Key</label>
+						<input
+							id="apiKey"
+							type="password"
+							bind:value={apiKeyInput}
+							placeholder="Enter your API key"
+							class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+						/>
+						<p class="text-xs text-muted-foreground">
+							Get your API key from the provider's dashboard
+						</p>
+					</div>
+				{/if}
+
+				<!-- OAuth info -->
+				{#if selectedMethod?.type === 'oauth'}
+					<div class="rounded-md bg-muted/20 px-3 py-3 text-sm">
+						<p class="font-medium">OAuth Authorization</p>
+						<p class="mt-1 text-xs text-muted-foreground">
+							Click "Start OAuth" to open the provider's authorization page. You'll need to complete
+							the authorization there.
+						</p>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Footer -->
+			<div class="flex justify-end gap-2 border-t px-4 py-3">
+				<button
+					onclick={closeAuthModal}
+					class="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-muted/50"
+				>
+					Cancel
+				</button>
+				{#if selectedMethod}
+					<button
+						onclick={submitAuth}
+						disabled={authLoading || (selectedMethod.type === 'api' && !apiKeyInput)}
+						class="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+					>
+						{authLoading
+							? 'Connecting...'
+							: selectedMethod.type === 'api'
+								? 'Connect'
+								: 'Start OAuth'}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>

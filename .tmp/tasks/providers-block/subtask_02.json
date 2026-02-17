@@ -1,0 +1,30 @@
+{
+	"id": "providers-block-02",
+	"seq": "02",
+	"title": "Create provider-modal.svelte with search/filter and API key input",
+	"status": "pending",
+	"depends_on": ["01"],
+	"parallel": false,
+	"suggested_agent": "OpenFrontendSpecialist",
+	"context_files": [
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/concepts/runes.md",
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/concepts/props.md",
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/guides/component-patterns.md"
+	],
+	"reference_files": [
+		"/home/digi4care/projects/prompt-manager/src/lib/components/admin/function-settings/model-picker-modal.svelte"
+	],
+	"acceptance_criteria": [
+		"Modal uses Svelte 5 runes ($state, $derived, $props, $effect)",
+		"Props interface with open (bindable), onClose, and providers data",
+		"Search input filters providers by name/id",
+		"dt/dd layout for provider info (name, id, models count, connected status)",
+		"API key input field for each provider (password type, masked)",
+		"Save button calls /api/opencode/providers/auth endpoint",
+		"Show connected/disconnected status per provider",
+		"Modal styling matches Catppuccin theme tokens",
+		"Keyboard handling (Escape to close)",
+		"Responsive design (mobile-friendly)"
+	],
+	"deliverables": ["src/lib/components/admin/ai-settings/provider-modal.svelte"]
+}

@@ -1,0 +1,23 @@
+{
+	"id": "providers-block-04",
+	"seq": "04",
+	"title": "Update settings page with Providers block",
+	"status": "pending",
+	"depends_on": ["03"],
+	"parallel": false,
+	"suggested_agent": "OpenFrontendSpecialist",
+	"context_files": [
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/concepts/runes.md",
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/guides/component-patterns.md"
+	],
+	"reference_files": ["/home/digi4care/projects/prompt-manager/src/routes/settings/+page.svelte"],
+	"acceptance_criteria": [
+		"Providers block added after Connection section in settings",
+		"Passes connection status from existing state",
+		"Passes provider catalog data from page data",
+		"Block appears/disappears based on connection status",
+		"Maintains existing accordion behavior",
+		"No breaking changes to existing functionality"
+	],
+	"deliverables": ["src/routes/settings/+page.svelte (updated)"]
+}

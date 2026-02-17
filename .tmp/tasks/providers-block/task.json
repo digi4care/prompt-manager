@@ -1,0 +1,29 @@
+{
+	"id": "providers-block",
+	"name": "Providers Block in Settings",
+	"status": "active",
+	"objective": "Add Providers block in settings that shows modal with provider list after successful connection, allows adding API keys for providers via SDK",
+	"context_files": [
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/concepts/runes.md",
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/concepts/props.md",
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/guides/component-patterns.md"
+	],
+	"reference_files": [
+		"/home/digi4care/projects/prompt-manager/src/lib/components/admin/function-settings/model-picker-modal.svelte",
+		"/home/digi4care/projects/prompt-manager/src/routes/settings/+page.svelte",
+		"/home/digi4care/.ai_docs/opencode/docs/sdk.mdx"
+	],
+	"exit_criteria": [
+		"Providers block appears only when connection is successful",
+		"Modal opens with provider list from client.config.providers()",
+		"Search/filter functionality works correctly",
+		"dt/dd layout used for provider info display",
+		"API key input for each provider (masked)",
+		"Save API key via client.auth.set() SDK method",
+		"Svelte 5 runes used ($state, $derived, $props, $effect)",
+		"No prop drilling - use runes for state management"
+	],
+	"subtask_count": 4,
+	"completed_count": 0,
+	"created_at": "2026-02-16T12:00:00Z"
+}

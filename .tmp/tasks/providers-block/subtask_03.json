@@ -1,0 +1,27 @@
+{
+	"id": "providers-block-03",
+	"seq": "03",
+	"title": "Create providers-block.svelte component",
+	"status": "pending",
+	"depends_on": ["02"],
+	"parallel": false,
+	"suggested_agent": "OpenFrontendSpecialist",
+	"context_files": [
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/concepts/runes.md",
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/concepts/props.md",
+		"/home/digi4care/projects/prompt-manager/.opencode/context/svelte/guides/component-patterns.md"
+	],
+	"reference_files": [
+		"/home/digi4care/projects/prompt-manager/src/lib/components/admin/function-settings/model-picker-modal.svelte",
+		"/home/digi4care/projects/prompt-manager/src/routes/settings/+page.svelte"
+	],
+	"acceptance_criteria": [
+		"Component uses Svelte 5 runes ($state, $derived, $props)",
+		"Only renders when isConnected prop is true",
+		"Clicking opens provider-modal",
+		"Displays provider count and connected count summary",
+		"Styling consistent with existing settings blocks",
+		"No prop drilling - manage modal state with $state"
+	],
+	"deliverables": ["src/lib/components/admin/ai-settings/providers-block.svelte"]
+}

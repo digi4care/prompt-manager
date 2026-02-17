@@ -1,0 +1,22 @@
+{
+	"id": "providers-block-01",
+	"seq": "01",
+	"title": "Create API endpoint for provider auth",
+	"status": "pending",
+	"depends_on": [],
+	"parallel": true,
+	"suggested_agent": "CoderAgent",
+	"context_files": [],
+	"reference_files": [
+		"/home/digi4care/projects/prompt-manager/src/routes/api/opencode/providers/+server.ts",
+		"/home/digi4care/projects/prompt-manager/src/lib/server/opencode/client.ts"
+	],
+	"acceptance_criteria": [
+		"POST /api/opencode/providers/auth endpoint",
+		"Accepts provider id and api key in body",
+		"Uses SDK client.auth.set() to save credentials",
+		"Returns success/error response",
+		"Proper error handling"
+	],
+	"deliverables": ["src/routes/api/opencode/providers/auth/+server.ts"]
+}

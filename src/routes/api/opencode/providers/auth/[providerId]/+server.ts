@@ -45,7 +45,19 @@ export const PUT: RequestHandler = async ({ request, params }) => {
 		// Clear providers cache so fresh data is fetched on next load
 		clearProvidersCache();
 
-		return json({ success: true, providerId });
+		// Call /global/dispose to refresh OpenCode state
+		// This is required for the provider to appear as "connected"
+		await fetch(`${baseUrl}/global/dispose`, { method: 'POST' });
+
+		// Fetch updated connected providers
+		const providerResponse = await fetch(`${baseUrl}/provider`);
+		const providerData = await providerResponse.json();
+
+		return json({
+			success: true,
+			providerId,
+			connected: providerData.connected || []
+		});
 	} catch (err) {
 		console.error('Failed to set provider auth:', err);
 		throw error(500, 'Failed to set provider authentication');
@@ -84,7 +96,19 @@ export const DELETE: RequestHandler = async ({ params }) => {
 		// Clear providers cache so fresh data is fetched on next load
 		clearProvidersCache();
 
-		return json({ success: true, providerId });
+		// Call /global/dispose to refresh OpenCode state
+		// This is required for the provider to be removed from "connected"
+		await fetch(`${baseUrl}/global/dispose`, { method: 'POST' });
+
+		// Fetch updated connected providers
+		const providerResponse = await fetch(`${baseUrl}/provider`);
+		const providerData = await providerResponse.json();
+
+		return json({
+			success: true,
+			providerId,
+			connected: providerData.connected || []
+		});
 	} catch (err) {
 		console.error('Failed to remove provider auth:', err);
 		throw error(500, 'Failed to remove provider authentication');

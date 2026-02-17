@@ -1,59 +1,30 @@
 <script lang="ts">
 	import { Check, Plus, RefreshCw, Server, X } from 'lucide-svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
+	import { providers } from '$lib/stores/providers.svelte';
 
-	interface Provider {
-		id: string;
-		name: string;
-		description?: string;
-		source?: string;
-		models?: Record<string, { id: string; name?: string }>;
-	}
-
-	interface Props {
-		allProviders: Provider[];
-		connectedProviderIds: string[];
-		connected: boolean;
-	}
-
-	let { allProviders = [], connectedProviderIds = [], connected = false }: Props = $props();
-
-	// Modal state
+	// Local state
 	let showProviderModal = $state(false);
-	let modalSearchQuery = $state('');
+	let searchQuery = $state('');
+	let isRefreshing = $state(false);
 
-	// Connected providers set for quick lookup
-	let connectedSet = $derived(new Set(connectedProviderIds));
-
-	// Get connected providers only
-	let connectedProviders = $derived.by(() => {
-		return allProviders.filter((p) => connectedSet.has(p.id));
-	});
-
-	// Filtered providers for modal (show all, not just connected)
-	let filteredAllProviders = $derived.by(() => {
-		if (!allProviders || allProviders.length === 0) return [];
-		if (!modalSearchQuery.trim()) return allProviders;
-		const query = modalSearchQuery.toLowerCase();
-		return allProviders.filter(
-			(p) =>
-				p.name.toLowerCase().includes(query) ||
-				p.id.toLowerCase().includes(query) ||
-				p.description?.toLowerCase().includes(query)
+	// Derived: filtered providers for modal
+	let filteredProviders = $derived.by(() => {
+		const query = searchQuery.toLowerCase().trim();
+		if (!query) return providers.all;
+		return providers.all.filter(
+			(p) => p.name.toLowerCase().includes(query) || p.id.toLowerCase().includes(query)
 		);
 	});
 
-	function getModelCount(provider: Provider): number {
-		return provider.models ? Object.keys(provider.models).length : 0;
-	}
-
-	function isConnected(providerId: string): boolean {
-		return connectedSet.has(providerId);
-	}
+	// Derived: connected providers for main view
+	let connectedProviders = $derived.by(() => {
+		return providers.all.filter((p) => providers.connectedIds.includes(p.id));
+	});
 
 	function openProviderModal() {
 		showProviderModal = true;
-		modalSearchQuery = '';
+		searchQuery = '';
 	}
 
 	function closeProviderModal() {
@@ -61,14 +32,21 @@
 	}
 
 	async function handleRefresh(force = false) {
+		isRefreshing = true;
 		if (force) {
-			// Force refresh by calling API with force parameter to clear cache
 			await fetch('/api/opencode/providers/all?force=true');
-			// Then navigate with refresh parameter to get fresh data from server
-			goto('?refresh=true', { replaceState: true, noScroll: true, keepFocus: true });
-		} else {
-			await invalidateAll();
 		}
+		await invalidateAll();
+		isRefreshing = false;
+	}
+
+	// Helper functions
+	function getModelCount(provider: Provider): number {
+		return provider.models ? Object.keys(provider.models).length : 0;
+	}
+
+	function isConnected(providerId: string): boolean {
+		return providers.connectedIds.includes(providerId);
 	}
 
 	// Auth modal state
@@ -84,7 +62,7 @@
 	async function handleConnectProvider(providerId: string) {
 		console.log('handleConnectProvider called with:', providerId);
 		authProviderId = providerId;
-		authProviderName = allProviders.find((p) => p.id === providerId)?.name || providerId;
+		authProviderName = providers.all.find((p) => p.id === providerId)?.name || providerId;
 		authError = '';
 		apiKeyInput = '';
 		selectedMethod = null;
@@ -149,10 +127,11 @@
 					return;
 				}
 
-				console.log('Provider connected:', authProviderId);
+				const result = await response.json();
+				console.log('Provider connected:', authProviderId, 'connected:', result.connected);
+				providers.setConnected(result.connected);
 				showAuthModal = false;
 				showProviderModal = false;
-				await handleRefresh(true);
 			} else if (selectedMethod.type === 'oauth') {
 				// OAuth authentication - start flow
 				const response = await fetch(`/api/opencode/providers/oauth/authorize`, {
@@ -202,10 +181,8 @@
 
 	async function handleDisconnectProvider(providerId: string) {
 		try {
-			const response = await fetch('/api/opencode/providers/auth', {
-				method: 'DELETE',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ providerId })
+			const response = await fetch(`/api/opencode/providers/auth/${providerId}`, {
+				method: 'DELETE'
 			});
 
 			if (!response.ok) {
@@ -214,9 +191,9 @@
 				return;
 			}
 
-			console.log('Provider disconnected:', providerId);
-			// Force refresh providers list to get updated connected status
-			await handleRefresh(true);
+			const result = await response.json();
+			console.log('Provider disconnected:', providerId, 'connected:', result.connected);
+			providers.setConnected(result.connected);
 		} catch (err) {
 			console.error('Error disconnecting provider:', err);
 		}
@@ -332,24 +309,24 @@
 				<input
 					type="text"
 					placeholder="Search providers..."
-					bind:value={modalSearchQuery}
+					bind:value={searchQuery}
 					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 				/>
 
 				<!-- Stats -->
 				<div class="flex items-center justify-between text-xs text-muted-foreground">
-					<span>{filteredAllProviders.length} providers</span>
+					<span>{filteredProviders.length} providers</span>
 					<span>{connectedProviderIds.length} connected</span>
 				</div>
 
 				<!-- Provider list -->
 				<div class="max-h-[400px] space-y-1 overflow-y-auto">
-					{#if filteredAllProviders.length === 0}
+					{#if filteredProviders.length === 0}
 						<div class="rounded-md bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
 							No providers found
 						</div>
 					{:else}
-						{#each filteredAllProviders as provider (provider.id)}
+						{#each filteredProviders as provider (provider.id)}
 							{@const connected = isConnected(provider.id)}
 							<div
 								class="flex cursor-pointer items-center justify-between rounded-md border px-3 py-2 transition-colors {connected
@@ -369,7 +346,7 @@
 										</dl>
 									</div>
 								</div>
-								{#if connected}
+								{#if providers.isConnected}
 									<span
 										class="bg-success/10 text-success flex items-center gap-1 rounded px-2 py-1 text-xs"
 									>

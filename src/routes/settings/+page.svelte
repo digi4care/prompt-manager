@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { providers } from '$lib/stores/providers.svelte';
 	import {
 		Plug,
 		Shield,
@@ -108,31 +109,16 @@
 	// Get data from server
 	let data = $derived($page.data);
 
-	// Connection state for providers block visibility
-	let isConnected = $state(false);
-
-	// Initialize connection status from API
-	async function checkConnectionStatus() {
-		try {
-			const res = await fetch('/api/admin/opencode-connection');
-			if (res.ok) {
-				const result = await res.json();
-				if (result.data?.connected || result.data?.healthy) {
-					isConnected = true;
-				}
-			}
-		} catch (e) {
-			console.error('Failed to check connection status:', e);
-		}
-	}
-
+	// Providers store - handles all provider state
+	// Initialize store with server data
 	$effect(() => {
-		checkConnectionStatus();
+		if (data.allProviders && data.connectedProviderIds) {
+			providers.init({
+				all: data.allProviders,
+				connected: data.connectedProviderIds
+			});
+		}
 	});
-
-	function handleConnectionChange(connected: boolean) {
-		isConnected = connected;
-	}
 
 	function toggleAccordion(sectionId: Section) {
 		const newSet = new Set(openAccordions);
@@ -241,14 +227,10 @@
 					{#if isOpen}
 						<div class="border-surface-2 border-t p-4 md:p-5">
 							{#if section.id === 'connection'}
-								<ConnectionSettings onConnectionChange={handleConnectionChange} />
+								<ConnectionSettings />
 							{:else if section.id === 'providers'}
-								{#if isConnected}
-									<ProvidersBlock
-										allProviders={data.allProviders ?? []}
-										connectedProviderIds={data.connectedProviderIds ?? []}
-										connected={isConnected}
-									/>
+								{#if providers.isConnected}
+									<ProvidersBlock />
 								{:else}
 									<div class="rounded-lg bg-muted/30 p-4 text-center text-sm text-muted-foreground">
 										Please establish a connection first to manage providers.

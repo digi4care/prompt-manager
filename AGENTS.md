@@ -1,5 +1,11 @@
 # AGENTS.md
 
+## Very Important
+
+Always check the "@.opencode/context/" directory for the latest project context.
+The coding method is always "SOLID". 
+Complex logic always goes into a separate file as SOLID dictates.
+
 ## Build, Lint, and Test Commands
 
 ### Development

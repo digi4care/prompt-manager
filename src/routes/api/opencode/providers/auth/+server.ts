@@ -2,6 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getLocalOpencodeClient, getRemoteOpencodeClient } from '$lib/server/opencode/client';
 import { getOpencodeConnectionConfig } from '$lib/server/services/opencode-connection.service';
+import { clearProvidersCache } from '$lib/server/services/opencode.service';
 
 /**
  * Get the appropriate client based on connection mode
@@ -43,6 +44,9 @@ export const POST: RequestHandler = async ({ request }) => {
 			body: { type: 'api', key: apiKey }
 		});
 
+		// Clear providers cache so fresh data is fetched on next load
+		clearProvidersCache();
+
 		return json({ success: true, providerId });
 	} catch (err) {
 		console.error('Failed to set provider auth:', err);
@@ -52,7 +56,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 /**
  * DELETE /api/opencode/providers/auth
- * Remove API key for a provider by setting empty key
+ * Remove authentication for a provider by calling OpenCode DELETE /auth/:providerId
  *
  * Body: { providerId: string }
  */
@@ -65,13 +69,25 @@ export const DELETE: RequestHandler = async ({ request }) => {
 			throw error(400, 'providerId is required');
 		}
 
-		const client = await getClient();
+		const config = await getOpencodeConnectionConfig();
+		const baseUrl = config.baseUrl || 'http://127.0.0.1:10000';
 
-		// SDK: set empty key to remove auth
-		await client.auth.set({
-			path: { id: providerId },
-			body: { type: 'api', key: '' }
+		// Direct HTTP DELETE to OpenCode server
+		const response = await fetch(`${baseUrl}/auth/${providerId}`, {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json'
+			}
 		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			console.error('OpenCode DELETE failed:', errorText);
+			throw error(response.status, `Failed to disconnect provider: ${errorText}`);
+		}
+
+		// Clear providers cache so fresh data is fetched on next load
+		clearProvidersCache();
 
 		return json({ success: true, providerId });
 	} catch (err) {

@@ -162,9 +162,29 @@
 										{#if isProcessing === provider.id}
 											<span class="text-xs text-muted-foreground">...</span>
 										{:else if isConnected(provider.id)}
-											<Unlink class="size-4 text-muted-foreground" />
+											<button
+												onclick={(e) => {
+													e.stopPropagation();
+													handleToggle(provider.id);
+												}}
+												class="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20"
+												disabled={isProcessing !== null}
+											>
+												<Unlink class="size-3" />
+												Disconnect
+											</button>
 										{:else}
-											<Link class="size-4 text-muted-foreground" />
+											<button
+												onclick={(e) => {
+													e.stopPropagation();
+													handleToggle(provider.id);
+												}}
+												class="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+												disabled={isProcessing !== null}
+											>
+												<Link class="size-3" />
+												Connect
+											</button>
 										{/if}
 									</dd>
 								</div>

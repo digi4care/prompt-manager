@@ -103,14 +103,51 @@ export async function getProviders() {
 }
 
 /**
- * Get ALL providers from OpenCode (Server endpoint - SDK fallback)
+ * In-memory cache for ALL providers (similar to OpenCode's lazy pattern)
+ */
+let providersCache: {
+	data: { all: ProviderInfo[]; connected: string[]; default?: { model?: string } } | null;
+	timestamp: number;
+	ttlSeconds: number;
+} = {
+	data: null,
+	timestamp: 0,
+	ttlSeconds: 86400 // 24 hours default, like OpenCode
+};
+
+/**
+ * Clear the providers cache (called on disconnect/connect operations)
+ */
+export function clearProvidersCache(): void {
+	providersCache.data = null;
+	providersCache.timestamp = 0;
+}
+
+/**
+ * Set providers cache TTL
+ */
+export function setProvidersCacheTTL(seconds: number): void {
+	providersCache.ttlSeconds = seconds;
+}
+
+/**
+ * Get ALL providers from OpenCode (with in-memory TTL cache)
  * Returns all available providers + connected provider IDs
  */
-export async function getAllProviders(): Promise<{
+export async function getAllProviders(forceRefresh = false): Promise<{
 	all: ProviderInfo[];
 	connected: string[];
 	default?: { model?: string };
 }> {
+	const now = Date.now();
+	const cacheAge = now - providersCache.timestamp;
+	const cacheValid =
+		!forceRefresh && providersCache.data && cacheAge < providersCache.ttlSeconds * 1000;
+
+	if (cacheValid) {
+		return providersCache.data!;
+	}
+
 	const settings = await getOpencodeConnectionSettings();
 	const connection = await getConnection(settings);
 
@@ -130,11 +167,17 @@ export async function getAllProviders(): Promise<{
 		default?: { model?: string };
 	};
 
-	return {
+	const result = {
 		all: data.all || [],
 		connected: data.connected || [],
 		default: data.default
 	};
+
+	// Cache the result
+	providersCache.data = result;
+	providersCache.timestamp = now;
+
+	return result;
 }
 
 /**

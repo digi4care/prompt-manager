@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Check, Plus, RefreshCw, Server, X } from 'lucide-svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 
 	interface Provider {
 		id: string;
@@ -60,8 +60,15 @@
 		showProviderModal = false;
 	}
 
-	async function handleRefresh() {
-		await invalidateAll();
+	async function handleRefresh(force = false) {
+		if (force) {
+			// Force refresh by calling API with force parameter to clear cache
+			await fetch('/api/opencode/providers/all?force=true');
+			// Then navigate with refresh parameter to get fresh data from server
+			goto('?refresh=true', { replaceState: true, noScroll: true, keepFocus: true });
+		} else {
+			await invalidateAll();
+		}
 	}
 
 	function handleConnectProvider(providerId: string) {
@@ -69,9 +76,26 @@
 		console.log('Connect provider:', providerId);
 	}
 
-	function handleDisconnectProvider(providerId: string) {
-		// TODO: Implement disconnect
-		console.log('Disconnect provider:', providerId);
+	async function handleDisconnectProvider(providerId: string) {
+		try {
+			const response = await fetch('/api/opencode/providers/auth', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ providerId })
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				console.error('Failed to disconnect provider:', error);
+				return;
+			}
+
+			console.log('Provider disconnected:', providerId);
+			// Force refresh providers list to get updated connected status
+			await handleRefresh(true);
+		} catch (err) {
+			console.error('Error disconnecting provider:', err);
+		}
 	}
 </script>
 
@@ -87,7 +111,7 @@
 				Add Provider
 			</button>
 			<button
-				onclick={handleRefresh}
+				onclick={() => handleRefresh()}
 				class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-muted/50"
 			>
 				<RefreshCw class="h-4 w-4" />

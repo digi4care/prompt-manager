@@ -43,7 +43,13 @@ const DEFAULT_SETTINGS: FunctionDefaultsSettings = {
 	councilAgents: []
 };
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
+	// Check for force refresh parameter
+	const forceRefresh = url.searchParams.get('refresh') === 'true';
+	if (forceRefresh) {
+		console.log('[Settings] Force refresh requested');
+	}
+
 	// Load function defaults
 	const settingsRow = await db
 		.select()
@@ -72,18 +78,13 @@ export const load: PageServerLoad = async () => {
 
 	const connection = connectionRow[0] ?? null;
 
-	// Load all providers directly from OpenCode server
+	// Load all providers using cached service
 	let models: unknown[] = [];
 	let allProviders: unknown[] = [];
 	let connectedProviderIds: string[] = [];
 	try {
 		console.log('[Settings] Loading all providers from OpenCode...');
-		const opencodeUrl = connection?.baseUrl ?? 'http://127.0.0.1:10000';
-		const response = await fetch(`${opencodeUrl}/provider`);
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-		}
-		const catalog = await response.json();
+		const catalog = await getAllProviders(forceRefresh);
 		console.log('[Settings] All providers loaded:', catalog.all?.length ?? 0);
 		// Store all providers
 		allProviders = catalog.all ?? [];

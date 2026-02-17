@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Check, Plus, RefreshCw, Server, X } from 'lucide-svelte';
 	import { invalidateAll } from '$app/navigation';
-	import { providers } from '$lib/stores/providers.svelte';
+	import { providers, type Provider } from '$lib/stores/providers.svelte';
 
 	// Local state
 	let showProviderModal = $state(false);
@@ -200,7 +200,7 @@
 	}
 </script>
 
-{#if connected}
+{#if providers.isConnected}
 	<div class="space-y-4">
 		<!-- Action buttons -->
 		<div class="flex gap-2">
@@ -230,7 +230,7 @@
 			<div class="space-y-2">
 				<div class="flex items-center justify-between text-xs text-muted-foreground">
 					<span>{connectedProviders.length} connected</span>
-					<span>{allProviders.length} available</span>
+					<span>{providers.all.length} available</span>
 				</div>
 
 				{#each connectedProviders as provider (provider.id)}
@@ -316,7 +316,7 @@
 				<!-- Stats -->
 				<div class="flex items-center justify-between text-xs text-muted-foreground">
 					<span>{filteredProviders.length} providers</span>
-					<span>{connectedProviderIds.length} connected</span>
+					<span>{providers.connectedIds.length} connected</span>
 				</div>
 
 				<!-- Provider list -->

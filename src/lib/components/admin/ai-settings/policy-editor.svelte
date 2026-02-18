@@ -11,6 +11,7 @@
 	import { toast } from 'svelte-sonner';
 	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
 	import ModelPickerModal from '$lib/components/admin/function-settings/model-picker-modal.svelte';
+	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 
 	type PolicyScope = 'judge' | 'executor' | 'improve' | 'council';
 
@@ -683,8 +684,9 @@
 						{#if selectedPreviewModels.length > 0}
 							<dd class="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
 								{#each selectedPreviewModels.slice(0, 6) as model}
-									<span class="rounded border px-1.5 py-0.5">
-										{model.providerName} / {model.name}
+									<span class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5">
+										<ProviderLogo providerId={model.providerId} size="sm" />
+										{model.name}
 									</span>
 								{/each}
 								{#if selectedPreviewModels.length > 6}
@@ -724,9 +726,15 @@
 									<td class="px-3 py-2">
 										<div class="space-y-0.5">
 											{#if row.model}
-												<div class="font-medium">{row.model.providerName} / {row.model.name}</div>
+												<div class="flex items-center gap-1.5 font-medium">
+													<ProviderLogo providerId={row.modelId.split('/')[0]} size="sm" />
+													<span>{row.model.name}</span>
+												</div>
 											{:else}
-												<div class="font-medium">{row.modelId}</div>
+												<div class="flex items-center gap-1.5 font-medium">
+													<ProviderLogo providerId={row.modelId.split('/')[0]} size="sm" />
+													<span>{row.modelId.split('/').slice(1).join('/')}</span>
+												</div>
 											{/if}
 											<div class="font-mono text-[11px] text-muted-foreground">{row.modelId}</div>
 										</div>

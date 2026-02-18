@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 	import { innerWidth } from 'svelte/reactivity/window';
 
 	interface GroupedModel {
@@ -306,7 +307,14 @@
 									onclick={() => handleSelectModel(model)}
 								>
 									<div class="flex items-center justify-between gap-2">
-										<div class="font-medium">{model.providerName} / {model.name}</div>
+										<div class="flex items-center gap-2">
+											<ProviderLogo
+												providerId={model.providerId}
+												name={model.providerName}
+												size="sm"
+											/>
+											<span class="font-medium">{model.providerName} / {model.name}</span>
+										</div>
 										{#if isSelectedModel(model.id)}
 											<span
 												class="rounded border border-primary bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-foreground"
@@ -335,7 +343,8 @@
 						<div class="mb-1 font-medium">Selected models ({selectedModels.length})</div>
 						<div class="flex flex-wrap gap-1">
 							{#each selectedModels.slice(0, 8) as model}
-								<span class="rounded border px-1.5 py-0.5">
+								<span class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5">
+									<ProviderLogo providerId={model.providerId} name={model.providerName} size="sm" />
 									{model.providerName} / {model.name}
 								</span>
 							{/each}
@@ -348,7 +357,12 @@
 					</div>
 				{:else if selectedModel}
 					<div class="rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
-						<div class="font-medium">
+						<div class="flex items-center gap-2 font-medium">
+							<ProviderLogo
+								providerId={selectedModel.providerId}
+								name={selectedModel.providerName}
+								size="sm"
+							/>
 							Selected: {selectedModel.providerName} / {selectedModel.name}
 						</div>
 						<div class="font-mono text-muted-foreground">{selectedModel.id}</div>

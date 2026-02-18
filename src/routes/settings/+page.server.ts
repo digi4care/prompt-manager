@@ -7,6 +7,7 @@ import {
 	getProviderCatalog,
 	type ProviderInfo
 } from '$lib/server/services/opencode.service';
+import { getFunctionDefaults } from '$lib/server/services/function-defaults.service';
 import { error, json } from '@sveltejs/kit';
 
 const SETTINGS_KEY = 'function_defaults';
@@ -19,7 +20,7 @@ interface FunctionDefault {
 	providerId?: string;
 	temperature: number;
 	maxTokens: number;
-	promptId?: string;
+	promptId?: number;
 }
 
 interface CouncilAgent {
@@ -57,22 +58,30 @@ export const load: PageServerLoad = async ({ url }) => {
 		console.log('[Settings] Force refresh requested');
 	}
 
-	// Load function defaults
-	const settingsRow = await db
-		.select()
-		.from(adminSettings)
-		.where(eq(adminSettings.key, SETTINGS_KEY))
-		.limit(1);
+	// Load function defaults from the function_defaults table
+	const functionDefaultsList = await getFunctionDefaults();
 
-	let settings = DEFAULT_SETTINGS;
-	if (settingsRow.length > 0) {
-		try {
-			const parsed = JSON.parse(settingsRow[0].value) as unknown;
-			if (parsed && typeof parsed === 'object') {
-				settings = { ...DEFAULT_SETTINGS, ...parsed } as FunctionDefaultsSettings;
-			}
-		} catch {
-			// Use defaults if parse fails
+	// Convert array to object keyed by functionType
+	// modelId format is 'providerID/modelID' - we'll extract providerId from it
+	const settings: FunctionDefaultsSettings = { ...DEFAULT_SETTINGS };
+	for (const def of functionDefaultsList) {
+		if (
+			def.functionType === 'executor' ||
+			def.functionType === 'judge' ||
+			def.functionType === 'improve'
+		) {
+			const modelParts = def.modelId.split('/');
+			const providerId = modelParts.length > 1 ? modelParts[0] : undefined;
+			const modelId = modelParts.length > 1 ? modelParts.slice(1).join('/') : def.modelId;
+
+			settings[def.functionType] = {
+				type: def.functionType,
+				modelId: modelId,
+				providerId: providerId,
+				temperature: def.temperature,
+				maxTokens: def.maxTokens,
+				promptId: def.promptId ?? undefined
+			};
 		}
 	}
 

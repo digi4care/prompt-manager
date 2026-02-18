@@ -183,11 +183,10 @@
 		try {
 			const types = ['executor', 'judge', 'improve'] as const;
 			for (const type of types) {
-				const response = await fetch('/api/settings/defaults', {
-					method: 'POST',
+				const response = await fetch(`/api/admin/function-defaults/${type}`, {
+					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						type,
 						modelId: functionDefaults[type].modelId,
 						modelName: functionDefaults[type].modelName,
 						temperature: functionDefaults[type].temperature,

@@ -128,21 +128,41 @@
 		improve: { modelId: '', modelName: '', temperature: 0.5, maxTokens: 4096 }
 	});
 
+	// Track if there are unsaved changes
+	let isDirty = $state(false);
+	let isSaving = $state(false);
+
+	// Helper to resolve model name from model ID
+	function resolveModelName(modelId: string | null): string {
+		if (!modelId) return '';
+		const model = data.models?.find((m) => m.id === modelId);
+		return model?.name || modelId;
+	}
+
 	// Initialize function defaults from server data
 	$effect(() => {
 		if (data.settings?.executor) {
-			functionDefaults.executor = { ...data.settings.executor };
+			functionDefaults.executor = {
+				...data.settings.executor,
+				modelName: resolveModelName(data.settings.executor.modelId)
+			};
 		}
 		if (data.settings?.judge) {
-			functionDefaults.judge = { ...data.settings.judge };
+			functionDefaults.judge = {
+				...data.settings.judge,
+				modelName: resolveModelName(data.settings.judge.modelId)
+			};
 		}
 		if (data.settings?.improve) {
-			functionDefaults.improve = { ...data.settings.improve };
+			functionDefaults.improve = {
+				...data.settings.improve,
+				modelName: resolveModelName(data.settings.improve.modelId)
+			};
 		}
 	});
 
-	// Handler for model selection
-	async function handleModelSelect(
+	// Handler for model selection (marks as dirty, doesn't save yet)
+	function handleModelSelect(
 		type: 'executor' | 'judge' | 'improve',
 		model: { id: string; name: string; provider: string }
 	) {
@@ -152,26 +172,38 @@
 			modelId: model.id,
 			modelName: model.name
 		};
+		isDirty = true;
+	}
 
-		// Save to server
+	// Save all function defaults to server
+	async function saveFunctionDefaults() {
+		if (isSaving) return;
+		isSaving = true;
+
 		try {
-			const response = await fetch('/api/settings/defaults', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					type,
-					modelId: model.id,
-					modelName: model.name,
-					temperature: functionDefaults[type].temperature,
-					maxTokens: functionDefaults[type].maxTokens
-				})
-			});
+			const types = ['executor', 'judge', 'improve'] as const;
+			for (const type of types) {
+				const response = await fetch('/api/settings/defaults', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						type,
+						modelId: functionDefaults[type].modelId,
+						modelName: functionDefaults[type].modelName,
+						temperature: functionDefaults[type].temperature,
+						maxTokens: functionDefaults[type].maxTokens
+					})
+				});
 
-			if (!response.ok) {
-				console.error('Failed to save model selection');
+				if (!response.ok) {
+					console.error(`Failed to save ${type} settings`);
+				}
 			}
+			isDirty = false;
 		} catch (error) {
-			console.error('Error saving model selection:', error);
+			console.error('Error saving function defaults:', error);
+		} finally {
+			isSaving = false;
 		}
 	}
 
@@ -318,8 +350,7 @@
 										prompts={data.prompts}
 										models={data.models}
 										allowedModels={data.allowedModels}
-										onselect={(modelId, modelName) =>
-											handleModelSelect('executor', modelId, modelName)}
+										onselect={(model) => handleModelSelect('executor', model)}
 									/>
 
 									<FunctionSettingsCard
@@ -336,7 +367,7 @@
 										prompts={data.prompts}
 										models={data.models}
 										allowedModels={data.allowedModels}
-										onselect={(modelId, modelName) => handleModelSelect('judge', model)}
+										onselect={(model) => handleModelSelect('judge', model)}
 									/>
 
 									{#if data.settings?.improve}
@@ -346,11 +377,11 @@
 											description="Improves prompts"
 											modelId={functionDefaults.improve.modelId}
 											modelName={functionDefaults.improve.modelName}
-											modelProvider={functionDefaults.improve.modelProvider}
-											modelLogo={functionDefaults.improve.modelLogo}
+											modelProvider={data.settings?.improve?.modelProvider}
+											modelLogo={data.settings?.improve?.modelLogo}
 											temperature={functionDefaults.improve.temperature}
 											maxTokens={functionDefaults.improve.maxTokens}
-											promptTemplate={functionDefaults.improve.promptTemplate}
+											promptTemplate={data.settings?.improve?.promptTemplate}
 											prompts={data.prompts}
 											models={data.models}
 											allowedModels={data.allowedModels}
@@ -376,6 +407,22 @@
 												allowedModels={data.allowedModels}
 											/>
 										{/each}
+									{/if}
+
+									<!-- Save Button -->
+									{#if isDirty}
+										<div
+											class="flex justify-end border-t border-gray-200 pt-4 dark:border-gray-700"
+										>
+											<button
+												type="button"
+												class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+												onclick={saveFunctionDefaults}
+												disabled={isSaving}
+											>
+												{isSaving ? 'Saving...' : 'Save Changes'}
+											</button>
+										</div>
 									{/if}
 								</div>
 							{:else if section.id === 'catalog'}

@@ -370,7 +370,7 @@
 							stroke-width="2"
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							class="text-green-500"
+							class="text-primary"
 						>
 							<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
 							<polyline points="22 4 12 14.01 9 11.01" />
@@ -379,14 +379,10 @@
 					</h3>
 
 					<div class="space-y-4">
-						<div
-							class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20"
-						>
+						<div class="rounded-lg border border-border bg-muted p-4">
 							<div class="mb-2 flex items-center justify-between">
 								<span class="font-medium">Version {selectedVariant.version}</span>
-								<span
-									class="rounded-full bg-green-100 px-2 py-0.5 text-xs capitalize dark:bg-green-900/40"
-								>
+								<span class="rounded-full bg-secondary px-2 py-0.5 text-xs capitalize">
 									{selectedVariant.changeType}
 								</span>
 							</div>

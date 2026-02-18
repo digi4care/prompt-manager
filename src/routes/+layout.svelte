@@ -9,7 +9,7 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<div class="min-h-screen bg-background">
+<div class="min-h-screen bg-background text-foreground">
 	<!-- Header -->
 	<div class="mx-auto max-w-[1440px]">
 		<Header />

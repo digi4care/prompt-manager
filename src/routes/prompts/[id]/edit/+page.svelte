@@ -703,7 +703,7 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 							{#if isExpanded}
 								<div class="border-t p-4">
 									<pre
-										class="overflow-x-auto rounded bg-muted/50 p-3 text-sm whitespace-pre-wrap">{variant.content}</pre>
+										class="overflow-x-auto rounded border bg-muted p-3 text-sm whitespace-pre-wrap">{variant.content}</pre>
 									<div class="mt-3 flex justify-end">
 										<Button size="sm" onclick={() => handleSelectVariant(variant)}>
 											Use This Variant

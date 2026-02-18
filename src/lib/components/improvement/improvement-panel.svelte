@@ -568,7 +568,7 @@
 							<div
 								class={cn(
 									'flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold',
-									'border-4',
+									'border-2 border-border',
 									overallScore >= 80
 										? 'border-green-500 text-green-600 dark:text-green-400'
 										: overallScore >= 60

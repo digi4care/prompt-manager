@@ -164,13 +164,14 @@
 					</TabsTrigger>
 					<TabsTrigger value="2fa" class="flex items-center gap-2">
 						{#if twoFactorEnabled}
-							<ShieldCheck class="h-4 w-4 text-green-500" />
+							<ShieldCheck class="h-4 w-4 text-primary" />
 						{:else}
 							<Shield class="h-4 w-4" />
 						{/if}
 						2FA
 						{#if twoFactorEnabled}
-							<span class="ml-1 rounded-full bg-green-500 px-1.5 py-0.5 text-[10px] text-white"
+							<span
+								class="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground"
 								>On</span
 							>
 						{/if}
@@ -304,7 +305,7 @@
 										<img
 											src={qrCodeDataUrl}
 											alt="2FA QR Code"
-											class="rounded-lg border bg-white p-2"
+											class="rounded-lg border bg-card p-2"
 										/>
 									{:else}
 										<p class="rounded-md bg-muted p-3 text-xs break-all">{totpURI}</p>
@@ -313,12 +314,8 @@
 							</div>
 
 							{#if backupCodes.length > 0}
-								<div
-									class="rounded-lg border border-amber-500/20 bg-amber-50 p-4 dark:bg-amber-950/20"
-								>
-									<p class="text-sm font-medium text-amber-600 dark:text-amber-400">
-										Step 2: Save Backup Codes
-									</p>
+								<div class="rounded-lg border border-border bg-muted p-4">
+									<p class="text-sm font-medium text-foreground">Step 2: Save Backup Codes</p>
 									<p class="mt-1 text-xs text-muted-foreground">
 										Store these safely - they're your recovery option
 									</p>
@@ -358,10 +355,10 @@
 						</div>
 					{:else if twoFactorEnabled}
 						<!-- 2FA Enabled Status -->
-						<div class="mb-4 flex items-center gap-3 rounded-lg bg-green-500/10 p-4">
-							<ShieldCheck class="h-8 w-8 text-green-500" />
+						<div class="mb-4 flex items-center gap-3 rounded-lg bg-muted p-4">
+							<ShieldCheck class="h-8 w-8 text-primary" />
 							<div>
-								<p class="font-medium text-green-600 dark:text-green-400">2FA is enabled</p>
+								<p class="font-medium text-foreground">2FA is enabled</p>
 								<p class="text-sm text-muted-foreground">Your account is protected</p>
 							</div>
 						</div>

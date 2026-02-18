@@ -138,7 +138,7 @@
 					{#if data.prompt.llmProviders && data.prompt.llmProviders.length > 0}
 						{#each data.prompt.llmProviders as provider}
 							<span
-								class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/60 dark:text-green-300"
+								class="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-medium"
 							>
 								{provider}
 							</span>

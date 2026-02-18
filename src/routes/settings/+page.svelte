@@ -132,27 +132,27 @@
 
 	// Map colors to actual Tailwind classes (Tailwind can't compile dynamic classes)
 	const leftBorderClasses: Record<string, string> = {
-		sapphire: 'border-l-sapphire',
-		mauve: 'border-l-mauve',
-		green: 'border-l-green',
-		peach: 'border-l-peach',
-		pink: 'border-l-pink'
+		sapphire: 'border-l-primary',
+		mauve: 'border-l-primary',
+		green: 'border-l-primary',
+		peach: 'border-l-primary',
+		pink: 'border-l-primary'
 	};
 
 	const bgClasses: Record<string, string> = {
-		sapphire: 'bg-sapphire/20',
-		mauve: 'bg-mauve/20',
-		green: 'bg-green/20',
-		peach: 'bg-peach/20',
-		pink: 'bg-pink/20'
+		sapphire: 'bg-secondary',
+		mauve: 'bg-secondary',
+		green: 'bg-secondary',
+		peach: 'bg-secondary',
+		pink: 'bg-secondary'
 	};
 
 	const textClasses: Record<string, string> = {
-		sapphire: 'text-sapphire',
-		mauve: 'text-mauve',
-		green: 'text-green',
-		peach: 'text-peach',
-		pink: 'text-pink'
+		sapphire: 'text-primary',
+		mauve: 'text-primary',
+		green: 'text-primary',
+		peach: 'text-primary',
+		pink: 'text-primary'
 	};
 
 	function getColorClasses(color: string): {
@@ -161,9 +161,9 @@
 		text: string;
 	} {
 		return {
-			leftBorder: leftBorderClasses[color] || 'border-l-sapphire',
-			bg: bgClasses[color] || 'bg-sapphire/20',
-			text: textClasses[color] || 'text-sapphire'
+			leftBorder: leftBorderClasses[color] || 'border-l-primary',
+			bg: bgClasses[color] || 'bg-secondary',
+			text: textClasses[color] || 'text-primary'
 		};
 	}
 </script>
@@ -172,17 +172,15 @@
 	<title>Settings - Admin</title>
 </svelte:head>
 
-<div class="from-surface-0 to-surface-1 min-h-screen bg-gradient-to-br via-background">
+<div class="min-h-screen bg-background">
 	<div class="container mx-auto px-4 py-6 md:py-10">
 		<!-- Header -->
 		<div class="mb-6 flex items-center gap-4 md:mb-8">
-			<div
-				class="bg-gradient-mauve shadow-elevated flex h-12 w-12 items-center justify-center rounded-xl"
-			>
-				<Settings class="size-6 text-white" />
+			<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-md">
+				<Settings class="size-6 text-primary-foreground" />
 			</div>
 			<div>
-				<h1 class="text-2xl font-bold tracking-tight md:text-3xl">Settings</h1>
+				<h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Settings</h1>
 				<p class="text-sm text-muted-foreground md:text-base">
 					Configure your workspace preferences
 				</p>
@@ -195,14 +193,14 @@
 				{@const isOpen = openAccordions.has(section.id)}
 				{@const colors = getColorClasses(section.color)}
 				<div
-					class="bg-surface-1 overflow-hidden rounded-xl shadow-card transition-all duration-200 {isOpen
-						? 'shadow-elevated'
+					class="overflow-hidden rounded-xl bg-card shadow-md transition-all duration-200 {isOpen
+						? 'shadow-lg'
 						: ''}"
 				>
 					<!-- Accordion Header with colored left border -->
 					<button
 						type="button"
-						class="group hover:bg-surface-2 flex w-full cursor-pointer items-center gap-4 p-4 text-left transition-colors md:p-5 {isOpen
+						class="group flex w-full cursor-pointer items-center gap-4 p-4 text-left transition-colors hover:bg-muted md:p-5 {isOpen
 							? 'rounded-tl-xl rounded-tr-xl'
 							: 'rounded-xl'}"
 						onclick={() => toggleAccordion(section.id)}
@@ -225,7 +223,7 @@
 
 					<!-- Accordion Content -->
 					{#if isOpen}
-						<div class="border-surface-2 border-t p-4 md:p-5">
+						<div class="border-t border-border p-4 md:p-5">
 							{#if section.id === 'connection'}
 								<ConnectionSettings />
 							{:else if section.id === 'providers'}

@@ -21,7 +21,9 @@
 	let selectedTags: string[] = $state([]);
 	let selectedPurpose: string = $state($page.url.searchParams.get('purpose') || '');
 	let sortField: string = $state($page.url.searchParams.get('sort') || 'updatedAt');
-	let sortDirection: 'asc' | 'desc' = $state(($page.url.searchParams.get('direction') as 'asc' | 'desc') || 'desc');
+	let sortDirection: 'asc' | 'desc' = $state(
+		($page.url.searchParams.get('direction') as 'asc' | 'desc') || 'desc'
+	);
 
 	// Bulk actions state
 	let isBulkMode: boolean = $state(false);
@@ -159,7 +161,7 @@
 		try {
 			const response = await fetch(`/api/prompts/${promptToDelete.id}`, {
 				method: 'DELETE',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json' }
 			});
 
 			if (response.ok) {
@@ -192,7 +194,7 @@
 			const response = await fetch('/api/prompts/bulk-delete', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ ids: Array.from(selectedPromptIds) }),
+				body: JSON.stringify({ ids: Array.from(selectedPromptIds) })
 			});
 
 			if (response.ok) {
@@ -220,7 +222,7 @@
 
 <div class="flex h-full gap-6 p-6">
 	<!-- Main Content -->
-	<div class="flex-1 flex flex-col min-w-0">
+	<div class="flex min-w-0 flex-1 flex-col">
 		<!-- Header -->
 		<div class="mb-6 flex flex-col gap-4">
 			<div class="flex items-center justify-between">
@@ -231,7 +233,7 @@
 						{isBulkMode ? 'Done' : 'Bulk Select'}
 					</Button>
 					{#if isBulkMode && selectedPromptIds.size > 0}
-						<Button variant="destructive" onclick={() => showBulkDeleteConfirm = true}>
+						<Button variant="destructive" onclick={() => (showBulkDeleteConfirm = true)}>
 							<Trash2 class="mr-2 h-4 w-4" />
 							Delete ({selectedPromptIds.size})
 						</Button>
@@ -245,8 +247,8 @@
 
 			<!-- Search and Controls -->
 			<div class="flex flex-wrap items-center gap-3">
-				<div class="relative flex-1 min-w-[200px]">
-					<Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+				<div class="relative min-w-[200px] flex-1">
+					<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						placeholder="Search prompts..."
 						bind:value={searchQuery}
@@ -258,14 +260,14 @@
 					<Button
 						variant={viewMode === 'grid' ? 'default' : 'outline'}
 						size="icon"
-						onclick={() => viewMode = 'grid'}
+						onclick={() => (viewMode = 'grid')}
 					>
 						<LayoutGrid class="h-4 w-4" />
 					</Button>
 					<Button
 						variant={viewMode === 'table' ? 'default' : 'outline'}
 						size="icon"
-						onclick={() => viewMode = 'table'}
+						onclick={() => (viewMode = 'table')}
 					>
 						<Table class="h-4 w-4" />
 					</Button>
@@ -277,7 +279,8 @@
 				<div class="flex items-center gap-2 rounded-lg border bg-muted p-3">
 					<input
 						type="checkbox"
-						checked={selectedPromptIds.size === filteredPrompts.length && filteredPrompts.length > 0}
+						checked={selectedPromptIds.size === filteredPrompts.length &&
+							filteredPrompts.length > 0}
 						onchange={toggleSelectAll}
 						class="h-4 w-4"
 					/>
@@ -313,8 +316,8 @@
 			{:else}
 				<PromptTable
 					prompts={filteredPrompts}
-					isBulkMode={isBulkMode}
-					selectedPromptIds={selectedPromptIds}
+					{isBulkMode}
+					{selectedPromptIds}
 					onToggleSelection={togglePromptSelection}
 					onedit={handleEdit}
 					ondelete={handleDelete}
@@ -349,7 +352,10 @@
 						variant={sortDirection === 'asc' ? 'default' : 'outline'}
 						size="sm"
 						class="flex-1"
-						onclick={() => { sortDirection = 'asc'; updateUrl(); }}
+						onclick={() => {
+							sortDirection = 'asc';
+							updateUrl();
+						}}
 					>
 						Asc
 					</Button>
@@ -357,7 +363,10 @@
 						variant={sortDirection === 'desc' ? 'default' : 'outline'}
 						size="sm"
 						class="flex-1"
-						onclick={() => { sortDirection = 'desc'; updateUrl(); }}
+						onclick={() => {
+							sortDirection = 'desc';
+							updateUrl();
+						}}
 					>
 						Desc
 					</Button>
@@ -388,10 +397,13 @@
 				<div class="flex flex-wrap gap-2">
 					{#each allTags as tag}
 						<button
-							class="rounded-full px-3 py-1 text-xs transition-colors {selectedTags.includes(tag) 
-								? 'bg-primary text-primary-foreground' 
+							class="rounded-full px-3 py-1 text-xs transition-colors {selectedTags.includes(tag)
+								? 'bg-primary text-primary-foreground'
 								: 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}"
-							onclick={() => { toggleTag(tag); updateUrl(); }}
+							onclick={() => {
+								toggleTag(tag);
+								updateUrl();
+							}}
 						>
 							{tag}
 						</button>
@@ -401,9 +413,7 @@
 		{/if}
 
 		<!-- Clear Filters -->
-		<Button variant="outline" class="w-full" onclick={clearFilters}>
-			Clear Filters
-		</Button>
+		<Button variant="outline" class="w-full" onclick={clearFilters}>Clear Filters</Button>
 
 		<!-- Quick Actions -->
 		<div class="space-y-3 border-t pt-6">
@@ -424,24 +434,20 @@
 
 <!-- Inline Delete Confirmation -->
 {#if showDeleteConfirm && promptToDelete}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
 		<div class="w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
-			<div class="flex items-center justify-between mb-4">
+			<div class="mb-4 flex items-center justify-between">
 				<h3 class="text-lg font-semibold">Delete Prompt</h3>
 				<button onclick={cancelDelete} class="rounded p-1 hover:bg-muted">
 					<X class="h-4 w-4" />
 				</button>
 			</div>
-			<p class="text-sm text-muted-foreground mb-6">
+			<p class="mb-6 text-sm text-muted-foreground">
 				Are you sure you want to delete "{promptToDelete.title}"? This action cannot be undone.
 			</p>
 			<div class="flex justify-end gap-2">
-				<Button variant="outline" onclick={cancelDelete}>
-					Cancel
-				</Button>
-				<Button variant="destructive" onclick={confirmDelete}>
-					Delete
-				</Button>
+				<Button variant="outline" onclick={cancelDelete}>Cancel</Button>
+				<Button variant="destructive" onclick={confirmDelete}>Delete</Button>
 			</div>
 		</div>
 	</div>
@@ -449,24 +455,20 @@
 
 <!-- Inline Bulk Delete Confirmation -->
 {#if showBulkDeleteConfirm}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
 		<div class="w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
-			<div class="flex items-center justify-between mb-4">
+			<div class="mb-4 flex items-center justify-between">
 				<h3 class="text-lg font-semibold">Delete Multiple Prompts</h3>
 				<button onclick={cancelBulkDelete} class="rounded p-1 hover:bg-muted">
 					<X class="h-4 w-4" />
 				</button>
 			</div>
-			<p class="text-sm text-muted-foreground mb-6">
+			<p class="mb-6 text-sm text-muted-foreground">
 				Are you sure you want to delete {selectedPromptIds.size} prompts? This action cannot be undone.
 			</p>
 			<div class="flex justify-end gap-2">
-				<Button variant="outline" onclick={cancelBulkDelete}>
-					Cancel
-				</Button>
-				<Button variant="destructive" onclick={handleBulkDelete}>
-					Delete All
-				</Button>
+				<Button variant="outline" onclick={cancelBulkDelete}>Cancel</Button>
+				<Button variant="destructive" onclick={handleBulkDelete}>Delete All</Button>
 			</div>
 		</div>
 	</div>

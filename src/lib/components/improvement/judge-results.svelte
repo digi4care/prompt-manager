@@ -40,9 +40,24 @@
 
 	// Score criteria for display
 	const criteria = $derived([
-		{ key: 'clarity' as const, label: 'Clarity', description: 'Is the prompt clear and unambiguous?', score: evaluation.clarity },
-		{ key: 'completeness' as const, label: 'Completeness', description: 'Does it include all necessary context?', score: evaluation.completeness },
-		{ key: 'specificity' as const, label: 'Specificity', description: 'Are instructions specific and actionable?', score: evaluation.specificity }
+		{
+			key: 'clarity' as const,
+			label: 'Clarity',
+			description: 'Is the prompt clear and unambiguous?',
+			score: evaluation.clarity
+		},
+		{
+			key: 'completeness' as const,
+			label: 'Completeness',
+			description: 'Does it include all necessary context?',
+			score: evaluation.completeness
+		},
+		{
+			key: 'specificity' as const,
+			label: 'Specificity',
+			description: 'Are instructions specific and actionable?',
+			score: evaluation.specificity
+		}
 	]);
 
 	// Get score color based on value
@@ -77,10 +92,10 @@
 
 	// Find min/max for chart scaling
 	const chartMin = $derived(
-		chartData.length > 0 ? Math.min(...chartData.map(d => d.qualityScore)) - 10 : 0
+		chartData.length > 0 ? Math.min(...chartData.map((d) => d.qualityScore)) - 10 : 0
 	);
 	const chartMax = $derived(
-		chartData.length > 0 ? Math.max(...chartData.map(d => d.qualityScore)) + 10 : 100
+		chartData.length > 0 ? Math.max(...chartData.map((d) => d.qualityScore)) + 10 : 100
 	);
 
 	// Calculate bar position (0-100 scale based on min/max)
@@ -97,7 +112,7 @@
 		<div
 			class={cn(
 				'flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold',
-				'border-4',
+				'border-2 border-border',
 				overallScore >= 80
 					? 'border-green-500 text-green-600 dark:text-green-400'
 					: overallScore >= 60
@@ -146,7 +161,7 @@
 	{#if evaluation.gaps.length > 0}
 		<Card>
 			<CardHeader>
-				<CardTitle class="text-base flex items-center gap-2">
+				<CardTitle class="flex items-center gap-2 text-base">
 					<svg
 						class="h-4 w-4 text-amber-500"
 						xmlns="http://www.w3.org/2000/svg"
@@ -169,7 +184,8 @@
 				<ul class="space-y-2" role="list" aria-label="Identified gaps">
 					{#each evaluation.gaps as gap, index (index)}
 						<li class="flex items-start gap-2">
-							<span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden="true"></span>
+							<span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true"
+							></span>
 							<span class="text-sm text-muted-foreground">{gap}</span>
 						</li>
 					{/each}
@@ -182,7 +198,7 @@
 	{#if evaluation.recommendations.length > 0}
 		<Card>
 			<CardHeader>
-				<CardTitle class="text-base flex items-center gap-2">
+				<CardTitle class="flex items-center gap-2 text-base">
 					<svg
 						class="h-4 w-4 text-blue-500"
 						xmlns="http://www.w3.org/2000/svg"
@@ -205,7 +221,8 @@
 				<ul class="space-y-2" role="list" aria-label="Recommendations">
 					{#each evaluation.recommendations as rec, index (index)}
 						<li class="flex items-start gap-2">
-							<span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" aria-hidden="true"></span>
+							<span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" aria-hidden="true"
+							></span>
 							<span class="text-sm text-muted-foreground">{rec}</span>
 						</li>
 					{/each}
@@ -233,12 +250,12 @@
 						{#each chartData as data (data.versionId)}
 							{@const position = getBarPosition(data.qualityScore)}
 							<div class="group relative flex items-center gap-3">
-								<span class="w-12 text-xs text-muted-foreground truncate">
+								<span class="w-12 truncate text-xs text-muted-foreground">
 									v{data.version}
 								</span>
-								<div class="flex-1 h-6 bg-muted rounded-md overflow-hidden relative">
+								<div class="relative h-6 flex-1 overflow-hidden rounded-md bg-muted">
 									<div
-										class="absolute left-0 top-0 h-full rounded-md transition-all duration-300"
+										class="absolute top-0 left-0 h-full rounded-md transition-all duration-300"
 										class:bg-green-500={data.qualityScore >= 80}
 										class:bg-yellow-500={data.qualityScore >= 60 && data.qualityScore < 80}
 										class:bg-red-500={data.qualityScore < 60}
@@ -252,19 +269,19 @@
 										{data.qualityScore}
 									</span>
 								</div>
-								<span class="w-8 text-xs text-right text-muted-foreground">
+								<span class="w-8 text-right text-xs text-muted-foreground">
 									{formatDateString(new Date(data.createdAt), dateFormatStore.format)}
 								</span>
 
 								<!-- Tooltip -->
 								<div
-									class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 bg-popover border rounded-md p-2 shadow-md text-xs whitespace-nowrap"
+									class="absolute bottom-full left-0 z-10 mb-2 hidden rounded-md border bg-popover p-2 text-xs whitespace-nowrap shadow-md group-hover:block"
 								>
 									<div class="font-medium">v{data.version}</div>
 									<div class="text-muted-foreground">
 										Created: {formatDateString(new Date(data.createdAt), dateFormatStore.format)}
 									</div>
-									<div class="grid grid-cols-3 gap-2 mt-1">
+									<div class="mt-1 grid grid-cols-3 gap-2">
 										<span>Clarity: {data.clarity}</span>
 										<span>Complete: {data.completeness}</span>
 										<span>Specific: {data.specificity}</span>
@@ -275,22 +292,22 @@
 					</div>
 
 					<!-- Score distribution summary -->
-					<div class="grid grid-cols-3 gap-2 pt-2 border-t">
+					<div class="grid grid-cols-3 gap-2 border-t pt-2">
 						<div class="text-center">
 							<div class="text-lg font-semibold text-green-600 dark:text-green-400">
-								{historicalScores.filter(d => d.qualityScore >= 80).length}
+								{historicalScores.filter((d) => d.qualityScore >= 80).length}
 							</div>
 							<div class="text-xs text-muted-foreground">Good+</div>
 						</div>
 						<div class="text-center">
 							<div class="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
-								{historicalScores.filter(d => d.qualityScore >= 60 && d.qualityScore < 80).length}
+								{historicalScores.filter((d) => d.qualityScore >= 60 && d.qualityScore < 80).length}
 							</div>
 							<div class="text-xs text-muted-foreground">Fair</div>
 						</div>
 						<div class="text-center">
 							<div class="text-lg font-semibold text-red-600 dark:text-red-400">
-								{historicalScores.filter(d => d.qualityScore < 60).length}
+								{historicalScores.filter((d) => d.qualityScore < 60).length}
 							</div>
 							<div class="text-xs text-muted-foreground">Needs Work</div>
 						</div>

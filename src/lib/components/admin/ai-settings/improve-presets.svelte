@@ -464,7 +464,7 @@
 				<span>Loading presets...</span>
 			</div>
 		{:else if error}
-			<div class="text-sm text-red-600 dark:text-red-400">
+			<div class="text-sm text-destructive">
 				<p>Failed to load presets: {error}</p>
 			</div>
 		{:else if isCreating || editingPreset}

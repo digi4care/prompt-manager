@@ -43,17 +43,17 @@
 	}
 </script>
 
-<div class="container mx-auto py-6 space-y-6" data-testid="analytics-page">
+<div class="container mx-auto space-y-6 py-6" data-testid="analytics-page">
 	<!-- Page Header -->
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
-			<p class="text-muted-foreground mt-1" data-testid="analytics-description">
+			<p class="mt-1 text-muted-foreground" data-testid="analytics-description">
 				Track your prompt management patterns and performance metrics
 			</p>
 		</div>
 		<Button onclick={handleExportAll} variant="outline" data-testid="export-all-button">
-			<Download class="h-4 w-4 mr-2" />
+			<Download class="mr-2 h-4 w-4" />
 			Export All
 		</Button>
 	</div>
@@ -90,15 +90,15 @@
 				{#if data.topPrompts.length > 0}
 					<ul class="space-y-3" data-testid="top-prompts-list">
 						{#each data.topPrompts as prompt}
-							<li class="flex items-center justify-between py-2 border-b last:border-0">
+							<li class="flex items-center justify-between border-b py-2 last:border-0">
 								<div class="flex-1">
 									<a
 										href="/prompts/{prompt.id}"
-										class="font-medium hover:text-primary transition-colors"
+										class="font-medium transition-colors hover:text-primary"
 									>
 										{prompt.title}
 									</a>
-									<p class="text-xs text-muted-foreground mt-1">
+									<p class="mt-1 text-xs text-muted-foreground">
 										Last updated: {formatDate(prompt.lastUpdated)}
 									</p>
 								</div>
@@ -111,11 +111,9 @@
 					</ul>
 				{:else}
 					<div class="py-8 text-center" data-testid="top-prompts-empty">
-						<TrendingUp class="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+						<TrendingUp class="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
 						<p class="text-sm text-muted-foreground">No prompts yet</p>
-						<p class="text-xs text-muted-foreground mt-1">
-							Create prompts to see usage statistics
-						</p>
+						<p class="mt-1 text-xs text-muted-foreground">Create prompts to see usage statistics</p>
 					</div>
 				{/if}
 			</CardContent>
@@ -133,27 +131,21 @@
 				{#if data.recentImprovements.length > 0}
 					<ul class="space-y-3" data-testid="recent-improvements-list">
 						{#each data.recentImprovements as improvement}
-							<li class="flex items-center justify-between py-2 border-b last:border-0">
+							<li class="flex items-center justify-between border-b py-2 last:border-0">
 								<div class="flex-1">
 									<a
 										href="/prompts/{improvement.promptId}"
-										class="font-medium hover:text-primary transition-colors"
+										class="font-medium transition-colors hover:text-primary"
 									>
 										{improvement.promptTitle}
 									</a>
-									<p class="text-xs text-muted-foreground mt-1">
+									<p class="mt-1 text-xs text-muted-foreground">
 										{formatDate(improvement.date)}
 									</p>
 								</div>
 								<div class="flex items-center gap-2">
 									<div
-										class="px-2 py-1 rounded text-xs font-medium"
-										class:bg-green-100={improvement.score >= 80}
-										class:text-green-800={improvement.score >= 80}
-										class:bg-yellow-100={improvement.score >= 60 && improvement.score < 80}
-										class:text-yellow-800={improvement.score >= 60 && improvement.score < 80}
-										class:bg-red-100={improvement.score < 60}
-										class:text-red-800={improvement.score < 60}
+										class="rounded rounded-md border bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
 									>
 										{improvement.score}%
 									</div>
@@ -163,9 +155,9 @@
 					</ul>
 				{:else}
 					<div class="py-8 text-center" data-testid="recent-improvements-empty">
-						<Calendar class="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+						<Calendar class="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
 						<p class="text-sm text-muted-foreground">No recent improvements</p>
-						<p class="text-xs text-muted-foreground mt-1">
+						<p class="mt-1 text-xs text-muted-foreground">
 							Use AI improvements to see recent activity
 						</p>
 					</div>

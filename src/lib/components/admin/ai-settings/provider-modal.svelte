@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { X, Search, Check, Link, Unlink } from 'lucide-svelte';
+	import { X, Search, Check, Link2, Unlink, KeyRound, ExternalLink } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
+	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 	import type { ProviderInfo } from '$lib/server/services/opencode.service';
 
 	interface Props {
@@ -73,132 +76,144 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
 		onclick={handleClose}
 	>
 		<div
 			bind:this={dialogElement}
-			class="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border bg-background shadow-xl"
+			class="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border bg-background shadow-2xl"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
 			onkeydown={handleDialogKeydown}
 			onclick={(e) => e.stopPropagation()}
 		>
-			<!-- Header -->
-			<div class="flex items-center justify-between border-b px-4 py-3">
-				<div>
-					<h2 class="text-lg font-semibold">Providers</h2>
-					<p class="text-sm text-muted-foreground">
-						{connectedProviders.length} verbonden van {providers.length}
-					</p>
+			<!-- Header with better visual hierarchy -->
+			<div class="border-b px-6 py-5">
+				<div class="flex items-start justify-between">
+					<div>
+						<h2 class="text-xl font-bold">Providers</h2>
+						<p class="mt-1 text-sm text-muted-foreground">
+							{connectedProviders.length} connected of {providers.length}
+						</p>
+					</div>
+					<button
+						type="button"
+						class="rounded-lg p-2 hover:bg-muted"
+						onclick={handleClose}
+						aria-label="Close"
+					>
+						<X class="size-5" />
+					</button>
 				</div>
-				<button
-					type="button"
-					class="cursor-pointer rounded-md p-1.5 hover:bg-muted"
-					onclick={handleClose}
-					aria-label="Sluiten"
-				>
-					<X class="size-5" />
-				</button>
 			</div>
 
-			<!-- Content -->
-			<div class="space-y-4 p-4">
-				<!-- Search -->
+			<!-- Content with better spacing -->
+			<div class="space-y-4 p-6">
+				<!-- Search with icon -->
 				<div class="relative">
 					<Search
-						class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+						class="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 					/>
-					<input
+					<Input
 						type="text"
 						bind:value={searchQuery}
-						placeholder="Zoek provider..."
-						class="w-full rounded-md border bg-background py-2 pr-3 pl-10 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+						placeholder="Search providers..."
+						class="pl-10"
 					/>
 				</div>
 
-				<!-- Provider list -->
-				<div class="max-h-[50vh] overflow-y-auto">
+				<!-- Provider list with better whitespace -->
+				<div class="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
 					{#if filteredProviders.length === 0}
-						<div class="rounded-md px-3 py-4 text-center text-sm text-muted-foreground">
-							Geen providers gevonden
+						<div class="rounded-lg bg-muted/20 px-4 py-8 text-center text-muted-foreground">
+							No providers found
 						</div>
 					{:else}
-						<dl class="space-y-2">
-							{#each filteredProviders as provider (provider.id)}
-								<div
-									class="flex cursor-pointer items-center justify-between gap-3 rounded-md border px-3 py-2 transition-colors {isConnected(
-										provider.id
-									)
-										? 'border-primary/50 bg-primary/5'
-										: 'border-border hover:bg-muted/50'}"
-									onclick={() => handleToggle(provider.id)}
-									onkeydown={(e) => e.key === 'Enter' && handleToggle(provider.id)}
-									role="button"
-									tabindex="0"
-								>
-									<dt class="min-w-0 flex-1">
+						{#each filteredProviders as provider (provider.id)}
+							{@const connected = isConnected(provider.id)}
+							<div
+								class="flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all {connected
+									? 'border-primary bg-muted'
+									: 'border-border hover:border-primary hover:bg-muted'}"
+								onclick={() => handleToggle(provider.id)}
+								onkeydown={(e) => e.key === 'Enter' && handleToggle(provider.id)}
+								role="button"
+								tabindex="0"
+							>
+								<div class="flex items-center gap-4">
+									<div
+										class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-muted"
+									>
+										<ProviderLogo providerId={provider.id} class="h-6 w-6" />
+									</div>
+									<div>
 										<div class="flex items-center gap-2">
 											<span class="font-medium">{provider.name}</span>
-											{#if isConnected(provider.id)}
-												<span
-													class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary"
-												>
-													Verbonden
-												</span>
+											{#if connectedProviders.includes(provider.id)}
+												<Badge variant="default" class="gap-1">
+													<Check class="h-3 w-3" />
+													Connected
+												</Badge>
 											{/if}
 										</div>
-										<span class="font-mono text-[11px] text-muted-foreground">
-											{provider.id}
-										</span>
-										{#if provider.models}
-											<span class="ml-2 text-xs text-muted-foreground">
-												{provider.models.length} models
-											</span>
-										{/if}
-									</dt>
-									<dd class="shrink-0">
-										{#if isProcessing === provider.id}
-											<span class="text-xs text-muted-foreground">...</span>
-										{:else if isConnected(provider.id)}
-											<button
-												onclick={(e) => {
-													e.stopPropagation();
-													handleToggle(provider.id);
-												}}
-												class="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20"
-												disabled={isProcessing !== null}
-											>
-												<Unlink class="size-3" />
-												Disconnect
-											</button>
-										{:else}
-											<button
-												onclick={(e) => {
-													e.stopPropagation();
-													handleToggle(provider.id);
-												}}
-												class="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-												disabled={isProcessing !== null}
-											>
-												<Link class="size-3" />
-												Connect
-											</button>
-										{/if}
-									</dd>
+										<div class="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+											<span class="font-mono">{provider.id}</span>
+											{#if provider.models}
+												<span class="text-muted-foreground/50">·</span>
+												<span>{provider.models.length} models</span>
+											{/if}
+										</div>
+									</div>
 								</div>
-							{/each}
-						</dl>
+								<div class="shrink-0">
+									{#if isProcessing === provider.id}
+										<span class="text-sm text-muted-foreground">Processing...</span>
+									{:else if connected}
+										<Button
+											variant="ghost"
+											size="sm"
+											onclick={(e: MouseEvent) => {
+												e.stopPropagation();
+												handleToggle(provider.id);
+											}}
+											disabled={isProcessing !== null}
+											class="gap-1 text-destructive hover:text-destructive"
+										>
+											<Unlink class="size-3" />
+											Disconnect
+										</Button>
+									{:else}
+										<Button
+											size="sm"
+											onclick={(e: MouseEvent) => {
+												e.stopPropagation();
+												handleToggle(provider.id);
+											}}
+											disabled={isProcessing !== null}
+											class="gap-1"
+										>
+											<Link2 class="size-3" />
+											Connect
+										</Button>
+									{/if}
+								</div>
+							</div>
+						{/each}
 					{/if}
 				</div>
 			</div>
 
 			<!-- Footer -->
-			<div class="flex justify-end gap-2 border-t px-4 py-3">
-				<Button variant="outline" onclick={handleClose} disabled={isProcessing !== null}
-					>Sluiten</Button
+			<div class="border-t px-6 py-4">
+				<Button
+					variant="outline"
+					onclick={handleClose}
+					disabled={isProcessing !== null}
+					class="w-full"
 				>
+					Close
+				</Button>
 			</div>
 		</div>
 	</div>

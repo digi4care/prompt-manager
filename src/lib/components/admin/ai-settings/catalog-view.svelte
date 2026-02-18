@@ -55,11 +55,13 @@
 	}
 
 	function getProviders(): ProviderInfo[] {
-		return catalog?.providers || [];
+		return (catalog?.providers as ProviderInfo[]) || [];
 	}
 
 	function getModelsForProvider(provider: ProviderInfo): ModelInfo[] {
-		return Object.values(provider.models || {}).filter((m) => m.status === 'active');
+		return Object.values((provider.models as Record<string, ModelInfo>) || {}).filter(
+			(m) => m.status === 'active'
+		);
 	}
 
 	function getModelCount(): number {
@@ -91,7 +93,7 @@
 			<span>Loading catalog...</span>
 		</div>
 	{:else if error}
-		<div class="text-sm text-red-600 dark:text-red-400">
+		<div class="text-sm text-destructive">
 			<p>Failed to load catalog: {error}</p>
 		</div>
 	{:else if catalog}
@@ -107,7 +109,7 @@
 			</div>
 
 			{#each getProviders() as provider}
-				<Collapsible title="{provider.name} ({Object.keys(provider.models).length} models)">
+				<Collapsible title="{provider.name} ({Object.keys(provider.models || {}).length} models)">
 					<div class="space-y-4">
 						<div class="flex flex-wrap items-center gap-2">
 							{#if provider.source}
@@ -124,7 +126,7 @@
 
 						<div class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 							{#each getModelsForProvider(provider) as model}
-								<ModelCatalogCard {model} {provider} />
+								<ModelCatalogCard {model} provider={provider.id} />
 							{/each}
 						</div>
 					</div>

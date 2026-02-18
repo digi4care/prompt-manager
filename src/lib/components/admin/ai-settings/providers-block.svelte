@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Check, Plus, RefreshCw, Server, X } from 'lucide-svelte';
+	import { Check, Plus, RefreshCw, X } from 'lucide-svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { providers, type Provider } from '$lib/stores/providers.svelte';
+	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 
 	// Local state
 	let showProviderModal = $state(false);
@@ -238,7 +239,7 @@
 						class="flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-3 py-2"
 					>
 						<div class="flex items-center gap-3">
-							<Server class="h-4 w-4 text-primary" />
+							<ProviderLogo providerId={provider.id} name={provider.name} size="sm" />
 							<div>
 								<div class="text-sm font-medium">{provider.name}</div>
 								<dl class="flex gap-3 text-xs text-muted-foreground">
@@ -335,7 +336,7 @@
 								onclick={() => !connected && handleConnectProvider(provider.id)}
 							>
 								<div class="flex items-center gap-3">
-									<Server class="h-4 w-4 text-muted-foreground" />
+									<ProviderLogo providerId={provider.id} name={provider.name} size="sm" />
 									<div>
 										<div class="text-sm font-medium">{provider.name}</div>
 										<dl class="flex gap-3 text-xs text-muted-foreground">

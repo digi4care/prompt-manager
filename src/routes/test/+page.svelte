@@ -556,7 +556,7 @@ Use standard SQL that works across PostgreSQL, MySQL, and SQL Server.`,
 			<div class="grid grid-cols-2 gap-4 md:grid-cols-5">
 				<div class="space-y-2">
 					<div
-						class="flex h-12 items-center justify-center rounded-md text-white"
+						class="flex h-12 items-center justify-center rounded-md text-primary-foreground"
 						style="background-color: hsl(240 11% 42%)"
 					>
 						<span class="text-lg font-medium">Aa</span>
@@ -566,7 +566,7 @@ Use standard SQL that works across PostgreSQL, MySQL, and SQL Server.`,
 				</div>
 				<div class="space-y-2">
 					<div
-						class="flex h-12 items-center justify-center rounded-md text-white"
+						class="flex h-12 items-center justify-center rounded-md text-primary-foreground"
 						style="background-color: hsl(240 10% 84%)"
 					>
 						<span class="text-lg font-medium">Aa</span>
@@ -576,7 +576,7 @@ Use standard SQL that works across PostgreSQL, MySQL, and SQL Server.`,
 				</div>
 				<div class="space-y-2">
 					<div
-						class="flex h-12 items-center justify-center rounded-md text-white"
+						class="flex h-12 items-center justify-center rounded-md text-primary-foreground"
 						style="background-color: hsl(240 9% 51%)"
 					>
 						<span class="text-lg font-medium">Aa</span>
@@ -586,7 +586,7 @@ Use standard SQL that works across PostgreSQL, MySQL, and SQL Server.`,
 				</div>
 				<div class="space-y-2">
 					<div
-						class="flex h-12 items-center justify-center rounded-md text-white"
+						class="flex h-12 items-center justify-center rounded-md text-primary-foreground"
 						style="background-color: hsl(240 5% 64%)"
 					>
 						<span class="text-lg font-medium">Aa</span>
@@ -596,7 +596,7 @@ Use standard SQL that works across PostgreSQL, MySQL, and SQL Server.`,
 				</div>
 				<div class="space-y-2">
 					<div
-						class="flex h-12 items-center justify-center rounded-md text-black"
+						class="flex h-12 items-center justify-center rounded-md text-foreground"
 						style="background-color: hsl(0 0% 100%)"
 					>
 						<span class="text-lg font-medium">Aa</span>

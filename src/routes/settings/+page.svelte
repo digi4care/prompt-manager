@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { invalidateAll } from '$app/navigation';
 	import { providers } from '$lib/stores/providers.svelte';
 	import {
 		Plug,
@@ -17,6 +18,13 @@
 	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
 	import ImprovePresets from '$lib/components/admin/ai-settings/improve-presets.svelte';
 	import FunctionSettingsCard from '$lib/components/admin/function-settings/FunctionSettingsCard.svelte';
+
+	interface SelectedModel {
+		id: string;
+		name: string;
+		provider: string;
+		logo?: string;
+	}
 
 	type Section = 'connection' | 'providers' | 'policy' | 'defaults' | 'catalog' | 'presets';
 
@@ -108,6 +116,64 @@
 
 	// Get data from server
 	let data = $derived($page.data);
+
+	// Local state for function defaults (for immediate UI updates)
+	let functionDefaults = $state<{
+		executor: { modelId: string; modelName: string; temperature: number; maxTokens: number };
+		judge: { modelId: string; modelName: string; temperature: number; maxTokens: number };
+		improve: { modelId: string; modelName: string; temperature: number; maxTokens: number };
+	}>({
+		executor: { modelId: '', modelName: '', temperature: 0.7, maxTokens: 4096 },
+		judge: { modelId: '', modelName: '', temperature: 0.3, maxTokens: 2048 },
+		improve: { modelId: '', modelName: '', temperature: 0.5, maxTokens: 4096 }
+	});
+
+	// Initialize function defaults from server data
+	$effect(() => {
+		if (data.settings?.executor) {
+			functionDefaults.executor = { ...data.settings.executor };
+		}
+		if (data.settings?.judge) {
+			functionDefaults.judge = { ...data.settings.judge };
+		}
+		if (data.settings?.improve) {
+			functionDefaults.improve = { ...data.settings.improve };
+		}
+	});
+
+	// Handler for model selection
+	async function handleModelSelect(
+		type: 'executor' | 'judge' | 'improve',
+		model: { id: string; name: string; provider: string }
+	) {
+		// Update local state immediately
+		functionDefaults[type] = {
+			...functionDefaults[type],
+			modelId: model.id,
+			modelName: model.name
+		};
+
+		// Save to server
+		try {
+			const response = await fetch('/api/settings/defaults', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					type,
+					modelId: model.id,
+					modelName: model.name,
+					temperature: functionDefaults[type].temperature,
+					maxTokens: functionDefaults[type].maxTokens
+				})
+			});
+
+			if (!response.ok) {
+				console.error('Failed to save model selection');
+			}
+		} catch (error) {
+			console.error('Error saving model selection:', error);
+		}
+	}
 
 	// Providers store - handles all provider state
 	// Initialize store with server data
@@ -238,57 +304,57 @@
 								<PolicyEditor />
 							{:else if section.id === 'defaults'}
 								<div class="space-y-6">
-									{#if data.settings?.executor}
-										<FunctionSettingsCard
-											type="executor"
-											label="Executor"
-											description="Runs prompt content"
-											modelId={data.settings.executor.modelId}
-											modelName={data.settings.executor.modelName}
-											modelProvider={data.settings.executor.modelProvider}
-											modelLogo={data.settings.executor.modelLogo}
-											temperature={data.settings.executor.temperature}
-											maxTokens={data.settings.executor.maxTokens}
-											promptTemplate={data.settings.executor.promptTemplate}
-											prompts={data.prompts}
-											models={data.models}
-											allowedModels={data.allowedModels}
-										/>
-									{/if}
+									<FunctionSettingsCard
+										type="executor"
+										label="Executor"
+										description="Runs prompt content"
+										modelId={functionDefaults.executor.modelId}
+										modelName={functionDefaults.executor.modelName}
+										modelProvider={data.settings?.executor?.modelProvider}
+										modelLogo={data.settings?.executor?.modelLogo}
+										temperature={functionDefaults.executor.temperature}
+										maxTokens={functionDefaults.executor.maxTokens}
+										promptTemplate={data.settings?.executor?.promptTemplate}
+										prompts={data.prompts}
+										models={data.models}
+										allowedModels={data.allowedModels}
+										onselect={(modelId, modelName) =>
+											handleModelSelect('executor', modelId, modelName)}
+									/>
 
-									{#if data.settings?.judge}
-										<FunctionSettingsCard
-											type="judge"
-											label="Judge"
-											description="Evaluates responses"
-											modelId={data.settings.judge.modelId}
-											modelName={data.settings.judge.modelName}
-											modelProvider={data.settings.judge.modelProvider}
-											modelLogo={data.settings.judge.modelLogo}
-											temperature={data.settings.judge.temperature}
-											maxTokens={data.settings.judge.maxTokens}
-											promptTemplate={data.settings.judge.promptTemplate}
-											prompts={data.prompts}
-											models={data.models}
-											allowedModels={data.allowedModels}
-										/>
-									{/if}
+									<FunctionSettingsCard
+										type="judge"
+										label="Judge"
+										description="Evaluates responses"
+										modelId={functionDefaults.judge.modelId}
+										modelName={functionDefaults.judge.modelName}
+										modelProvider={data.settings?.judge?.modelProvider}
+										modelLogo={data.settings?.judge?.modelLogo}
+										temperature={functionDefaults.judge.temperature}
+										maxTokens={functionDefaults.judge.maxTokens}
+										promptTemplate={data.settings?.judge?.promptTemplate}
+										prompts={data.prompts}
+										models={data.models}
+										allowedModels={data.allowedModels}
+										onselect={(modelId, modelName) => handleModelSelect('judge', model)}
+									/>
 
 									{#if data.settings?.improve}
 										<FunctionSettingsCard
 											type="improve"
 											label="Improve"
 											description="Improves prompts"
-											modelId={data.settings.improve.modelId}
-											modelName={data.settings.improve.modelName}
-											modelProvider={data.settings.improve.modelProvider}
-											modelLogo={data.settings.improve.modelLogo}
-											temperature={data.settings.improve.temperature}
-											maxTokens={data.settings.improve.maxTokens}
-											promptTemplate={data.settings.improve.promptTemplate}
+											modelId={functionDefaults.improve.modelId}
+											modelName={functionDefaults.improve.modelName}
+											modelProvider={functionDefaults.improve.modelProvider}
+											modelLogo={functionDefaults.improve.modelLogo}
+											temperature={functionDefaults.improve.temperature}
+											maxTokens={functionDefaults.improve.maxTokens}
+											promptTemplate={functionDefaults.improve.promptTemplate}
 											prompts={data.prompts}
 											models={data.models}
 											allowedModels={data.allowedModels}
+											onselect={(model) => handleModelSelect('improve', model)}
 										/>
 									{/if}
 

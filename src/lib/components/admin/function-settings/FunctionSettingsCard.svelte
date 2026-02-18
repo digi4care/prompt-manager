@@ -3,6 +3,13 @@
 	import { fly } from 'svelte/transition';
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 
+	interface Model {
+		id: string;
+		name: string;
+		provider: string;
+		logo?: string;
+	}
+
 	interface Props {
 		type: 'executor' | 'judge' | 'improve' | 'council';
 		label: string;
@@ -15,8 +22,9 @@
 		maxTokens?: number;
 		promptTemplate?: string | null;
 		prompts?: { id: string; title: string }[];
-		models?: { id: string; name: string; provider: string; logo?: string }[];
+		models?: Model[];
 		allowedModels?: string[];
+		onselect?: (model: Model) => void;
 	}
 
 	let {
@@ -32,7 +40,8 @@
 		promptTemplate = null,
 		prompts = [],
 		models = [],
-		allowedModels = []
+		allowedModels = [],
+		onselect
 	}: Props = $props();
 
 	let showModal = $state(false);
@@ -91,6 +100,11 @@
 	function closeModal() {
 		showModal = false;
 	}
+
+	function selectModel(model: { id: string; name: string; provider: string; logo?: string }) {
+		onselect?.(model);
+		closeModal();
+	}
 </script>
 
 <div class="rounded-lg border bg-card shadow-sm">
@@ -116,12 +130,8 @@
 					class="flex w-full items-center gap-3 rounded-md border bg-background p-3 hover:bg-accent"
 					onclick={openModal}
 				>
-					{#if modelLogo && modelProvider}
-						<ProviderLogo
-							providerId={modelProvider}
-							size="lg"
-							class="h-8 w-8 rounded-full bg-white p-1 dark:bg-gray-800"
-						/>
+					{#if modelProvider}
+						<ProviderLogo providerId={modelProvider} size="lg" />
 					{/if}
 					<div class="flex-1 text-left">
 						<div class="font-medium">{modelName}</div>
@@ -262,23 +272,9 @@
 							model.id
 								? 'border-primary bg-primary/5'
 								: ''}"
-							name="{type}-model"
-							value={model.id}
-							onclick={closeModal}
+							onclick={() => selectModel(model)}
 						>
-							{#if model.logo}
-								<ProviderLogo
-									providerId={model.provider}
-									size="lg"
-									class="h-8 w-8 rounded-full bg-white p-1 dark:bg-gray-800"
-								/>
-							{:else}
-								<div
-									class="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold"
-								>
-									{model.provider.slice(0, 2)}
-								</div>
-							{/if}
+							<ProviderLogo providerId={model.provider} size="lg" />
 							<div class="flex-1 text-left">
 								<div class="font-medium">{model.name}</div>
 								<div class="text-xs text-muted-foreground">{model.provider}</div>

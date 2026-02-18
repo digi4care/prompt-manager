@@ -1,8 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/client';
-import { adminSettings, opencodeConnection } from '$lib/server/db/schema';
+import { adminSettings, opencodeConnection, prompts } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { getAllProviders, getProviderCatalog } from '$lib/server/services/opencode.service';
+import {
+	getAllProviders,
+	getProviderCatalog,
+	type ProviderInfo
+} from '$lib/server/services/opencode.service';
 import { error, json } from '@sveltejs/kit';
 
 const SETTINGS_KEY = 'function_defaults';
@@ -27,6 +31,8 @@ interface CouncilAgent {
 	temperature: number;
 	maxTokens: number;
 	systemPrompt?: string;
+	modelLogo?: string;
+	promptTemplate?: string;
 }
 
 interface FunctionDefaultsSettings {
@@ -34,6 +40,7 @@ interface FunctionDefaultsSettings {
 	judge: FunctionDefault;
 	improve: FunctionDefault;
 	councilAgents: CouncilAgent[];
+	opencode_allowed_models?: string[];
 }
 
 const DEFAULT_SETTINGS: FunctionDefaultsSettings = {
@@ -69,6 +76,25 @@ export const load: PageServerLoad = async ({ url }) => {
 		}
 	}
 
+	// Load AI Policy settings to get allowed models
+	const policySettingsRow = await db
+		.select()
+		.from(adminSettings)
+		.where(eq(adminSettings.key, 'opencode_allowed_models'))
+		.limit(1);
+
+	let allowedModels: string[] = [];
+	if (policySettingsRow.length > 0) {
+		try {
+			const parsed = JSON.parse(policySettingsRow[0].value);
+			allowedModels = Array.isArray(parsed) ? parsed : [];
+			console.log('[Settings] Whitelist loaded:', allowedModels);
+		} catch (e) {
+			console.error('[Settings] Failed to parse policy settings:', e);
+		}
+	}
+	console.log('[Settings] Final allowedModels count:', allowedModels.length);
+
 	// Load connection status
 	const connectionRow = await db
 		.select()
@@ -77,6 +103,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		.limit(1);
 
 	const connection = connectionRow[0] ?? null;
+
+	// Load prompts for the dropdown
+	const promptsList = await db.select({ id: prompts.id, title: prompts.title }).from(prompts);
 
 	// Load all providers using cached service
 	let models: unknown[] = [];
@@ -91,14 +120,58 @@ export const load: PageServerLoad = async ({ url }) => {
 		connectedProviderIds = catalog.connected ?? [];
 		// Flatten providers to get all models
 		if (catalog.all && Array.isArray(catalog.all)) {
+			// Get selected provider IDs (connected ones)
+			const connectedIds = (catalog.connected ?? []).map((p: string) => p.toLowerCase());
+
+			const allProviderModels = catalog.all.flatMap((p: unknown) => {
+				const provider = p as ProviderInfo;
+				const providerModels = Object.values(provider.models ?? {});
+				return providerModels;
+			});
+			const totalModels = allProviderModels.length;
+
 			models = catalog.all.flatMap((p: unknown) => {
-				const provider = p as Record<string, unknown>;
-				const providerModels = (provider.models as unknown[]) ?? [];
-				return providerModels.map((m: unknown) => ({
-					...(m as Record<string, unknown>),
+				const provider = p as ProviderInfo;
+
+				// Only include models from selected/connected providers
+				if (!connectedIds.includes(provider.id.toLowerCase())) {
+					return [];
+				}
+
+				const providerModels = Object.values(provider.models ?? {});
+
+				// If whitelist exists, filter models by provider/model format
+				let filteredModels = providerModels;
+				if (allowedModels.length > 0) {
+					filteredModels = providerModels.filter((m) => {
+						// Use provider/model format for exact matching
+						const providerModelId = `${provider.id}/${m.id}`.toLowerCase();
+						const modelIdLower = m.id.toLowerCase();
+						return allowedModels.some((wl) => {
+							const wlLower = wl.toLowerCase();
+							// Match provider/model format (e.g., "openrouter/glm-4")
+							if (wlLower.includes('/')) {
+								return providerModelId === wlLower || providerModelId.startsWith(wlLower + '/');
+							}
+							// Legacy support: match just model ID for backward compatibility
+							return (
+								modelIdLower === wlLower ||
+								(wlLower.length >= 7 && modelIdLower.startsWith(wlLower))
+							);
+						});
+					});
+				}
+
+				return filteredModels.map((m) => ({
+					...m,
 					provider: provider.id
 				}));
 			});
+
+			console.log(
+				`[Settings] Filtered models: ${models.length} from ${totalModels} | whitelist:`,
+				allowedModels
+			);
 		}
 	} catch (err) {
 		console.error('[Settings] FAILED to load all providers:', err);
@@ -109,7 +182,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		connection,
 		models,
 		allProviders,
-		connectedProviderIds
+		connectedProviderIds,
+		allowedModels,
+		prompts: promptsList
 	};
 };
 

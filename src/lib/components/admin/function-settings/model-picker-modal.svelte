@@ -102,7 +102,9 @@
 	});
 
 	let selectedModel = $derived(
-		multiSelect ? null : allModels.find((model) => model.id === draftModelId) || null
+		multiSelect
+			? null
+			: allModels.find((model) => `${model.providerId}/${model.id}` === draftModelId) || null
 	);
 
 	let selectedModels = $derived.by(() => {
@@ -111,28 +113,31 @@
 		}
 
 		const selectedSet = new Set(draftModelIds);
-		return allModels.filter((model) => selectedSet.has(model.id));
+		return allModels.filter((model) => selectedSet.has(`${model.providerId}/${model.id}`));
 	});
 
 	let selectedCount = $derived(
 		multiSelect ? draftModelIds.length : draftModelId.length > 0 ? 1 : 0
 	);
 
-	function isSelectedModel(modelId: string): boolean {
-		return multiSelect ? draftModelIds.includes(modelId) : draftModelId === modelId;
+	function isSelectedModel(providerModelId: string): boolean {
+		return multiSelect ? draftModelIds.includes(providerModelId) : draftModelId === providerModelId;
 	}
 
-	function handleSelectModel(modelId: string): void {
+	function handleSelectModel(model: FlatModel): void {
+		// Use provider/model format for consistent identification
+		const providerModelId = `${model.providerId}/${model.id}`;
+
 		if (multiSelect) {
-			if (draftModelIds.includes(modelId)) {
-				draftModelIds = draftModelIds.filter((id) => id !== modelId);
+			if (draftModelIds.includes(providerModelId)) {
+				draftModelIds = draftModelIds.filter((id) => id !== providerModelId);
 			} else {
-				draftModelIds = [...draftModelIds, modelId];
+				draftModelIds = [...draftModelIds, providerModelId];
 			}
 			return;
 		}
 
-		draftModelId = modelId;
+		draftModelId = providerModelId;
 	}
 
 	function handleSelectAllFiltered(): void {
@@ -142,7 +147,7 @@
 
 		const next = new Set(draftModelIds);
 		for (const model of filteredModels) {
-			next.add(model.id);
+			next.add(`${model.providerId}/${model.id}`);
 		}
 
 		draftModelIds = Array.from(next);
@@ -213,7 +218,7 @@
 			<div class="border-b px-4 py-3">
 				<div class="flex items-center justify-between gap-3">
 					<div>
-						<h3 class="text-base font-semibold">{title}</h3>
+						<h3 class="font-semibold text-base">{title}</h3>
 						<p class="text-xs text-muted-foreground">
 							{multiSelect
 								? 'Select one or more models, then save.'
@@ -294,11 +299,11 @@
 								<button
 									type="button"
 									class="w-full cursor-pointer rounded-md border px-3 py-2 text-left transition-colors hover:bg-muted/50 {isSelectedModel(
-										model.id
+										`${model.providerId}/${model.id}`
 									)
 										? 'border-primary bg-primary/5'
 										: 'border-border'}"
-									onclick={() => handleSelectModel(model.id)}
+									onclick={() => handleSelectModel(model)}
 								>
 									<div class="flex items-center justify-between gap-2">
 										<div class="font-medium">{model.providerName} / {model.name}</div>

@@ -347,7 +347,7 @@
 										</dl>
 									</div>
 								</div>
-								{#if providers.isConnected}
+								{#if connected}
 									<span
 										class="bg-success/10 text-success flex items-center gap-1 rounded px-2 py-1 text-xs"
 									>

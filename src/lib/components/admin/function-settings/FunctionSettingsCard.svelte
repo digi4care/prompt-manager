@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { fly } from 'svelte/transition';
+	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 
 	interface Props {
 		type: 'executor' | 'judge' | 'improve' | 'council';
@@ -15,6 +16,7 @@
 		promptTemplate?: string | null;
 		prompts?: { id: string; title: string }[];
 		models?: { id: string; name: string; provider: string; logo?: string }[];
+		allowedModels?: string[];
 	}
 
 	let {
@@ -29,15 +31,23 @@
 		maxTokens = 4096,
 		promptTemplate = null,
 		prompts = [],
-		models = []
+		models = [],
+		allowedModels = []
 	}: Props = $props();
 
 	let showModal = $state(false);
 	let searchQuery = $state('');
 	let showSelectedOnly = $state(false);
 
-	let filteredModels = $derived(() => {
-		let result = models;
+	let filteredModels = $derived.by(() => {
+		const modelList = models ?? [];
+		let result = modelList;
+
+		// Filter by whitelist if available (provider/model format)
+		if (allowedModels && allowedModels.length > 0) {
+			result = result.filter((m) => isModelInWhitelist(m.id, m.provider, allowedModels));
+		}
+
 		if (searchQuery) {
 			result = result.filter(
 				(m) =>
@@ -50,6 +60,27 @@
 		}
 		return result;
 	});
+
+	function isModelInWhitelist(modelId: string, providerId: string, whitelist: string[]): boolean {
+		// Use provider/model format for exact matching
+		const providerModelId = `${providerId}/${modelId}`.toLowerCase();
+		const modelIdLower = modelId.toLowerCase();
+
+		for (const allowed of whitelist) {
+			const allowedLower = allowed.toLowerCase();
+			// Match provider/model format (e.g., "openrouter/glm-4")
+			if (allowedLower.includes('/')) {
+				if (providerModelId === allowedLower) return true;
+				// Prefix match for variants like "openrouter/glm-4-32k"
+				if (providerModelId.startsWith(allowedLower)) return true;
+			} else {
+				// Legacy support: match just model ID for backward compatibility
+				if (modelIdLower === allowedLower) return true;
+				if (allowedLower.length >= 7 && modelIdLower.startsWith(allowedLower)) return true;
+			}
+		}
+		return false;
+	}
 
 	function openModal() {
 		showModal = true;
@@ -85,10 +116,10 @@
 					class="flex w-full items-center gap-3 rounded-md border bg-background p-3 hover:bg-accent"
 					onclick={openModal}
 				>
-					{#if modelLogo}
-						<img
-							src={modelLogo}
-							alt="{modelProvider} logo"
+					{#if modelLogo && modelProvider}
+						<ProviderLogo
+							providerId={modelProvider}
+							size="lg"
 							class="h-8 w-8 rounded-full bg-white p-1 dark:bg-gray-800"
 						/>
 					{/if}
@@ -221,10 +252,10 @@
 
 			<!-- Model List -->
 			<div class="p-4">
-				{#if filteredModels().length === 0}
+				{#if filteredModels.length === 0}
 					<p class="py-8 text-center text-muted-foreground">No models found</p>
 				{:else}
-					{#each filteredModels() as model}
+					{#each filteredModels as model}
 						<button
 							type="button"
 							class="flex w-full items-center gap-3 rounded-md border p-3 hover:bg-accent {modelId ===
@@ -236,9 +267,9 @@
 							onclick={closeModal}
 						>
 							{#if model.logo}
-								<img
-									src={model.logo}
-									alt="{model.provider} logo"
+								<ProviderLogo
+									providerId={model.provider}
+									size="lg"
 									class="h-8 w-8 rounded-full bg-white p-1 dark:bg-gray-800"
 								/>
 							{:else}

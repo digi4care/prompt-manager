@@ -343,6 +343,27 @@
 			return null;
 		}
 
+		// Check for provider/model format (e.g., "openrouter/glm-4")
+		const slashIndex = modelId.indexOf('/');
+		if (slashIndex > 0) {
+			const providerId = modelId.slice(0, slashIndex);
+			const actualModelId = modelId.slice(slashIndex + 1);
+			const provider = groupedModels.find((p) => p.providerId === providerId);
+			if (provider) {
+				const model = provider.models.find((entry) => entry.id === actualModelId);
+				if (model) {
+					return {
+						...model,
+						id: modelId, // Keep full provider/model format
+						providerName: provider.providerName,
+						providerId: provider.providerId
+					};
+				}
+			}
+			return null;
+		}
+
+		// Legacy fallback: search by model ID only
 		for (const provider of groupedModels) {
 			const model = provider.models.find((entry) => entry.id === modelId);
 			if (model) {

@@ -252,6 +252,7 @@
 											promptTemplate={data.settings.executor.promptTemplate}
 											prompts={data.prompts}
 											models={data.models}
+											allowedModels={data.allowedModels}
 										/>
 									{/if}
 
@@ -269,6 +270,7 @@
 											promptTemplate={data.settings.judge.promptTemplate}
 											prompts={data.prompts}
 											models={data.models}
+											allowedModels={data.allowedModels}
 										/>
 									{/if}
 
@@ -286,6 +288,7 @@
 											promptTemplate={data.settings.improve.promptTemplate}
 											prompts={data.prompts}
 											models={data.models}
+											allowedModels={data.allowedModels}
 										/>
 									{/if}
 
@@ -304,6 +307,7 @@
 												promptTemplate={agent.promptTemplate}
 												prompts={data.prompts}
 												models={data.models}
+												allowedModels={data.allowedModels}
 											/>
 										{/each}
 									{/if}

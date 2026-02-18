@@ -10,7 +10,8 @@
 		Sparkles,
 		ChevronDown,
 		ChevronUp,
-		Server
+		Server,
+		Users
 	} from 'lucide-svelte';
 	import ConnectionSettings from '$lib/components/admin/ai-settings/connection-settings.svelte';
 	import ProvidersBlock from '$lib/components/admin/ai-settings/providers-block.svelte';
@@ -26,13 +27,21 @@
 		logo?: string;
 	}
 
-	type Section = 'connection' | 'providers' | 'policy' | 'defaults' | 'catalog' | 'presets';
+	type Section =
+		| 'connection'
+		| 'providers'
+		| 'policy'
+		| 'defaults'
+		| 'council'
+		| 'catalog'
+		| 'presets';
 
 	const sectionIcons = {
 		connection: Plug,
 		providers: Server,
 		policy: Shield,
 		defaults: Settings,
+		council: Users,
 		catalog: Database,
 		presets: Sparkles
 	} as const;
@@ -66,6 +75,12 @@
 			title: 'Function Defaults',
 			color: 'green',
 			description: 'Default models & settings'
+		},
+		{
+			id: 'council',
+			title: 'LLM Council',
+			color: 'blue',
+			description: 'Multi-model council agents'
 		},
 		{
 			id: 'catalog',
@@ -388,26 +403,6 @@
 										/>
 									{/if}
 
-									{#if data.settings?.council && data.settings.council.length > 0}
-										{#each data.settings.council as agent, i}
-											<FunctionSettingsCard
-												type="council"
-												label="Agent {i + 1}"
-												description="Council member"
-												modelId={agent.modelId}
-												modelName={agent.modelName}
-												modelProvider={agent.modelProvider}
-												modelLogo={agent.modelLogo}
-												temperature={agent.temperature}
-												maxTokens={agent.maxTokens}
-												promptTemplate={agent.promptTemplate}
-												prompts={data.prompts}
-												models={data.models}
-												allowedModels={data.allowedModels}
-											/>
-										{/each}
-									{/if}
-
 									<!-- Save Button -->
 									{#if isDirty}
 										<div
@@ -422,6 +417,29 @@
 												{isSaving ? 'Saving...' : 'Save Changes'}
 											</button>
 										</div>
+									{/if}
+								</div>
+							{:else if section.id === 'council'}
+								<div class="space-y-4">
+									{#if data.councilAgents && data.councilAgents.length > 0}
+										{#each data.councilAgents as agent, i}
+											<FunctionSettingsCard
+												type="council"
+												label="Agent {i + 1}"
+												description="Council member"
+												modelId={agent.modelId}
+												modelName={agent.modelName}
+												modelProvider={agent.modelProvider}
+												modelLogo={agent.modelLogo}
+												temperature={agent.temperature}
+												maxTokens={agent.maxTokens}
+												prompts={data.prompts}
+												models={data.models}
+												allowedModels={data.allowedModels}
+											/>
+										{/each}
+									{:else}
+										<p class="text-sm text-gray-500">No council agents configured</p>
 									{/if}
 								</div>
 							{:else if section.id === 'catalog'}

@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/client';
-import { adminSettings, opencodeConnection, prompts } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { adminSettings, opencodeConnection, prompts, councilAgents } from '$lib/server/db/schema';
+import { eq, asc } from 'drizzle-orm';
 import {
 	getAllProviders,
 	getProviderCatalog,
@@ -186,6 +186,13 @@ export const load: PageServerLoad = async ({ url }) => {
 		console.error('[Settings] FAILED to load all providers:', err);
 	}
 
+	// Load council agents
+	const councilAgentsList = await db
+		.select()
+		.from(councilAgents)
+		.where(eq(councilAgents.parentType, 'function_defaults'))
+		.orderBy(asc(councilAgents.agentOrder));
+
 	return {
 		settings,
 		connection,
@@ -193,7 +200,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		allProviders,
 		connectedProviderIds,
 		allowedModels,
-		prompts: promptsList
+		prompts: promptsList,
+		councilAgents: councilAgentsList
 	};
 };
 

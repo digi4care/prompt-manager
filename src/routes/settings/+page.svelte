@@ -481,14 +481,35 @@
 												modelLogo={agent.modelLogo}
 												temperature={agent.temperature}
 												maxTokens={agent.maxTokens}
+												promptLinkId={agent.promptLinkId}
 												prompts={data.prompts}
 												models={data.models}
 												allowedModels={data.allowedModels}
+												onDelete={() => deleteCouncilMember(agent.id)}
 											/>
 										{/each}
 									{:else}
 										<p class="text-sm text-gray-500">No council agents configured</p>
 									{/if}
+
+									<!-- Add Member Button -->
+									<button
+										type="button"
+										class="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+										onclick={addCouncilMember}
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-4 w-4"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg
+										>
+										Add Council Member
+									</button>
 								</div>
 							{:else if section.id === 'catalog'}
 								<CatalogView />

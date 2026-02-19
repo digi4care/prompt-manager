@@ -20,8 +20,17 @@ export const GET: RequestHandler = async ({ params }) => {
 	return json({ data: agent });
 };
 
-// PUT: Update council agent
+// PUT: Update council agent (full replacement)
 export const PUT: RequestHandler = async ({ params, request }) => {
+	return handleUpdate(params, request);
+};
+
+// PATCH: Update council agent (partial update)
+export const PATCH: RequestHandler = async ({ params, request }) => {
+	return handleUpdate(params, request);
+};
+
+async function handleUpdate(params: { id: string }, request: Request): Promise<Response> {
 	const id = parseInt(params.id, 10);
 	if (isNaN(id)) {
 		error(400, 'Invalid ID');
@@ -60,7 +69,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 	}
 
 	return json({ data: agent });
-};
+}
 
 // DELETE: Remove council agent
 export const DELETE: RequestHandler = async ({ params }) => {

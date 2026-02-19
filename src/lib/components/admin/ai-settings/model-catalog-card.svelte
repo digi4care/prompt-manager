@@ -4,9 +4,7 @@
 	import CardTitle from '$lib/components/ui/card/card-title.svelte';
 	import CardDescription from '$lib/components/ui/card/card-description.svelte';
 	import CardContent from '$lib/components/ui/card/card-content.svelte';
-	import CardFooter from '$lib/components/ui/card/card-footer.svelte';
 	import { Badge } from '$lib/components/ui/badge';
-	import Button from '$lib/components/ui/button/button.svelte';
 
 	interface ModelMeta {
 		contextWindow?: number;
@@ -21,11 +19,9 @@
 		provider: string;
 		description?: string;
 		meta?: ModelMeta;
-		selected?: boolean;
-		onSelect?: () => void;
 	}
 
-	let { id, name, provider, description, meta, selected = false, onSelect }: Props = $props();
+	let { id, name, provider, description, meta }: Props = $props();
 
 	function formatContextWindow(tokens?: number): string {
 		if (!tokens) return 'Unknown';
@@ -42,7 +38,7 @@
 	}
 </script>
 
-<Card class="transition-all hover:shadow-lg {selected ? 'ring-2 ring-primary' : ''}">
+<Card class="transition-all hover:shadow-lg">
 	<CardHeader class="pb-3">
 		<div class="flex items-start justify-between gap-2">
 			<div class="flex-1 space-y-1">
@@ -84,10 +80,4 @@
 			{/if}
 		</div>
 	</CardContent>
-
-	<CardFooter class="pt-0">
-		<Button variant={selected ? 'default' : 'outline'} size="sm" class="w-full" onclick={onSelect}>
-			{selected ? 'Selected' : 'Select Model'}
-		</Button>
-	</CardFooter>
 </Card>

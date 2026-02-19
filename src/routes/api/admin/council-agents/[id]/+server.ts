@@ -28,10 +28,22 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 	}
 
 	const body = await request.json();
-	const { modelId, temperature, maxTokens, promptLinkId, agentOrder } = body;
+	const {
+		modelId,
+		modelName,
+		modelProvider,
+		modelLogo,
+		temperature,
+		maxTokens,
+		promptLinkId,
+		agentOrder
+	} = body;
 
 	const updateData: Record<string, unknown> = {};
 	if (modelId !== undefined) updateData.modelId = modelId;
+	if (modelName !== undefined) updateData.modelName = modelName;
+	if (modelProvider !== undefined) updateData.modelProvider = modelProvider;
+	if (modelLogo !== undefined) updateData.modelLogo = modelLogo;
 	if (temperature !== undefined) updateData.temperature = temperature;
 	if (maxTokens !== undefined) updateData.maxTokens = maxTokens;
 	if (promptLinkId !== undefined) updateData.promptLinkId = promptLinkId;

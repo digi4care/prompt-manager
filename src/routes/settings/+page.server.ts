@@ -28,12 +28,14 @@ interface CouncilAgent {
 	name: string;
 	modelId: string | null;
 	modelName?: string;
+	modelProvider?: string;
 	providerId?: string;
 	temperature: number;
 	maxTokens: number;
 	systemPrompt?: string;
 	modelLogo?: string;
 	promptTemplate?: string;
+	promptLinkId?: number;
 }
 
 interface FunctionDefaultsSettings {
@@ -191,11 +193,53 @@ export const load: PageServerLoad = async ({ url }) => {
 	}
 
 	// Load council agents
-	const councilAgentsList = await db
-		.select()
-		.from(councilAgents)
-		.where(eq(councilAgents.parentType, 'function_defaults'))
-		.orderBy(asc(councilAgents.agentOrder));
+	console.log('[Settings] Loading council agents...');
+	let councilAgentsList: CouncilAgent[] = [];
+	try {
+		// Get all council agents from the database
+		const result = await db.select().from(councilAgents).all();
+		console.log('[Settings] Raw council agents query result:', result.length);
+
+		// Enrich with model info - look up model details from the models list
+		councilAgentsList = result.map((agent) => {
+			// Try to find model name from the models list (fallback)
+			const model = models.find((m: unknown) => (m as { id: string }).id === agent.modelId) as
+				| { id: string; name: string; provider: string; logo?: string }
+				| undefined;
+
+			// Extract provider from modelId format (provider/model) or use model's provider
+			let providerId: string | undefined;
+			let modelIdOnly = agent.modelId;
+			if (agent.modelId.includes('/')) {
+				const parts = agent.modelId.split('/');
+				providerId = parts[0];
+				modelIdOnly = parts.slice(1).join('/');
+			} else if (model?.provider) {
+				providerId = model.provider;
+			}
+
+			// Use stored values from database first, then fallback to models list lookup
+			const resolvedModelName = agent.modelName || model?.name || agent.modelId;
+			return {
+				id: String(agent.id),
+				name: resolvedModelName, // Required field - use resolved model name
+				modelId: agent.modelName ? modelIdOnly : agent.modelId, // Store just the model ID part
+				modelName: resolvedModelName,
+				providerId: agent.modelProvider || providerId,
+				modelProvider: agent.modelProvider || model?.provider || providerId,
+				modelLogo: agent.modelLogo || model?.logo,
+				temperature: agent.temperature,
+				maxTokens: agent.maxTokens,
+				promptLinkId: agent.promptLinkId || undefined,
+				createdAt: agent.createdAt?.toISOString(),
+				updatedAt: agent.updatedAt?.toISOString()
+			};
+		});
+
+		console.log('[Settings] Council agents loaded:', councilAgentsList.length);
+	} catch (err) {
+		console.error('[Settings] Error loading council agents:', err);
+	}
 
 	return {
 		settings,

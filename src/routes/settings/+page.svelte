@@ -229,7 +229,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					parentType: 'function_defaults',
-					parentId: 1,
+					parentId: 4, // Match existing council agents in the database
 					modelId: null,
 					temperature: 0.5,
 					maxTokens: 8192,
@@ -258,7 +258,7 @@
 	async function updateCouncilPrompt(agentId: number, promptId: number | null) {
 		try {
 			const response = await fetch(`/api/admin/council-agents/${agentId}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ promptLinkId: promptId })
 			});
@@ -278,7 +278,7 @@
 
 		try {
 			const response = await fetch(`/api/admin/council-agents/${agentId}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					modelId: model.id,

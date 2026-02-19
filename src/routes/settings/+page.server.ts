@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/client';
 import { adminSettings, opencodeConnection, prompts, councilAgents } from '$lib/server/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, isNull } from 'drizzle-orm';
 import {
 	getAllProviders,
 	getProviderCatalog,
@@ -113,8 +113,12 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	const connection = connectionRow[0] ?? null;
 
-	// Load prompts for the dropdown
-	const promptsList = await db.select({ id: prompts.id, title: prompts.title }).from(prompts);
+	// Load prompts for the dropdown (exclude deleted)
+	const promptsList = await db
+		.select({ id: prompts.id, title: prompts.title })
+		.from(prompts)
+		.where(isNull(prompts.deletedAt))
+		.orderBy(asc(prompts.title));
 
 	// Load all providers using cached service
 	let models: unknown[] = [];

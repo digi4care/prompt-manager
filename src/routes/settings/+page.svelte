@@ -221,6 +221,54 @@
 		}
 	}
 
+	// Council CRUD functions
+	async function addCouncilMember() {
+		try {
+			const response = await fetch('/api/admin/council-agents', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					parentType: 'function_defaults',
+					parentId: 1,
+					modelId: null,
+					temperature: 0.5,
+					maxTokens: 8192,
+					promptLinkId: null
+				})
+			});
+			if (!response.ok) throw new Error('Failed to add council member');
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error adding council member:', error);
+		}
+	}
+
+	async function deleteCouncilMember(id: number) {
+		try {
+			const response = await fetch(`/api/admin/council-agents/${id}`, {
+				method: 'DELETE'
+			});
+			if (!response.ok) throw new Error('Failed to delete council member');
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error deleting council member:', error);
+		}
+	}
+
+	async function updateCouncilPrompt(agentId: number, promptId: number | null) {
+		try {
+			const response = await fetch(`/api/admin/council-agents/${agentId}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ promptLinkId: promptId })
+			});
+			if (!response.ok) throw new Error('Failed to update council prompt');
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error updating council prompt:', error);
+		}
+	}
+
 	// Providers store - handles all provider state
 	// Initialize store with server data
 	$effect(() => {

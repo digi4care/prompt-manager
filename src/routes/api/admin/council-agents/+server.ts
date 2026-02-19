@@ -26,14 +26,14 @@ export const POST: RequestHandler = async ({ request }) => {
 	const {
 		parentType = 'function_defaults',
 		parentId = 0,
-		modelId,
+		modelId = '',
 		temperature = 0.7,
 		maxTokens = 4096,
-		promptLinkId
+		promptLinkId = null
 	} = body;
 
 	if (!modelId) {
-		error(400, 'modelId is required');
+		error(400, 'Je moet een model selecteren');
 	}
 
 	// Get next order

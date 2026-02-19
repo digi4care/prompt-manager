@@ -224,13 +224,15 @@
 	// Council CRUD functions
 	async function addCouncilMember() {
 		try {
+			// Get first available model as default
+			const defaultModel = data.models?.[0];
 			const response = await fetch('/api/admin/council-agents', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					parentType: 'function_defaults',
 					parentId: 4, // Match existing council agents in the database
-					modelId: null,
+					modelId: defaultModel?.id || 'openai/gpt-4o',
 					temperature: 0.5,
 					maxTokens: 8192,
 					promptLinkId: null
@@ -240,7 +242,8 @@
 				if (response.status === 302 || response.status === 401) {
 					throw new Error('Je moet ingelogd zijn om dit te doen');
 				}
-				throw new Error('Failed to add council member');
+				const err = await response.json();
+				throw new Error(err.message || 'Failed to add council member');
 			}
 			await invalidateAll();
 		} catch (error) {

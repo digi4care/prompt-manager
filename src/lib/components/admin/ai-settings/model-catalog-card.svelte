@@ -5,10 +5,11 @@
 	import CardDescription from '$lib/components/ui/card/card-description.svelte';
 	import CardContent from '$lib/components/ui/card/card-content.svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 
 	interface ModelMeta {
-		contextWindow?: number;
-		supportsVision?: boolean;
+		context_window?: number;
+		supports_vision?: boolean;
 		status?: string;
 		limit?: { context: number; output: number };
 	}
@@ -24,7 +25,7 @@
 	let { id, name, provider, description, meta }: Props = $props();
 
 	function formatContextWindow(tokens?: number): string {
-		if (!tokens) return 'Unknown';
+		if (!tokens) return 'N/A';
 		if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`;
 		if (tokens >= 1000) return `${(tokens / 1000).toFixed(0)}K`;
 		return `${tokens}`;
@@ -41,27 +42,30 @@
 <Card class="transition-all hover:shadow-lg">
 	<CardHeader class="pb-3">
 		<div class="flex items-start justify-between gap-2">
-			<div class="flex-1 space-y-1">
-				<CardTitle class="text-base">{name}</CardTitle>
-				<CardDescription class="line-clamp-2 text-xs">
-					{description || 'No description available'}
-				</CardDescription>
+			<div class="flex flex-1 items-center gap-3">
+				<ProviderLogo providerId={provider} {name} size="lg" />
+				<div class="flex-1 space-y-1">
+					<CardTitle class="text-base">{name}</CardTitle>
+					<CardDescription class="line-clamp-2 text-xs">
+						{description || 'No description available'}
+					</CardDescription>
+				</div>
 			</div>
-			<Badge variant="outline" class="shrink-0 text-xs">
-				{provider}
+			<Badge variant={getStatusVariant(meta?.status)} class="shrink-0 text-xs">
+				{meta?.status || 'unknown'}
 			</Badge>
 		</div>
 	</CardHeader>
 
 	<CardContent class="pb-3">
 		<div class="flex flex-wrap gap-2">
-			{#if meta?.contextWindow}
+			{#if meta?.context_window}
 				<Badge variant="secondary" class="text-xs">
-					{formatContextWindow(meta.contextWindow)} tokens
+					{formatContextWindow(meta.context_window)} ctx
 				</Badge>
 			{/if}
 
-			{#if meta?.supportsVision}
+			{#if meta?.supports_vision}
 				<Badge variant="secondary" class="text-xs">
 					<span class="mr-1">👁️</span> Vision
 				</Badge>
@@ -69,13 +73,7 @@
 
 			{#if meta?.limit}
 				<Badge variant="outline" class="text-xs">
-					Max: {formatContextWindow(meta.limit.context)} / {formatContextWindow(meta.limit.output)}
-				</Badge>
-			{/if}
-
-			{#if meta?.status}
-				<Badge variant={getStatusVariant(meta.status)} class="text-xs">
-					{meta.status}
+					Out: {formatContextWindow(meta.limit.output)}
 				</Badge>
 			{/if}
 		</div>

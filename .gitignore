@@ -36,6 +36,7 @@ drizzle/
 coverage/
 test-results/
 .playwright-mcp/
+.playwright-cli/
 playwright-report/ 
 
 # Logs

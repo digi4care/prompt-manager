@@ -163,10 +163,7 @@ function isAdminAuthenticated(event: RequestEvent): boolean {
 		return true;
 	}
 
-	// In dev mode with no password set, allow access
-	if (dev && !process.env.ADMIN_PASSWORD) {
-		return true;
-	}
+	// Require authentication for all admin routes
 
 	return false;
 }

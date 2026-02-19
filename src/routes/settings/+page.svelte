@@ -269,6 +269,38 @@
 		}
 	}
 
+	// Update council member model
+	async function updateCouncilModel(
+		agentId: number,
+		model: { id: string; name: string; provider: string; logo?: string }
+	) {
+		if (!model?.id) return;
+
+		try {
+			const response = await fetch(`/api/admin/council-agents/${agentId}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					modelId: model.id,
+					modelName: model.name,
+					modelProvider: model.provider,
+					modelLogo: model.logo
+				})
+			});
+
+			if (!response.ok) throw new Error('Failed to update');
+
+			invalidateAll();
+		} catch (error) {
+			console.error('Error updating council model:', error);
+		}
+	}
+
+	// Navigate to prompts page
+	function goToPrompts() {
+		window.location.href = '/prompts';
+	}
+
 	// Providers store - handles all provider state
 	// Initialize store with server data
 	$effect(() => {
@@ -485,6 +517,7 @@
 												prompts={data.prompts}
 												models={data.models}
 												allowedModels={data.allowedModels}
+												onselect={(model) => updateCouncilModel(agent.id, model)}
 												onDelete={() => deleteCouncilMember(agent.id)}
 											/>
 										{/each}

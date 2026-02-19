@@ -205,19 +205,45 @@
 				>
 					Prompt Template
 				</label>
-				<select
-					id="{type}-prompt"
-					name="{type}-prompt"
-					class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-				>
-					<option value="">None</option>
-					{#each prompts as prompt}
-						<option value={prompt.id} selected={(promptTemplate ?? promptLinkId) === prompt.id}>
-							{prompt.title}
-						</option>
-					{/each}
-				</select>
-				<p class="mt-1 text-xs text-muted-foreground">Optional template to prepend</p>
+				{#if prompts && prompts.length > 0}
+					<select
+						id="{type}-prompt"
+						name="{type}-prompt"
+						class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
+						onchange={(e) => (promptLinkId = e.target.value ? Number(e.target.value) : null)}
+					>
+						<option value="">None</option>
+						{#each prompts as prompt}
+							<option value={prompt.id} selected={(promptTemplate ?? promptLinkId) === prompt.id}>
+								{prompt.title}
+							</option>
+						{/each}
+					</select>
+					<p class="mt-1 text-xs text-muted-foreground">Optional template to prepend</p>
+				{:else}
+					<a
+						href="/prompts"
+						class="flex h-10 w-full items-center justify-center rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="mr-2 h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M5 12h14" />
+							<path d="M12 5v14" />
+						</svg>
+						Create Prompt
+					</a>
+					<p class="mt-1 text-xs text-muted-foreground">
+						No prompts available. Create one to link.
+					</p>
+				{/if}
 			</div>
 		{/if}
 

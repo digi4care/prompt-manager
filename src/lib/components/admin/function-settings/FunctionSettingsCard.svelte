@@ -334,6 +334,33 @@
 							<div class="flex-1 text-left">
 								<div class="font-medium">{model.name}</div>
 								<div class="text-xs text-muted-foreground">{model.provider}</div>
+								{#if model.description}
+									<div class="mt-1 line-clamp-2 text-xs text-muted-foreground">
+										{model.description}
+									</div>
+								{/if}
+								<div class="mt-2 flex flex-wrap gap-2">
+									{#if model.context_window}
+										<span class="rounded bg-secondary px-2 py-0.5 text-xs">
+											Context: {(model.context_window / 1000).toFixed(0)}K
+										</span>
+									{/if}
+									{#if model.supports_vision}
+										<span class="rounded bg-green-100 px-2 py-0.5 text-xs text-green-800"
+											>Vision</span
+										>
+									{/if}
+									{#if model.status}
+										<span class="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-800"
+											>{model.status}</span
+										>
+									{/if}
+									{#if model.limit?.context}
+										<span class="rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-800">
+											Limit: {(model.limit.context / 1000).toFixed(0)}K
+										</span>
+									{/if}
+								</div>
 							</div>
 							{#if modelId === model.id}
 								<span class="text-xs text-primary">Selected</span>

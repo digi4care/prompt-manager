@@ -212,7 +212,7 @@
 				>
 					<option value="">None</option>
 					{#each prompts as prompt}
-						<option value={prompt.id} selected={promptTemplate === prompt.id}>
+						<option value={prompt.id} selected={(promptTemplate ?? promptLinkId) === prompt.id}>
 							{prompt.title}
 						</option>
 					{/each}

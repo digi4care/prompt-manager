@@ -236,10 +236,16 @@
 					promptLinkId: null
 				})
 			});
-			if (!response.ok) throw new Error('Failed to add council member');
+			if (!response.ok) {
+				if (response.status === 302 || response.status === 401) {
+					throw new Error('Je moet ingelogd zijn om dit te doen');
+				}
+				throw new Error('Failed to add council member');
+			}
 			await invalidateAll();
 		} catch (error) {
 			console.error('Error adding council member:', error);
+			alert(error instanceof Error ? error.message : 'Failed to add council member');
 		}
 	}
 

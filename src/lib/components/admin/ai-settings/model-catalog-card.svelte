@@ -65,15 +65,21 @@
 				</Badge>
 			{/if}
 
-			{#if meta?.supports_vision}
-				<Badge variant="secondary" class="text-xs">
-					<span class="mr-1">👁️</span> Vision
+			{#if meta?.limit?.context}
+				<Badge variant="outline" class="text-xs">
+					Limit: {formatContextWindow(meta.limit.context)}
 				</Badge>
 			{/if}
 
-			{#if meta?.limit}
+			{#if meta?.limit?.output}
 				<Badge variant="outline" class="text-xs">
 					Out: {formatContextWindow(meta.limit.output)}
+				</Badge>
+			{/if}
+
+			{#if meta?.supports_vision}
+				<Badge variant="secondary" class="text-xs">
+					<span class="mr-1">👁️</span> Vision
 				</Badge>
 			{/if}
 		</div>

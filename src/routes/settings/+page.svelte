@@ -11,9 +11,11 @@
 		Server,
 		Users,
 		ChevronUp,
-		ChevronDown
+		ChevronDown,
+		Plus
 	} from 'lucide-svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
+	import { Button } from '$lib/components/ui/button';
 	import ConnectionSettings from '$lib/components/admin/ai-settings/connection-settings.svelte';
 	import ProvidersBlock from '$lib/components/admin/ai-settings/providers-block.svelte';
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
@@ -499,7 +501,7 @@
 							{:else if section.id === 'policy'}
 								<PolicyEditor />
 							{:else if section.id === 'defaults'}
-								<div class="space-y-6">
+								<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 									<FunctionSettingsCard
 										type="executor"
 										label="Executor"
@@ -556,22 +558,15 @@
 
 									<!-- Save Button -->
 									{#if isDirty}
-										<div
-											class="flex justify-end border-t border-gray-200 pt-4 dark:border-gray-700"
-										>
-											<button
-												type="button"
-												class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-												onclick={saveFunctionDefaults}
-												disabled={isSaving}
-											>
+										<div class="flex justify-end border-t border-border pt-4">
+											<Button onclick={saveFunctionDefaults} disabled={isSaving}>
 												{isSaving ? 'Saving...' : 'Save Changes'}
-											</button>
+											</Button>
 										</div>
 									{/if}
 								</div>
 							{:else if section.id === 'council'}
-								<div class="space-y-4">
+								<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 									{#if data.councilAgents && data.councilAgents.length > 0}
 										{#each data.councilAgents as agent, i}
 											<FunctionSettingsCard
@@ -598,23 +593,10 @@
 									{/if}
 
 									<!-- Add Member Button -->
-									<button
-										type="button"
-										class="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
-										onclick={addCouncilMember}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											class="h-4 w-4"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg
-										>
+									<Button variant="outline" onclick={addCouncilMember}>
+										<Plus class="mr-2 h-4 w-4" />
 										Add Council Member
-									</button>
+									</Button>
 								</div>
 							{:else if section.id === 'catalog'}
 								<CatalogView allowedModels={data.allowedModels} />

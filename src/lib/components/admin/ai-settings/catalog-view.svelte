@@ -15,6 +15,7 @@
 	import ModelCatalogCard from './model-catalog-card.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { toast } from 'svelte-sonner';
+	import { ChevronDown, RotateCw, Search } from 'lucide-svelte';
 	import type {
 		CatalogResponse,
 		ProviderInfo,
@@ -216,49 +217,71 @@
 			size="sm"
 			onclick={handleRefresh}
 			disabled={isRefreshing || isLoading}
+			class="gap-2"
 		>
+			{#if isRefreshing}
+				<RotateCw class="h-4 w-4 animate-spin" />
+			{:else}
+				<RotateCw class="h-4 w-4" />
+			{/if}
 			{isRefreshing ? 'Refreshing...' : 'Refresh'}
 		</Button>
 	</div>
 
 	<!-- Search and Filter -->
-	<div class="mt-4 space-y-3">
-		<div class="flex flex-wrap gap-3">
+	<div class="mt-4 space-y-4">
+		<!-- Search and Filters Row -->
+		<div class="flex flex-wrap items-center gap-3">
+			<!-- Search Input with focus ring -->
 			<Input
 				type="search"
 				placeholder="Search models..."
 				bind:value={searchQuery}
-				class="max-w-xs"
+				class="max-w-xs focus:ring-2 focus:ring-primary/50"
 			/>
 
 			{#if hasInactiveModels}
+				<!-- Status Select with focus ring -->
 				<div class="relative">
 					<select
 						bind:value={statusFilter}
-						class="cursor-pointer appearance-none rounded-md border border-input bg-background px-8 py-2 pr-8 text-sm"
+						class="cursor-pointer appearance-none rounded-md border border-input bg-background px-8 py-2 pr-8 text-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/50 focus:outline-none"
 					>
 						<option value="all">All Status</option>
 						<option value="active">Active</option>
 						<option value="inactive">Inactive</option>
 					</select>
-					<span
-						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground"
-						>▼</span
-					>
+					<ChevronDown
+						class="pointer-events-none absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+					/>
 				</div>
 			{/if}
 
 			{#if hasWhitelistedModels}
-				<label class="flex items-center gap-2 text-sm">
-					<input type="checkbox" bind:checked={showWhitelistedOnly} class="rounded border-input" />
-					Whitelisted
+				<!-- Whitelisted checkbox with better styling -->
+				<label
+					class="flex cursor-pointer items-center gap-2 text-sm transition-colors hover:text-foreground"
+				>
+					<input
+						type="checkbox"
+						bind:checked={showWhitelistedOnly}
+						class="h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-primary/50"
+					/>
+					<span>Whitelisted</span>
 				</label>
 			{/if}
 
 			{#if hasVisionModels}
-				<label class="flex items-center gap-2 text-sm">
-					<input type="checkbox" bind:checked={showVisionOnly} class="rounded border-input" />
-					Vision
+				<!-- Vision checkbox with better styling -->
+				<label
+					class="flex cursor-pointer items-center gap-2 text-sm transition-colors hover:text-foreground"
+				>
+					<input
+						type="checkbox"
+						bind:checked={showVisionOnly}
+						class="h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-primary/50"
+					/>
+					<span>Vision</span>
 				</label>
 			{/if}
 		</div>
@@ -281,7 +304,7 @@
 					{Math.round(sliderValue[0] / 1000)}K - {Math.round(sliderValue[1] / 1000)}K
 				</div>
 				<button
-					class="text-xs text-muted-foreground hover:text-foreground"
+					class="flex min-h-[44px] min-w-[44px] items-center justify-center rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none"
 					onclick={() => {
 						sliderValue = [0, contextRange.max];
 					}}

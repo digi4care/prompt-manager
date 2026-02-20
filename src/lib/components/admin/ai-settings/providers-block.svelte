@@ -3,6 +3,9 @@
 	import { invalidateAll } from '$app/navigation';
 	import { providers, type Provider } from '$lib/stores/providers.svelte';
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardContent } from '$lib/components/ui/card';
 
 	// Local state
 	let showProviderModal = $state(false);
@@ -205,28 +208,24 @@
 	<div class="space-y-4">
 		<!-- Action buttons -->
 		<div class="flex gap-2">
-			<button
-				onclick={openProviderModal}
-				class="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-			>
-				<Plus class="h-4 w-4" />
+			<Button onclick={openProviderModal}>
+				<Plus class="mr-2 h-4 w-4" />
 				Add Provider
-			</button>
-			<button
-				onclick={() => handleRefresh()}
-				class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-muted/50"
-			>
-				<RefreshCw class="h-4 w-4" />
+			</Button>
+			<Button variant="outline" size="sm" onclick={() => handleRefresh()}>
+				<RefreshCw class="mr-2 h-4 w-4" />
 				Refresh
-			</button>
+			</Button>
 		</div>
 
 		<!-- Connected providers list -->
 		{#if connectedProviders.length === 0}
-			<div class="rounded-md bg-muted/20 px-3 py-6 text-center">
-				<p class="text-sm text-muted-foreground">No providers connected yet</p>
-				<p class="mt-1 text-xs text-muted-foreground">Click "Add Provider" to connect one</p>
-			</div>
+			<Card>
+				<CardContent class="py-6 text-center">
+					<p class="text-sm text-muted-foreground">No providers connected yet</p>
+					<p class="mt-1 text-xs text-muted-foreground">Click "Add Provider" to connect one</p>
+				</CardContent>
+			</Card>
 		{:else}
 			<div class="space-y-2">
 				<div class="flex items-center justify-between text-xs text-muted-foreground">
@@ -234,39 +233,38 @@
 					<span>{providers.all.length} available</span>
 				</div>
 
-				{#each connectedProviders as provider (provider.id)}
-					<div
-						class="flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-3 py-2"
-					>
-						<div class="flex items-center gap-3">
-							<ProviderLogo providerId={provider.id} name={provider.name} size="sm" />
-							<div>
-								<div class="text-sm font-medium">{provider.name}</div>
-								<dl class="flex gap-3 text-xs text-muted-foreground">
-									<dt class="sr-only">ID</dt>
-									<dd class="font-mono">{provider.id}</dd>
-									<dt class="sr-only">Models</dt>
-									<dd>{getModelCount(provider)} models</dd>
-								</dl>
+				<div class="grid gap-2">
+					{#each connectedProviders as provider (provider.id)}
+						<Card class="py-3">
+							<div class="flex items-center justify-between px-4">
+								<div class="flex items-center gap-3">
+									<ProviderLogo providerId={provider.id} name={provider.name} size="sm" />
+									<div>
+										<p class="text-sm font-medium">{provider.name}</p>
+										<div class="flex gap-3 text-xs text-muted-foreground">
+											<span class="font-mono">{provider.id}</span>
+											<span>{getModelCount(provider)} models</span>
+										</div>
+									</div>
+								</div>
+								<div class="flex items-center gap-2">
+									<Badge variant="default" class="gap-1">
+										<Check class="h-3 w-3" />
+										Connected
+									</Badge>
+									<Button
+										variant="ghost"
+										size="icon"
+										onclick={() => handleDisconnectProvider(provider.id)}
+										title="Disconnect"
+									>
+										<X class="h-4 w-4" />
+									</Button>
+								</div>
 							</div>
-						</div>
-						<div class="flex items-center gap-2">
-							<span
-								class="bg-success/10 text-success flex items-center gap-1 rounded px-2 py-1 text-xs"
-							>
-								<Check class="h-3 w-3" />
-								Connected
-							</span>
-							<button
-								onclick={() => handleDisconnectProvider(provider.id)}
-								class="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-								title="Disconnect"
-							>
-								<X class="h-4 w-4" />
-							</button>
-						</div>
-					</div>
-				{/each}
+						</Card>
+					{/each}
+				</div>
 			</div>
 		{/if}
 	</div>

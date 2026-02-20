@@ -9,6 +9,7 @@
 	} from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
+	import { Trash2, ExternalLink } from 'lucide-svelte';
 	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
 	import ModelPickerModal from '$lib/components/admin/function-settings/model-picker-modal.svelte';
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
@@ -625,11 +626,11 @@
 </script>
 
 <Card class={className}>
-	<CardHeader>
-		<div class="flex items-center justify-between gap-4">
-			<div>
-				<CardTitle class="text-lg">AI Policy</CardTitle>
-				<CardDescription>
+	<CardHeader class="pb-4">
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div class="space-y-1">
+				<CardTitle class="text-xl font-semibold">AI Policy</CardTitle>
+				<CardDescription class="text-sm">
 					Whitelist + scope matrix for Judge, Executor, Improve, and Council Agent.
 				</CardDescription>
 			</div>
@@ -638,6 +639,7 @@
 				size="sm"
 				onclick={handleSave}
 				disabled={!hasChanges || isSaving || isLoadingCatalog}
+				class="min-h-[40px] min-w-[120px] focus:ring-2 focus:ring-offset-2"
 			>
 				{isSaving ? 'Saving...' : 'Save Changes'}
 			</Button>
@@ -660,7 +662,12 @@
 								: `${allowedModels.length} model(s) in whitelist matrix`}
 						</p>
 					</div>
-					<Button variant="outline" size="sm" onclick={() => (isPickerOpen = true)}>
+					<Button
+						variant="outline"
+						size="sm"
+						onclick={() => (isPickerOpen = true)}
+						class="touch-target min-h-[40px] hover:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2"
+					>
 						Select models
 					</Button>
 				</div>
@@ -701,28 +708,49 @@
 			</div>
 
 			{#if matrixRows.length === 0}
-				<div class="rounded-lg bg-muted px-4 py-3 text-sm">
-					<p class="text-muted-foreground">
+				<div
+					class="rounded-lg border border-dashed border-muted-foreground/25 bg-muted/20 px-4 py-8 text-center"
+				>
+					<p class="text-sm text-muted-foreground">
 						AI Policy matrix is empty. Every catalog model is currently allowed for all functions.
+					</p>
+					<p class="mt-2 text-xs text-muted-foreground/70">
+						Click "Select models" above to add models to the policy.
 					</p>
 				</div>
 			{:else}
-				<div class="overflow-x-auto rounded-xl shadow-sm">
+				<div class="overflow-x-auto rounded-xl border border-border shadow-sm">
 					<table class="w-full text-sm">
 						<thead>
-							<tr class="bg-muted/50">
-								<th class="px-3 py-2 text-left font-medium">Model</th>
-								<th class="px-3 py-2 text-left font-medium">Variants</th>
-								<th class="px-3 py-2 text-center font-medium">Judge</th>
-								<th class="px-3 py-2 text-center font-medium">Executor</th>
-								<th class="px-3 py-2 text-center font-medium">Improve</th>
-								<th class="px-3 py-2 text-center font-medium">Council Agent</th>
-								<th class="px-3 py-2 text-center font-medium">Remove</th>
+							<tr class="border-b border-border bg-muted/40 text-muted-foreground">
+								<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase"
+									>Model</th
+								>
+								<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase"
+									>Variants</th
+								>
+								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
+									>Judge</th
+								>
+								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
+									>Executor</th
+								>
+								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
+									>Improve</th
+								>
+								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
+									>Council Agent</th
+								>
+								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
+									>Remove</th
+								>
 							</tr>
 						</thead>
 						<tbody>
-							{#each matrixRows as row (row.modelId)}
-								<tr class="border-b border-border/50 transition-colors hover:bg-muted/30">
+							{#each matrixRows as row, i (row.modelId)}
+								<tr
+									class="border-b border-border/50 transition-colors even:bg-muted/10 hover:bg-muted/50 data-[selected=true]:bg-muted/60"
+								>
 									<td class="px-3 py-2">
 										<div class="space-y-0.5">
 											{#if row.model}
@@ -759,25 +787,28 @@
 											<span class="text-xs text-muted-foreground">-</span>
 										{/if}
 									</td>
-									<td class="px-3 py-2 text-center">
+									<td class="px-4 py-3 text-center">
 										<input
 											type="checkbox"
 											checked={row.scopes.judge}
 											onchange={() => toggleScope(row.modelId, 'judge')}
+											class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
 										/>
 									</td>
-									<td class="px-3 py-2 text-center">
+									<td class="px-4 py-3 text-center">
 										<input
 											type="checkbox"
 											checked={row.scopes.executor}
 											onchange={() => toggleScope(row.modelId, 'executor')}
+											class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
 										/>
 									</td>
-									<td class="px-3 py-2 text-center">
+									<td class="px-4 py-3 text-center">
 										<input
 											type="checkbox"
 											checked={row.scopes.improve}
 											onchange={() => toggleScope(row.modelId, 'improve')}
+											class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
 										/>
 									</td>
 									<td class="px-3 py-2 text-center">

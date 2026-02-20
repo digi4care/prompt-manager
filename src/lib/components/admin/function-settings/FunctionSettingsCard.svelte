@@ -136,27 +136,30 @@
 	}
 </script>
 
-<div class="rounded-lg border bg-card shadow-sm">
-	<div class="border-b p-4">
+<!-- Card: improved visual hierarchy with better shadows and borders -->
+<div class="rounded-xl border border-border/60 bg-card shadow-sm transition-shadow hover:shadow-md">
+	<!-- Header: clear visual separation -->
+	<div class="border-b border-border/60 bg-muted/20 px-5 py-4">
 		<div class="flex items-center justify-between">
 			<div>
-				<h3 class="font-medium capitalize">{label}</h3>
-				<p class="text-sm text-muted-foreground">{description}</p>
+				<h3 class="text-lg font-semibold capitalize">{label}</h3>
+				<p class="mt-0.5 text-sm text-muted-foreground">{description}</p>
 			</div>
-			<span class="rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary">Default</span>
+			<span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+				>Default</span
+			>
 		</div>
 	</div>
 
-	<div class="space-y-4 p-4">
-		<!-- Model Selection -->
-		<div class="rounded-lg border bg-background/50 p-3">
-			<label class="mb-2 block text-xs font-medium tracking-wide text-muted-foreground uppercase">
-				Selected Model
-			</label>
+	<!-- Content: better spacing and hierarchy -->
+	<div class="space-y-6 px-5 py-5">
+		<!-- Model Selection: improved styling with focus states -->
+		<div class="rounded-lg border border-border/50 bg-background/50 p-4">
+			<label class="mb-3 block text-sm font-medium text-foreground"> Selected Model </label>
 			{#if modelId}
 				<button
 					type="button"
-					class="flex w-full items-center gap-3 rounded-md border bg-background p-3 hover:bg-accent"
+					class="flex w-full items-center gap-4 rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/30 hover:bg-accent/50 focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:outline-none"
 					onclick={openModal}
 				>
 					{#if modelProvider}
@@ -164,28 +167,38 @@
 					{/if}
 					<div class="flex-1 text-left">
 						<div class="font-medium">{modelName}</div>
-						<div class="text-xs text-muted-foreground">{modelProvider}</div>
+						<div class="text-sm text-muted-foreground">{modelProvider}</div>
 					</div>
-					<span class="text-xs text-muted-foreground">Change</span>
+					<span
+						class="rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80"
+						>Change</span
+					>
 				</button>
 			{:else}
 				<button
 					type="button"
-					class="flex w-full items-center justify-center gap-2 rounded-md border border-dashed p-4 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+					class="flex min-h-[64px] w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/50 p-4 text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent/50 hover:text-foreground focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:outline-none"
 					onclick={openModal}
 				>
-					<span>Choose a model</span>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg
+					>
+					<span class="font-medium">Choose a model</span>
 				</button>
 			{/if}
 		</div>
 
-		<!-- Temperature & Max Tokens -->
-		<div class="grid gap-4 sm:grid-cols-2">
+		<!-- Temperature & Max Tokens: improved inputs with focus states -->
+		<div class="grid gap-5 sm:grid-cols-2">
 			<div>
-				<label
-					for="{type}-temperature"
-					class="mb-2 block text-xs font-medium tracking-wide text-muted-foreground uppercase"
-				>
+				<label for="{type}-temperature" class="mb-2 block text-sm font-medium text-foreground">
 					Temperature
 				</label>
 				<input
@@ -196,15 +209,12 @@
 					min="0"
 					max="2"
 					step="0.1"
-					class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
+					class="flex h-11 w-full rounded-lg border border-border bg-background px-4 py-2 text-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				/>
-				<p class="mt-1 text-xs text-muted-foreground">Controls randomness (0-2)</p>
+				<p class="mt-2 text-xs text-muted-foreground">Controls randomness (0-2)</p>
 			</div>
 			<div>
-				<label
-					for="{type}-max-tokens"
-					class="mb-2 block text-xs font-medium tracking-wide text-muted-foreground uppercase"
-				>
+				<label for="{type}-max-tokens" class="mb-2 block text-sm font-medium text-foreground">
 					Max Tokens
 				</label>
 				<input
@@ -215,26 +225,23 @@
 					min="1"
 					max="1000000"
 					step="1"
-					class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
+					class="flex h-11 w-full rounded-lg border border-border bg-background px-4 py-2 text-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				/>
-				<p class="mt-1 text-xs text-muted-foreground">Maximum output length</p>
+				<p class="mt-2 text-xs text-muted-foreground">Maximum output length</p>
 			</div>
 		</div>
 
-		<!-- Prompt Template -->
+		<!-- Prompt Template: improved select with focus states -->
 		{#if prompts.length > 0}
 			<div>
-				<label
-					for="{type}-prompt"
-					class="mb-2 block text-xs font-medium tracking-wide text-muted-foreground uppercase"
-				>
+				<label for="{type}-prompt" class="mb-2 block text-sm font-medium text-foreground">
 					Prompt Template
 				</label>
 				{#if prompts && prompts.length > 0}
 					<select
 						id="{type}-prompt"
 						name="{type}-prompt"
-						class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
+						class="flex h-11 w-full rounded-lg border border-border bg-background px-4 py-2 text-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 						onchange={(e: Event) => {
 							const target = e.target as HTMLSelectElement;
 							const newValue = target.value ? Number(target.value) : null;
@@ -277,17 +284,17 @@
 			</div>
 		{/if}
 
-		<!-- Delete Button (for council members) -->
+		<!-- Delete Button (for council members): improved with focus states -->
 		{#if onDelete}
-			<div class="mt-4 border-t border-border pt-4">
+			<div class="mt-6 border-t border-border/60 pt-5">
 				<button
 					type="button"
-					class="flex items-center gap-2 text-sm text-destructive transition-colors hover:text-destructive/80"
+					class="flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-destructive transition-all hover:bg-destructive/10 focus:ring-2 focus:ring-destructive/50 focus:ring-offset-2 focus:outline-none"
 					onclick={() => onDelete()}
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						class="h-4 w-4"
+						class="h-5 w-5"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"

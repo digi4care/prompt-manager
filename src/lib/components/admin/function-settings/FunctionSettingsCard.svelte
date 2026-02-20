@@ -47,7 +47,8 @@
 		allowedModels = [],
 		onselect,
 		onDelete,
-		promptLinkId = null
+		promptLinkId = null,
+		onPromptChange
 	}: Props = $props();
 
 	let showModal = $state(false);

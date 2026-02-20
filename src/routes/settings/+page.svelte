@@ -134,13 +134,31 @@
 
 	// Local state for function defaults (for immediate UI updates)
 	let functionDefaults = $state<{
-		executor: { modelId: string; modelName: string; temperature: number; maxTokens: number };
-		judge: { modelId: string; modelName: string; temperature: number; maxTokens: number };
-		improve: { modelId: string; modelName: string; temperature: number; maxTokens: number };
+		executor: {
+			modelId: string;
+			modelName: string;
+			temperature: number;
+			maxTokens: number;
+			promptLinkId: number | null;
+		};
+		judge: {
+			modelId: string;
+			modelName: string;
+			temperature: number;
+			maxTokens: number;
+			promptLinkId: number | null;
+		};
+		improve: {
+			modelId: string;
+			modelName: string;
+			temperature: number;
+			maxTokens: number;
+			promptLinkId: number | null;
+		};
 	}>({
-		executor: { modelId: '', modelName: '', temperature: 0.7, maxTokens: 4096 },
-		judge: { modelId: '', modelName: '', temperature: 0.3, maxTokens: 2048 },
-		improve: { modelId: '', modelName: '', temperature: 0.5, maxTokens: 4096 }
+		executor: { modelId: '', modelName: '', temperature: 0.7, maxTokens: 4096, promptLinkId: null },
+		judge: { modelId: '', modelName: '', temperature: 0.3, maxTokens: 2048, promptLinkId: null },
+		improve: { modelId: '', modelName: '', temperature: 0.5, maxTokens: 4096, promptLinkId: null }
 	});
 
 	// Track if there are unsaved changes
@@ -188,6 +206,29 @@
 			modelName: model.name
 		};
 		isDirty = true;
+	}
+
+	// Handle prompt template selection for function defaults
+	async function handleFunctionPromptChange(
+		type: string,
+		prompt: { id: number; title: string } | null
+	) {
+		if (!prompt) return;
+
+		functionDefaults[type].promptLinkId = prompt.id;
+
+		// Auto-save to server
+		await fetch(`/api/admin/function-defaults/${type}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				modelId: functionDefaults[type].modelId,
+				modelName: functionDefaults[type].modelName,
+				temperature: functionDefaults[type].temperature,
+				maxTokens: functionDefaults[type].maxTokens,
+				promptLinkId: prompt.id
+			})
+		});
 	}
 
 	// Save all function defaults to server
@@ -454,6 +495,7 @@
 										models={data.models}
 										allowedModels={data.allowedModels}
 										onselect={(model) => handleModelSelect('executor', model)}
+										onPromptChange={(prompt) => handleFunctionPromptChange('executor', prompt)}
 									/>
 
 									<FunctionSettingsCard

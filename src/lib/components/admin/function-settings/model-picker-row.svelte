@@ -2,19 +2,7 @@
 	import { cn } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
 	import ModelPickerModal from './model-picker-modal.svelte';
-
-	type FunctionType = 'executor' | 'judge' | 'improve';
-	type SettingField = 'modelId' | 'modelVariant' | 'temperature' | 'maxTokens';
-
-	interface FunctionSetting {
-		id?: number;
-		functionType: FunctionType;
-		modelId: string;
-		modelVariant?: string | null;
-		temperature: number;
-		maxTokens: number;
-		promptId?: number | null;
-	}
+	import type { FunctionType, SettingField, FunctionSetting } from './types';
 
 	interface GroupedModel {
 		id: string;

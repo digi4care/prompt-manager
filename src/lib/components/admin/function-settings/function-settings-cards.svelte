@@ -1,18 +1,7 @@
 <script lang="ts">
 	import ModelPickerRow from './model-picker-row.svelte';
 	import type { Snippet } from 'svelte';
-
-	type FunctionType = 'executor' | 'judge' | 'improve';
-
-	interface FunctionSetting {
-		id?: number;
-		functionType: FunctionType;
-		modelId: string;
-		modelVariant?: string | null;
-		temperature: number;
-		maxTokens: number;
-		promptId?: number | null;
-	}
+	import type { FunctionType, PolicyScope, SettingField, FunctionSetting } from './types';
 
 	interface GroupedModel {
 		id: string;
@@ -30,10 +19,6 @@
 		id: number;
 		title: string;
 	}
-
-	// Local types to match parent signatures
-	type SettingField = 'modelId' | 'temperature' | 'maxTokens' | 'prompt' | 'modelVariant';
-	type PolicyScope = 'shared' | 'council';
 
 	interface Props {
 		rowTypes: readonly FunctionType[];

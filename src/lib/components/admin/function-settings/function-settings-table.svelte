@@ -12,23 +12,16 @@
 		validateMaxTokens,
 		validateTemperature
 	} from '$lib/validators/function-settings';
+	import type {
+		FunctionType,
+		PolicyScope,
+		SettingField,
+		FunctionSetting,
+		FunctionSettingsRecord
+	} from './types';
 
 	// Responsive breakpoint (< 768px = mobile)
 	const MOBILE_BREAKPOINT = 768;
-
-	type FunctionType = 'executor' | 'judge' | 'improve';
-	type PolicyScope = FunctionType | 'council';
-	type SettingField = 'modelId' | 'modelVariant' | 'temperature' | 'maxTokens';
-
-	interface FunctionSetting {
-		id?: number;
-		functionType: FunctionType;
-		modelId: string;
-		modelVariant?: string | null;
-		temperature: number;
-		maxTokens: number;
-		promptId?: number | null;
-	}
 
 	interface CouncilAgent {
 		id: string;
@@ -66,7 +59,7 @@
 	// Responsive: use container width if available, otherwise fall back to viewport width
 	let isMobile = $derived((containerWidth || innerWidth.current || 0) < MOBILE_BREAKPOINT);
 
-	let settings = $state<Record<FunctionType, FunctionSetting>>({
+	let settings = $state<FunctionSettingsRecord>({
 		executor: {
 			functionType: 'executor',
 			modelId: '',

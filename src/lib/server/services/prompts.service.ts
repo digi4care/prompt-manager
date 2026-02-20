@@ -60,7 +60,17 @@ export async function listPrompts(
 	let filteredPrompts = allPrompts;
 	if (tags && tags.length > 0) {
 		filteredPrompts = allPrompts.filter((p) => {
-			const promptTags = typeof p.tags === 'string' ? JSON.parse(p.tags || '[]') : p.tags || [];
+			// Handle both comma-separated strings and JSON arrays
+			let promptTags: string[] = [];
+			if (typeof p.tags === 'string') {
+				try {
+					promptTags = JSON.parse(p.tags);
+				} catch {
+					promptTags = p.tags.split(',').map((t) => t.trim());
+				}
+			} else if (Array.isArray(p.tags)) {
+				promptTags = p.tags;
+			}
 			return tags.some((tag) => promptTags.includes(tag));
 		});
 	}

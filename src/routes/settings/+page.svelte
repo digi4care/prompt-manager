@@ -514,6 +514,7 @@
 										{#each data.councilAgents as agent, i}
 											<FunctionSettingsCard
 												type="council"
+												id={agent.id}
 												label="Agent {i + 1}"
 												description="Council member"
 												modelId={agent.modelId}

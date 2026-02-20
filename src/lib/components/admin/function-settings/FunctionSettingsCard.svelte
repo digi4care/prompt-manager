@@ -12,6 +12,7 @@
 
 	interface Props {
 		type: 'executor' | 'judge' | 'improve' | 'council';
+		id?: number;
 		label: string;
 		description: string;
 		modelId?: string | null;
@@ -31,6 +32,7 @@
 
 	let {
 		type,
+		id,
 		label,
 		description,
 		modelId = null,
@@ -51,6 +53,28 @@
 	let showModal = $state(false);
 	let searchQuery = $state('');
 	let showSelectedOnly = $state(false);
+	let savingPrompt = $state(false);
+	let promptSaved = $state(false);
+
+	// Autosave prompt when selection changes
+	async function savePrompt(promptId: number | null) {
+		if (!id || type !== 'council') return;
+
+		savingPrompt = true;
+		try {
+			await fetch(`/api/admin/council-agents/${id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ promptLinkId: promptId })
+			});
+			promptSaved = true;
+			setTimeout(() => (promptSaved = false), 2000);
+		} catch (e) {
+			console.error('Failed to save prompt:', e);
+		} finally {
+			savingPrompt = false;
+		}
+	}
 
 	let filteredModels = $derived.by(() => {
 		const modelList = models ?? [];
@@ -210,7 +234,12 @@
 						id="{type}-prompt"
 						name="{type}-prompt"
 						class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-						onchange={(e) => (promptLinkId = e.target.value ? Number(e.target.value) : null)}
+						onchange={(e: Event) => {
+							const target = e.target as HTMLSelectElement;
+							const newValue = target.value ? Number(target.value) : null;
+							promptLinkId = newValue;
+							savePrompt(newValue);
+						}}
 					>
 						<option value="">None</option>
 						{#each prompts as prompt}

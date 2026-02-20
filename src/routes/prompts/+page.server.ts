@@ -31,14 +31,35 @@ export const load: PageServerLoad = async ({ url }) => {
 			sortDirection
 		);
 
-		// Transform tags from JSON string to array if needed
+		// Transform tags from JSON string or comma-separated to array
 		// Transform llm_providers to llmProviders
 		const prompts = promptsList.map((p) => ({
 			...p,
-			tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags || [],
+			tags: (() => {
+				if (typeof p.tags === 'string') {
+					try {
+						return JSON.parse(p.tags);
+					} catch {
+						return p.tags
+							.split(',')
+							.map((t) => t.trim())
+							.filter(Boolean);
+					}
+				}
+				return p.tags || [];
+			})(),
 			llmProviders:
 				typeof (p as any).llm_providers === 'string'
-					? JSON.parse((p as any).llm_providers)
+					? (() => {
+							try {
+								return JSON.parse((p as any).llm_providers);
+							} catch {
+								return ((p as any).llm_providers || '')
+									.split(',')
+									.map((t: string) => t.trim())
+									.filter(Boolean);
+							}
+						})()
 					: (p as any).llm_providers || []
 		}));
 

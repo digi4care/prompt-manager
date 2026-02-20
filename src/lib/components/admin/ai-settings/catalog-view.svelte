@@ -23,13 +23,15 @@
 
 	interface Props {
 		class?: string;
+		allowedModels?: string[];
 	}
 
-	let { class: className = '' }: Props = $props();
+	let { class: className = '', allowedModels = [] }: Props = $props();
 
 	// Search and filter state
 	let searchQuery = $state('');
 	let showVisionOnly = $state(false);
+	let showWhitelistedOnly = $state(false);
 	let statusFilter = $state<'all' | 'active' | 'inactive'>('all');
 
 	// Calculate min/max context from all models
@@ -51,6 +53,27 @@
 
 		return { min: min === Infinity ? 0 : min, max: max || 1000000 };
 	});
+
+	// Adaptive filters - show only if data exists
+	let hasVisionModels = $derived(
+		getProviders().some((p: ProviderInfo) =>
+			Object.values(p.models || {}).some((m: ModelInfo) => m.supports_vision === true)
+		)
+	);
+
+	let hasInactiveModels = $derived(
+		getProviders().some((p: ProviderInfo) =>
+			Object.values(p.models || {}).some((m: ModelInfo) => m.status === 'inactive')
+		)
+	);
+
+	// Check if there are any whitelisted models (models in allowedModels)
+	let hasWhitelistedModels = $derived(
+		allowedModels.length > 0 &&
+			getProviders().some((p: ProviderInfo) =>
+				Object.values(p.models || {}).some((m: ModelInfo) => allowedModels.includes(m.id))
+			)
+	);
 
 	// Dual-handle slider values [min, max] in tokens
 	let sliderValue = $state<[number, number]>([0, 1000000]);
@@ -113,6 +136,10 @@
 			.map((provider) => {
 				const models = getModelsForProvider(provider);
 				const filteredModels = models.filter((model) => {
+					// Whitelist filter - only show models that are in allowedModels
+					if (showWhitelistedOnly && allowedModels.length > 0) {
+						if (!allowedModels.includes(model.id)) return false;
+					}
 					// Vision filter
 					if (showVisionOnly && !model.supports_vision) return false;
 					// Search filter
@@ -204,19 +231,36 @@
 				class="max-w-xs"
 			/>
 
-			<select
-				bind:value={statusFilter}
-				class="rounded-md border border-input bg-background px-3 py-2 text-sm"
-			>
-				<option value="all">All Status</option>
-				<option value="active">Active</option>
-				<option value="inactive">Inactive</option>
-			</select>
+			{#if hasInactiveModels}
+				<div class="relative">
+					<select
+						bind:value={statusFilter}
+						class="cursor-pointer appearance-none rounded-md border border-input bg-background px-8 py-2 pr-8 text-sm"
+					>
+						<option value="all">All Status</option>
+						<option value="active">Active</option>
+						<option value="inactive">Inactive</option>
+					</select>
+					<span
+						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground"
+						>▼</span
+					>
+				</div>
+			{/if}
 
-			<label class="flex items-center gap-2 text-sm">
-				<input type="checkbox" bind:checked={showVisionOnly} class="rounded border-input" />
-				Vision
-			</label>
+			{#if hasWhitelistedModels}
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" bind:checked={showWhitelistedOnly} class="rounded border-input" />
+					Whitelisted
+				</label>
+			{/if}
+
+			{#if hasVisionModels}
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" bind:checked={showVisionOnly} class="rounded border-input" />
+					Vision
+				</label>
+			{/if}
 		</div>
 
 		<!-- Context Range Filter with Slider -->
@@ -229,6 +273,7 @@
 						min={0}
 						max={contextRange.max}
 						step={10000}
+						type="multiple"
 						class="w-full"
 					/>
 				</div>

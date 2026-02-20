@@ -150,7 +150,7 @@
 	// Helper to resolve model name from model ID
 	function resolveModelName(modelId: string | null): string {
 		if (!modelId) return '';
-		const model = data.models?.find((m) => m.id === modelId);
+		const model = data.models?.find((m: any) => m.id === modelId);
 		return model?.name || modelId;
 	}
 
@@ -554,7 +554,7 @@
 									</button>
 								</div>
 							{:else if section.id === 'catalog'}
-								<CatalogView />
+								<CatalogView allowedModels={data.allowedModels} />
 							{:else if section.id === 'presets'}
 								<ImprovePresets />
 							{/if}

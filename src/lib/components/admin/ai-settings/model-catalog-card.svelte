@@ -46,9 +46,11 @@
 				<ProviderLogo providerId={provider} {name} size="lg" />
 				<div class="flex-1 space-y-1">
 					<CardTitle class="text-base">{name}</CardTitle>
-					<CardDescription class="line-clamp-2 text-xs">
-						{description || 'No description available'}
-					</CardDescription>
+					{#if description}
+						<CardDescription class="line-clamp-2 text-xs">
+							{description}
+						</CardDescription>
+					{/if}
 				</div>
 			</div>
 			<Badge variant={getStatusVariant(meta?.status)} class="shrink-0 text-xs">

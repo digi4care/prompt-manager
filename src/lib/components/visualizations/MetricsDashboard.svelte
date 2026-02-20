@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
+	import { Calendar } from 'lucide-svelte';
 	import {
 		Download,
 		TrendingUp,
@@ -12,6 +13,8 @@
 		Clock
 	} from 'lucide-svelte';
 	import { cn } from '$lib/utils';
+
+	type DateRange = '7d' | '30d' | '90d' | 'all';
 
 	interface Props {
 		totalPrompts?: number;
@@ -36,6 +39,32 @@
 		lastActivity = 'Never',
 		class: className = ''
 	}: Props = $props();
+
+	// Date range state
+	let selectedRange = $state<DateRange>('30d');
+	let customStartDate = $state<string>('');
+	let customEndDate = $state<string>('');
+
+	const dateRangeOptions: { value: DateRange; label: string }[] = [
+		{ value: '7d', label: 'Last 7 days' },
+		{ value: '30d', label: 'Last 30 days' },
+		{ value: '90d', label: 'Last 90 days' },
+		{ value: 'all', label: 'All time' }
+	];
+
+	function getDateRangeLabel(range: DateRange): string {
+		const option = dateRangeOptions.find((o) => o.value === range);
+		return option?.label || 'Custom';
+	}
+
+	function handleRangeChange(range: DateRange) {
+		selectedRange = range;
+		// Emit event or trigger callback for parent to reload data
+		const event = new CustomEvent('daterangechange', {
+			detail: { range, startDate: customStartDate, endDate: customEndDate }
+		});
+		document.dispatchEvent(event);
+	}
 
 	function getTrendIcon(trend: string) {
 		switch (trend) {
@@ -97,18 +126,38 @@
 </script>
 
 <div id="metrics-dashboard-container" class={cn('space-y-6', className)}>
-	<!-- Header -->
-	<div class="flex items-center justify-between">
+	<!-- Header with Date Range -->
+	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<h2 class="text-xl font-semibold">Metrics Dashboard</h2>
-		<button
-			class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-			onclick={handleExport}
-			aria-label="Export metrics data"
-			type="button"
-		>
-			<Download class="mr-2 h-4 w-4" />
-			Export Data
-		</button>
+		<div class="flex flex-wrap items-center gap-2">
+			<!-- Date Range Selector -->
+			<div class="flex items-center gap-1 rounded-md border bg-background p-1">
+				{#each dateRangeOptions as option}
+					<button
+						type="button"
+						onclick={() => handleRangeChange(option.value)}
+						class={cn(
+							'rounded-sm px-3 py-1 text-sm transition-colors',
+							selectedRange === option.value
+								? 'bg-primary text-primary-foreground'
+								: 'hover:bg-accent hover:text-accent-foreground'
+						)}
+					>
+						{option.label}
+					</button>
+				{/each}
+			</div>
+			<!-- Export Button -->
+			<button
+				class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+				onclick={handleExport}
+				aria-label="Export metrics data"
+				type="button"
+			>
+				<Download class="mr-2 h-4 w-4" />
+				Export Data
+			</button>
+		</div>
 	</div>
 
 	<!-- Key Metrics Grid -->

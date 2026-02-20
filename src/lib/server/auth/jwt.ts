@@ -46,9 +46,9 @@ export function verifyToken(token: string): JwtPayload {
  * Extract token from Authorization header
  * Format: "Bearer <token>"
  */
-export function extractTokenFromHeader(authHeader: string | null | undefined): string | undefined {
+export function extractTokenFromHeader(authHeader: string | null | undefined): string | null {
 	if (!authHeader?.startsWith('Bearer ')) {
-		return undefined;
+		return null;
 	}
 	return authHeader.substring(7);
 }
@@ -64,7 +64,7 @@ export function authenticateRequest(event: RequestEvent): JwtPayload {
 	// If not in cookie, try Authorization header
 	if (!token) {
 		const authHeader = event.request.headers.get('Authorization');
-		token = extractTokenFromHeader(authHeader ?? undefined);
+		token = extractTokenFromHeader(authHeader ?? undefined) ?? undefined;
 	}
 
 	if (!token) {

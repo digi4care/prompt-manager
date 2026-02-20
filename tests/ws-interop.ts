@@ -1,9 +1,46 @@
-import { createRequire } from 'node:module';
+// Mock ws module for jsdom test environment
+// This provides a minimal WebSocket implementation for testing
 
-const require = createRequire(import.meta.url);
-const ws = require('ws');
+class MockWebSocket {
+	public readyState = 0; // CONNECTING
+	public OPEN = 1;
+	public CLOSED = 3;
 
-export const WebSocket = ws.WebSocket ?? ws;
-export const WebSocketServer = ws.WebSocketServer ?? ws.Server;
+	constructor(public url: string) {}
 
-export default ws;
+	public send(data: string | ArrayBuffer): void {
+		// No-op for testing
+	}
+
+	public close(): void {
+		// No-op for testing
+	}
+
+	public addEventListener(): void {
+		// No-op for testing
+	}
+
+	public removeEventListener(): void {
+		// No-op for testing
+	}
+}
+
+class MockWebSocketServer {
+	constructor() {
+		// No-op for testing
+	}
+
+	public close(): void {
+		// No-op for testing
+	}
+}
+
+// ESM exports
+export const WebSocket = MockWebSocket;
+export const WebSocketServer = MockWebSocketServer;
+
+// CommonJS default export
+export default {
+	WebSocket: MockWebSocket,
+	WebSocketServer: MockWebSocketServer
+};

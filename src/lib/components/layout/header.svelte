@@ -66,6 +66,15 @@
 		onMenuToggle?.();
 	}
 
+	// Close mobile nav when route changes
+	$effect(() => {
+		// Track pathname changes
+		const path = $page.url.pathname;
+		if (mobileNavOpen) {
+			mobileNavOpen = false;
+		}
+	});
+
 	$effect(() => {
 		if (typeof window === 'undefined') return;
 		if (!mobileNavOpen) return;
@@ -200,27 +209,47 @@
 		</div>
 
 		<!-- Mobile Navigation (slide-out, only when authenticated) -->
-		{#if mobileNavOpen && $page.data.isAuthenticated}
+		{#if $page.data.isAuthenticated}
+			<!-- Backdrop -->
+			{#if mobileNavOpen}
+				<div
+					class="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm md:hidden"
+					onclick={() => (mobileNavOpen = false)}
+					onkeydown={(e) => e.key === 'Escape' && (mobileNavOpen = false)}
+					role="button"
+					tabindex="-1"
+					aria-label="Close menu"
+				></div>
+			{/if}
+
+			<!-- Mobile Nav Panel -->
 			<nav
 				id="mobile-nav"
-				class="space-y-1 border-t bg-background p-4 md:hidden"
+				class={cn(
+					'fixed inset-x-0 top-16 z-40 border-t bg-background p-4 transition-all duration-300 ease-in-out md:hidden',
+					mobileNavOpen
+						? 'translate-y-0 opacity-100'
+						: 'pointer-events-none -translate-y-4 opacity-0'
+				)}
 				aria-label="Mobile navigation"
 			>
-				{#each allNavItems as item}
-					{@const active = isActive(item.href, $page.url.pathname)}
-					<a
-						href={item.href}
-						onclick={() => (mobileNavOpen = false)}
-						class={cn(
-							'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
-							active
-								? 'bg-primary text-primary-foreground'
-								: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:text-foreground'
-						)}
-					>
-						{item.label}
-					</a>
-				{/each}
+				<div class="space-y-1">
+					{#each allNavItems as item}
+						{@const active = isActive(item.href, $page.url.pathname)}
+						<a
+							href={item.href}
+							onclick={() => (mobileNavOpen = false)}
+							class={cn(
+								'flex min-h-[44px] w-full items-center rounded-md px-4 py-3 font-medium text-base transition-all duration-200',
+								active
+									? 'bg-primary text-primary-foreground'
+									: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:text-foreground'
+							)}
+						>
+							{item.label}
+						</a>
+					{/each}
+				</div>
 			</nav>
 		{/if}
 	</div>

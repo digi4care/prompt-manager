@@ -530,3 +530,198 @@ body {
 .bg-gradient-pink {
 	background: linear-gradient(135deg, hsl(var(--pink) / 0.1) 0%, hsl(var(--mauve) / 0.05) 100%);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATION PRESETS - DRY: Define once, use everywhere
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fade animations */
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes fade-out {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+@keyframes fade-in-up {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes fade-in-down {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Scale animations */
+@keyframes scale-in {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+@keyframes scale-out {
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+}
+
+/* Slide animations */
+@keyframes slide-in-left {
+	from {
+		opacity: 0;
+		transform: translateX(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+@keyframes slide-in-right {
+	from {
+		opacity: 0;
+		transform: translateX(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* Collapse/expand animation */
+@keyframes collapse-down {
+	from {
+		height: 0;
+		opacity: 0;
+	}
+	to {
+		height: var(--radix-accordion-content-height);
+		opacity: 1;
+	}
+}
+@keyframes collapse-up {
+	from {
+		height: var(--radix-accordion-content-height);
+		opacity: 1;
+	}
+	to {
+		height: 0;
+		opacity: 0;
+	}
+}
+
+/* Animation utility classes */
+.animate-fade-in {
+	animation: fade-in 0.2s ease-out forwards;
+}
+.animate-fade-out {
+	animation: fade-out 0.2s ease-in forwards;
+}
+.animate-fade-in-up {
+	animation: fade-in-up 0.3s ease-out forwards;
+}
+.animate-fade-in-down {
+	animation: fade-in-down 0.3s ease-out forwards;
+}
+.animate-scale-in {
+	animation: scale-in 0.2s ease-out forwards;
+}
+.animate-scale-out {
+	animation: scale-out 0.2s ease-in forwards;
+}
+.animate-slide-in-left {
+	animation: slide-in-left 0.3s ease-out forwards;
+}
+.animate-slide-in-right {
+	animation: slide-in-right 0.3s ease-out forwards;
+}
+.animate-collapse-down {
+	animation: collapse-down 0.3s ease-out forwards;
+}
+.animate-collapse-up {
+	animation: collapse-up 0.3s ease-out forwards;
+}
+
+/* Animation duration variants */
+.duration-fast {
+	animation-duration: 0.15s;
+}
+.duration-normal {
+	animation-duration: 0.3s;
+}
+.duration-slow {
+	animation-duration: 0.5s;
+}
+
+/* Animation delay variants */
+.delay-100 {
+	animation-delay: 100ms;
+}
+.delay-200 {
+	animation-delay: 200ms;
+}
+.delay-300 {
+	animation-delay: 300ms;
+}
+
+/* Staggered animations for lists */
+.stagger-1 {
+	animation-delay: 50ms;
+}
+.stagger-2 {
+	animation-delay: 100ms;
+}
+.stagger-3 {
+	animation-delay: 150ms;
+}
+.stagger-4 {
+	animation-delay: 200ms;
+}
+.stagger-5 {
+	animation-delay: 250ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOUCH TARGETS - Mobile-first: 44px minimum (WCAG)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.touch-target {
+	@apply min-h-11 min-w-11;
+}
+
+.touch-target-sm {
+	@apply min-h-9 min-w-9;
+}
+
+.touch-target-lg {
+	@apply min-h-12 min-w-12;
+}

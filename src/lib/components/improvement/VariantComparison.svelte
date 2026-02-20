@@ -58,6 +58,8 @@
 	let selectedVariantId = $state<number | null>(null);
 	let previewVariantId = $state<number | null>(null);
 	let expandedVariantId = $state<number | null>(null);
+	let fullContentVariantId = $state<number | null>(null);
+	const CONTENT_PREVIEW_LINES = 10;
 	const scoreCriteria: Array<'clarity' | 'completeness' | 'specificity'> = [
 		'clarity',
 		'completeness',
@@ -106,6 +108,23 @@
 	// Handle expand/collapse for diff view
 	function toggleExpand(variantId: number): void {
 		expandedVariantId = expandedVariantId === variantId ? null : variantId;
+	}
+
+	// Handle show full content toggle
+	function toggleFullContent(variantId: number): void {
+		fullContentVariantId = fullContentVariantId === variantId ? null : variantId;
+	}
+
+	// Check if content should be truncated
+	function shouldTruncate(content: string): boolean {
+		return content.split('\n').length > CONTENT_PREVIEW_LINES;
+	}
+
+	// Get truncated content
+	function getTruncatedContent(content: string): string {
+		const lines = content.split('\n');
+		if (lines.length <= CONTENT_PREVIEW_LINES) return content;
+		return lines.slice(0, CONTENT_PREVIEW_LINES).join('\n') + '\n...';
 	}
 
 	// Handle reject all
@@ -282,7 +301,26 @@
 					<!-- Content Preview -->
 					{#if isPreview}
 						<div class="rounded-lg bg-muted/50 p-4">
-							<pre class="font-mono text-sm break-words whitespace-pre-wrap">{variant.content}</pre>
+							<pre
+								class="font-mono text-sm break-words whitespace-pre-wrap">{#if shouldTruncate(variant.content) && fullContentVariantId !== variant.id}{getTruncatedContent(
+										variant.content
+									)}{:else}{variant.content}{/if}</pre>
+							{#if shouldTruncate(variant.content)}
+								<Button
+									variant="link"
+									size="sm"
+									onclick={() => toggleFullContent(variant.id)}
+									class="mt-2 h-auto p-0 text-primary"
+								>
+									{#if fullContentVariantId === variant.id}
+										<ChevronUp class="mr-1 h-4 w-4" />
+										Show less
+									{:else}
+										<ChevronDown class="mr-1 h-4 w-4" />
+										Show more ({variant.content.split('\n').length - CONTENT_PREVIEW_LINES} more lines)
+									{/if}
+								</Button>
+							{/if}
 						</div>
 					{/if}
 

@@ -63,7 +63,10 @@
 </script>
 
 <aside
-	class="sticky top-0 hidden h-[calc(100vh-4rem)] w-64 flex-shrink-0 self-start border-r bg-background md:block"
+	class={cn(
+		'sticky top-0 hidden h-[calc(100vh-4rem)] w-64 flex-shrink-0 self-start border-r bg-background md:block',
+		'transition-colors duration-200 hover:bg-accent/5'
+	)}
 >
 	<div class="flex h-full flex-col">
 		<!-- Navigation section -->
@@ -72,19 +75,27 @@
 				{@const active = isActive(item.href, $page.url.pathname)}
 				<Button
 					variant={active ? 'secondary' : 'ghost'}
-					class={cn('w-full justify-start gap-2', active ? '' : 'text-muted-foreground')}
+					class={cn(
+						'w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all duration-200',
+						active
+							? 'border-l-2 border-primary bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:translate-x-1 hover:bg-accent hover:text-foreground',
+						!active && 'border-l-2 border-transparent'
+					)}
 					href={item.href}
 				>
 					{#if icons[item.icon]}
-						{@html icons[item.icon].svg}
+						<span class="flex-shrink-0">
+							{@html icons[item.icon].svg}
+						</span>
 					{/if}
-					{item.label}
+					<span class="truncate">{item.label}</span>
 				</Button>
 			{/each}
 		</nav>
 
 		<!-- Footer with version info -->
-		<div class="border-t p-4">
+		<div class="border-t border-border/50 p-4">
 			<p class="text-center text-xs text-muted-foreground">Prompt Wallet v1.0</p>
 		</div>
 	</div>

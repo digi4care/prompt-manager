@@ -54,11 +54,42 @@
 				}
 			},
 			tooltip: {
-				backgroundColor: 'rgba(0, 0, 0, 0.8)',
+				backgroundColor: 'rgba(0, 0, 0, 0.9)',
 				titleColor: '#fff',
 				bodyColor: '#fff',
-				padding: 10,
-				cornerRadius: 6
+				padding: 12,
+				cornerRadius: 8,
+				titleFont: { size: 13, weight: 'bold' as const },
+				bodyFont: { size: 12 },
+				displayColors: true,
+				boxPadding: 4,
+				callbacks: {
+					title: (items: any[]) => {
+						if (!items.length) return '';
+						return `Date: ${items[0].label}`;
+					},
+					label: (context: any) => {
+						const value = context.parsed.y;
+						const label = context.dataset.label || '';
+						return `${label}: ${value}%`;
+					},
+					afterBody: (items: any[]) => {
+						if (!items.length) return [];
+						// Find corresponding data point
+						const idx = items[0].dataIndex;
+						if (qualityScores[idx]) {
+							const data = qualityScores[idx];
+							return [
+								'',
+								`Clarity: ${data.clarity}%`,
+								`Completeness: ${data.completeness}%`,
+								`Specificity: ${data.specificity}%`,
+								`Overall: ${data.overall}%`
+							];
+						}
+						return [];
+					}
+				}
 			}
 		},
 		scales: {

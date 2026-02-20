@@ -67,7 +67,7 @@ describe('Navigation Items', () => {
 		expect(content).toContain('navItems');
 		expect(content).toContain("href: '/prompts'");
 		expect(content).toContain("href: '/analytics'");
-		expect(content).toContain("href: '/admin'");
+		expect(content).toContain("href: '/settings'");
 	});
 });
 

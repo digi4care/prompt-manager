@@ -8,11 +8,12 @@
 		Settings,
 		Database,
 		Sparkles,
-		ChevronDown,
-		ChevronUp,
 		Server,
-		Users
+		Users,
+		ChevronUp,
+		ChevronDown
 	} from 'lucide-svelte';
+	import * as Accordion from '$lib/components/ui/accordion';
 	import ConnectionSettings from '$lib/components/admin/ai-settings/connection-settings.svelte';
 	import ProvidersBlock from '$lib/components/admin/ai-settings/providers-block.svelte';
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
@@ -372,40 +373,59 @@
 		openAccordions = newSet;
 	}
 
-	// Map colors to actual Tailwind classes (Tailwind can't compile dynamic classes)
+	// Remove old toggle function - using shadcn-svelte Accordion instead
+	// Map colors to actual Tailwind classes - distinct colors per section
 	const leftBorderClasses: Record<string, string> = {
-		sapphire: 'border-l-primary',
-		mauve: 'border-l-primary',
-		green: 'border-l-primary',
-		peach: 'border-l-primary',
-		pink: 'border-l-primary'
+		sapphire: 'border-l-blue-500 dark:border-l-blue-400',
+		mauve: 'border-l-violet-500 dark:border-l-violet-400',
+		green: 'border-l-emerald-500 dark:border-l-emerald-400',
+		peach: 'border-l-orange-400 dark:border-l-orange-300',
+		pink: 'border-l-pink-500 dark:border-l-pink-400',
+		teal: 'border-l-teal-500 dark:border-l-teal-400',
+		blue: 'border-l-blue-500 dark:border-l-blue-400'
 	};
 
 	const bgClasses: Record<string, string> = {
-		sapphire: 'bg-secondary',
-		mauve: 'bg-secondary',
-		green: 'bg-secondary',
-		peach: 'bg-secondary',
-		pink: 'bg-secondary'
+		sapphire: 'bg-blue-50 dark:bg-blue-950/30',
+		mauve: 'bg-violet-50 dark:bg-violet-950/30',
+		green: 'bg-emerald-50 dark:bg-emerald-950/30',
+		peach: 'bg-orange-50 dark:bg-orange-950/30',
+		pink: 'bg-pink-50 dark:bg-pink-950/30',
+		teal: 'bg-teal-50 dark:bg-teal-950/30',
+		blue: 'bg-blue-50 dark:bg-blue-950/30'
 	};
 
 	const textClasses: Record<string, string> = {
-		sapphire: 'text-primary',
-		mauve: 'text-primary',
-		green: 'text-primary',
-		peach: 'text-primary',
-		pink: 'text-primary'
+		sapphire: 'text-blue-600 dark:text-blue-400',
+		mauve: 'text-violet-600 dark:text-violet-400',
+		green: 'text-emerald-600 dark:text-emerald-400',
+		peach: 'text-orange-600 dark:text-orange-400',
+		pink: 'text-pink-600 dark:text-pink-400',
+		teal: 'text-teal-600 dark:text-teal-400',
+		blue: 'text-blue-600 dark:text-blue-400'
+	};
+
+	const iconBgClasses: Record<string, string> = {
+		sapphire: 'bg-blue-100 dark:bg-blue-900/50',
+		mauve: 'bg-violet-100 dark:bg-violet-900/50',
+		green: 'bg-emerald-100 dark:bg-emerald-900/50',
+		peach: 'bg-orange-100 dark:bg-orange-900/50',
+		pink: 'bg-pink-100 dark:bg-pink-900/50',
+		teal: 'bg-teal-100 dark:bg-teal-900/50',
+		blue: 'bg-blue-100 dark:bg-blue-900/50'
 	};
 
 	function getColorClasses(color: string): {
 		leftBorder: string;
 		bg: string;
 		text: string;
+		iconBg: string;
 	} {
 		return {
 			leftBorder: leftBorderClasses[color] || 'border-l-primary',
 			bg: bgClasses[color] || 'bg-secondary',
-			text: textClasses[color] || 'text-primary'
+			text: textClasses[color] || 'text-primary',
+			iconBg: iconBgClasses[color] || 'bg-secondary'
 		};
 	}
 </script>

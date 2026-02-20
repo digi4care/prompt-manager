@@ -12,6 +12,8 @@
 		CardTitle
 	} from '$lib/components/ui/card';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import Eye from 'lucide-svelte/icons/eye';
+	import EyeOff from 'lucide-svelte/icons/eye-off';
 	import { onMount } from 'svelte';
 
 	let isBrowser = $state(false);
@@ -31,6 +33,7 @@
 
 	let loading = $state(false);
 	let showTwoFactor = $state(false);
+	let showPassword = $state(false);
 	let userEmail = $state('');
 	let email = $state('');
 	let password = $state('');
@@ -171,16 +174,31 @@
 					</div>
 					<div class="space-y-2">
 						<label for="password" class="text-sm font-medium">Password</label>
-						<Input
-							id="password"
-							name="password"
-							type="password"
-							placeholder="Enter admin password"
-							autocomplete="current-password"
-							required
-							bind:value={password}
-							disabled={loading}
-						/>
+						<div class="relative">
+							<Input
+								id="password"
+								name="password"
+								type={showPassword ? 'text' : 'password'}
+								placeholder="Enter admin password"
+								autocomplete="current-password"
+								required
+								bind:value={password}
+								disabled={loading}
+								class="pr-10"
+							/>
+							<button
+								type="button"
+								onclick={() => (showPassword = !showPassword)}
+								class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								tabindex="-1"
+							>
+								{#if showPassword}
+									<EyeOff class="h-4 w-4" />
+								{:else}
+									<Eye class="h-4 w-4" />
+								{/if}
+							</button>
+						</div>
 					</div>
 
 					{#if error}

@@ -21,7 +21,8 @@
 	import CatalogView from '$lib/components/admin/ai-settings/catalog-view.svelte';
 	import PolicyEditor from '$lib/components/admin/ai-settings/policy-editor.svelte';
 	import ImprovePresets from '$lib/components/admin/ai-settings/improve-presets.svelte';
-	import FunctionSettingsCard from '$lib/components/admin/function-settings/FunctionSettingsCard.svelte';
+	import FunctionDefaultsList from '$lib/components/admin/function-settings/FunctionDefaultsList.svelte';
+	import CouncilMembersList from '$lib/components/admin/function-settings/CouncilMembersList.svelte';
 
 	interface SelectedModel {
 		id: string;
@@ -140,6 +141,7 @@
 		executor: {
 			modelId: string;
 			modelName: string;
+			modelProvider: string;
 			temperature: number;
 			maxTokens: number;
 			promptLinkId: number | null;
@@ -147,6 +149,7 @@
 		judge: {
 			modelId: string;
 			modelName: string;
+			modelProvider: string;
 			temperature: number;
 			maxTokens: number;
 			promptLinkId: number | null;
@@ -154,14 +157,36 @@
 		improve: {
 			modelId: string;
 			modelName: string;
+			modelProvider: string;
 			temperature: number;
 			maxTokens: number;
 			promptLinkId: number | null;
 		};
 	}>({
-		executor: { modelId: '', modelName: '', temperature: 0.7, maxTokens: 4096, promptLinkId: null },
-		judge: { modelId: '', modelName: '', temperature: 0.3, maxTokens: 2048, promptLinkId: null },
-		improve: { modelId: '', modelName: '', temperature: 0.5, maxTokens: 4096, promptLinkId: null }
+		executor: {
+			modelId: '',
+			modelName: '',
+			modelProvider: '',
+			temperature: 0.7,
+			maxTokens: 4096,
+			promptLinkId: null
+		},
+		judge: {
+			modelId: '',
+			modelName: '',
+			modelProvider: '',
+			temperature: 0.3,
+			maxTokens: 2048,
+			promptLinkId: null
+		},
+		improve: {
+			modelId: '',
+			modelName: '',
+			modelProvider: '',
+			temperature: 0.5,
+			maxTokens: 4096,
+			promptLinkId: null
+		}
 	});
 
 	// Track if there are unsaved changes
@@ -178,21 +203,30 @@
 	// Initialize function defaults from server data
 	$effect(() => {
 		if (data.settings?.executor) {
+			const exec = data.settings.executor as any;
 			functionDefaults.executor = {
-				...data.settings.executor,
-				modelName: resolveModelName(data.settings.executor.modelId)
+				...exec,
+				modelName: resolveModelName(exec.modelId),
+				modelProvider: exec.providerId || exec.modelProvider || '',
+				promptLinkId: exec.promptId ?? null
 			};
 		}
 		if (data.settings?.judge) {
+			const judge = data.settings.judge as any;
 			functionDefaults.judge = {
-				...data.settings.judge,
-				modelName: resolveModelName(data.settings.judge.modelId)
+				...judge,
+				modelName: resolveModelName(judge.modelId),
+				modelProvider: judge.providerId || judge.modelProvider || '',
+				promptLinkId: judge.promptId ?? null
 			};
 		}
 		if (data.settings?.improve) {
+			const improve = data.settings.improve as any;
 			functionDefaults.improve = {
-				...data.settings.improve,
-				modelName: resolveModelName(data.settings.improve.modelId)
+				...improve,
+				modelName: resolveModelName(improve.modelId),
+				modelProvider: improve.providerId || improve.modelProvider || '',
+				promptLinkId: improve.promptId ?? null
 			};
 		}
 	});
@@ -206,32 +240,19 @@
 		functionDefaults[type] = {
 			...functionDefaults[type],
 			modelId: model.id,
-			modelName: model.name
+			modelName: model.name,
+			modelProvider: model.provider
 		};
 		isDirty = true;
 	}
 
 	// Handle prompt template selection for function defaults
 	async function handleFunctionPromptChange(
-		type: string,
-		prompt: { id: number; title: string } | null
+		type: 'executor' | 'judge' | 'improve',
+		promptId: number | null
 	) {
-		if (!prompt) return;
-
-		functionDefaults[type].promptLinkId = prompt.id;
-
-		// Auto-save to server
-		await fetch(`/api/admin/function-defaults/${type}`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				modelId: functionDefaults[type].modelId,
-				modelName: functionDefaults[type].modelName,
-				temperature: functionDefaults[type].temperature,
-				maxTokens: functionDefaults[type].maxTokens,
-				promptLinkId: prompt.id
-			})
-		});
+		functionDefaults[type].promptLinkId = promptId;
+		isDirty = true;
 	}
 
 	// Save all function defaults to server
@@ -247,9 +268,10 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
 						modelId: functionDefaults[type].modelId,
-						modelName: functionDefaults[type].modelName,
+						modelProvider: functionDefaults[type].modelProvider,
 						temperature: functionDefaults[type].temperature,
-						maxTokens: functionDefaults[type].maxTokens
+						maxTokens: functionDefaults[type].maxTokens,
+						promptId: functionDefaults[type].promptLinkId
 					})
 				});
 
@@ -257,11 +279,12 @@
 					console.error(`Failed to save ${type} settings`);
 				}
 			}
-			isDirty = false;
+			await invalidateAll();
 		} catch (error) {
 			console.error('Error saving function defaults:', error);
 		} finally {
 			isSaving = false;
+			isDirty = false;
 		}
 	}
 
@@ -501,103 +524,30 @@
 							{:else if section.id === 'policy'}
 								<PolicyEditor />
 							{:else if section.id === 'defaults'}
-								<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-									<FunctionSettingsCard
-										type="executor"
-										label="Executor"
-										description="Runs prompt content"
-										modelId={functionDefaults.executor.modelId}
-										modelName={functionDefaults.executor.modelName}
-										modelProvider={data.settings?.executor?.modelProvider}
-										modelLogo={data.settings?.executor?.modelLogo}
-										temperature={functionDefaults.executor.temperature}
-										maxTokens={functionDefaults.executor.maxTokens}
-										promptTemplate={data.settings?.executor?.promptTemplate}
-										prompts={data.prompts}
-										models={data.models}
-										allowedModels={data.allowedModels}
-										onselect={(model) => handleModelSelect('executor', model)}
-										onPromptChange={(prompt) => handleFunctionPromptChange('executor', prompt)}
-									/>
-
-									<FunctionSettingsCard
-										type="judge"
-										label="Judge"
-										description="Evaluates responses"
-										modelId={functionDefaults.judge.modelId}
-										modelName={functionDefaults.judge.modelName}
-										modelProvider={data.settings?.judge?.modelProvider}
-										modelLogo={data.settings?.judge?.modelLogo}
-										temperature={functionDefaults.judge.temperature}
-										maxTokens={functionDefaults.judge.maxTokens}
-										promptTemplate={data.settings?.judge?.promptTemplate}
-										prompts={data.prompts}
-										models={data.models}
-										allowedModels={data.allowedModels}
-										onselect={(model) => handleModelSelect('judge', model)}
-									/>
-
-									{#if data.settings?.improve}
-										<FunctionSettingsCard
-											type="improve"
-											label="Improve"
-											description="Improves prompts"
-											modelId={functionDefaults.improve.modelId}
-											modelName={functionDefaults.improve.modelName}
-											modelProvider={data.settings?.improve?.modelProvider}
-											modelLogo={data.settings?.improve?.modelLogo}
-											temperature={functionDefaults.improve.temperature}
-											maxTokens={functionDefaults.improve.maxTokens}
-											promptTemplate={data.settings?.improve?.promptTemplate}
-											prompts={data.prompts}
-											models={data.models}
-											allowedModels={data.allowedModels}
-											onselect={(model) => handleModelSelect('improve', model)}
-										/>
-									{/if}
-
-									<!-- Save Button -->
-									{#if isDirty}
-										<div class="flex justify-end border-t border-border pt-4">
-											<Button onclick={saveFunctionDefaults} disabled={isSaving}>
-												{isSaving ? 'Saving...' : 'Save Changes'}
-											</Button>
-										</div>
-									{/if}
-								</div>
+								<FunctionDefaultsList
+									executor={functionDefaults.executor}
+									judge={functionDefaults.judge}
+									improve={data.settings?.improve ? functionDefaults.improve : null}
+									prompts={data.prompts}
+									models={data.models}
+									allowedModels={data.allowedModels}
+									onModelSelect={handleModelSelect}
+									onPromptChange={handleFunctionPromptChange}
+									onSave={saveFunctionDefaults}
+									{isSaving}
+									{isDirty}
+								/>
 							{:else if section.id === 'council'}
-								<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-									{#if data.councilAgents && data.councilAgents.length > 0}
-										{#each data.councilAgents as agent, i}
-											<FunctionSettingsCard
-												type="council"
-												id={agent.id}
-												label="Agent {i + 1}"
-												description="Council member"
-												modelId={agent.modelId}
-												modelName={agent.modelName}
-												modelProvider={agent.modelProvider}
-												modelLogo={agent.modelLogo}
-												temperature={agent.temperature}
-												maxTokens={agent.maxTokens}
-												promptLinkId={agent.promptLinkId}
-												prompts={data.prompts}
-												models={data.models}
-												allowedModels={data.allowedModels}
-												onselect={(model) => updateCouncilModel(agent.id, model)}
-												onDelete={() => deleteCouncilMember(agent.id)}
-											/>
-										{/each}
-									{:else}
-										<p class="text-sm text-gray-500">No council agents configured</p>
-									{/if}
-
-									<!-- Add Member Button -->
-									<Button variant="outline" onclick={addCouncilMember}>
-										<Plus class="mr-2 h-4 w-4" />
-										Add Council Member
-									</Button>
-								</div>
+								<CouncilMembersList
+									agents={data.councilAgents ?? []}
+									prompts={data.prompts}
+									models={data.models}
+									allowedModels={data.allowedModels}
+									onModelChange={updateCouncilModel}
+									onDelete={deleteCouncilMember}
+									onAdd={addCouncilMember}
+									onPromptChange={updateCouncilPrompt}
+								/>
 							{:else if section.id === 'catalog'}
 								<CatalogView allowedModels={data.allowedModels} />
 							{:else if section.id === 'presets'}

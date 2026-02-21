@@ -719,118 +719,259 @@
 					</p>
 				</div>
 			{:else}
-				<div class="overflow-x-auto rounded-xl border border-border shadow-sm">
-					<table class="w-full text-sm">
-						<thead>
-							<tr class="border-b border-border bg-muted/40 text-muted-foreground">
-								<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase"
-									>Model</th
-								>
-								<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase"
-									>Variants</th
-								>
-								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
-									>Judge</th
-								>
-								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
-									>Executor</th
-								>
-								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
-									>Improve</th
-								>
-								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
-									>Council Agent</th
-								>
-								<th class="px-4 py-3 text-center text-xs font-semibold tracking-wider uppercase"
-									>Remove</th
-								>
-							</tr>
-						</thead>
-						<tbody>
-							{#each matrixRows as row, i (row.modelId)}
-								<tr
-									class="border-b border-border/50 transition-colors even:bg-muted/10 hover:bg-muted/50 data-[selected=true]:bg-muted/60"
-								>
-									<td class="px-3 py-2">
-										<div class="space-y-0.5">
-											{#if row.model}
-												<div class="flex items-center gap-1.5 font-medium">
-													<ProviderLogo providerId={row.modelId.split('/')[0]} size="sm" />
-													<span>{row.model.name}</span>
+				<div class="space-y-4">
+					<div class="hidden overflow-hidden rounded-xl border border-border shadow-sm lg:block">
+						<table class="w-full text-sm">
+							<thead>
+								<tr class="border-b border-border bg-muted/30">
+									<th
+										class="px-4 py-3 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Model</th
+									>
+									<th
+										class="px-4 py-3 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Variants</th
+									>
+									<th
+										class="w-20 px-3 py-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Judge</th
+									>
+									<th
+										class="w-24 px-3 py-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Executor</th
+									>
+									<th
+										class="w-20 px-3 py-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Improve</th
+									>
+									<th
+										class="w-20 px-3 py-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Council</th
+									>
+									<th class="w-16 px-3 py-3"></th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-border/50">
+								{#each matrixRows as row, i (row.modelId)}
+									<tr class="transition-colors hover:bg-muted/30">
+										<td class="px-4 py-3">
+											<div class="flex items-center gap-2">
+												<ProviderLogo providerId={row.modelId.split('/')[0]} size="sm" />
+												<div class="min-w-0">
+													<div class="truncate font-medium">
+														{row.model?.name ?? row.modelId.split('/').slice(1).join('/')}
+													</div>
+													<div class="truncate font-mono text-[11px] text-muted-foreground">
+														{row.modelId}
+													</div>
+												</div>
+											</div>
+										</td>
+										<td class="px-4 py-3">
+											{#if row.model?.variantOptions && row.model.variantOptions.length > 0}
+												<div class="flex flex-wrap gap-1.5">
+													{#each row.model.variantOptions as variant}
+														<button
+															type="button"
+															onclick={() => toggleVariant(row.modelId, variant)}
+															class="min-h-[28px] rounded-md border px-2 py-1 text-[11px] font-medium transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:outline-none {row.allowedVariants.includes(
+																variant
+															)
+																? 'border-primary bg-primary/10 text-primary'
+																: 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:bg-muted/30'}"
+														>
+															{variant}
+														</button>
+													{/each}
 												</div>
 											{:else}
-												<div class="flex items-center gap-1.5 font-medium">
-													<ProviderLogo providerId={row.modelId.split('/')[0]} size="sm" />
-													<span>{row.modelId.split('/').slice(1).join('/')}</span>
-												</div>
+												<span class="text-xs text-muted-foreground">—</span>
 											{/if}
-											<div class="font-mono text-[11px] text-muted-foreground">{row.modelId}</div>
-										</div>
-									</td>
-									<td class="px-3 py-2">
-										{#if row.model?.variantOptions && row.model.variantOptions.length > 0}
-											<div class="flex flex-wrap gap-2 text-[10px] text-muted-foreground">
-												{#each row.model.variantOptions as variant}
-													<label
-														class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5"
-													>
-														<input
-															type="checkbox"
-															checked={row.allowedVariants.includes(variant)}
-															onchange={() => toggleVariant(row.modelId, variant)}
-														/>
-														<span>{variant}</span>
-													</label>
-												{/each}
+										</td>
+										<td class="px-3 py-3 text-center">
+											<label
+												class="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center"
+											>
+												<input
+													type="checkbox"
+													checked={row.scopes.judge}
+													onchange={() => toggleScope(row.modelId, 'judge')}
+													class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+												/>
+											</label>
+										</td>
+										<td class="px-3 py-3 text-center">
+											<label
+												class="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center"
+											>
+												<input
+													type="checkbox"
+													checked={row.scopes.executor}
+													onchange={() => toggleScope(row.modelId, 'executor')}
+													class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+												/>
+											</label>
+										</td>
+										<td class="px-3 py-3 text-center">
+											<label
+												class="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center"
+											>
+												<input
+													type="checkbox"
+													checked={row.scopes.improve}
+													onchange={() => toggleScope(row.modelId, 'improve')}
+													class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+												/>
+											</label>
+										</td>
+										<td class="px-3 py-3 text-center">
+											<label
+												class="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center"
+											>
+												<input
+													type="checkbox"
+													checked={row.scopes.council}
+													onchange={() => toggleScope(row.modelId, 'council')}
+													class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+												/>
+											</label>
+										</td>
+										<td class="px-3 py-3 text-center">
+											<Button
+												variant="ghost"
+												size="icon"
+												onclick={() => removeAllowedModel(row.modelId)}
+												class="min-h-[44px] min-w-[44px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus:ring-2 focus:ring-destructive focus:ring-offset-2"
+												aria-label="Remove model"
+											>
+												<Trash2 class="h-4 w-4" />
+											</Button>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+
+					<div class="flex flex-col gap-3 lg:hidden">
+						{#each matrixRows as row, i (row.modelId)}
+							<div class="rounded-xl border border-border bg-card p-4 shadow-sm">
+								<div class="flex items-start justify-between gap-3">
+									<div class="flex min-w-0 items-center gap-2">
+										<ProviderLogo providerId={row.modelId.split('/')[0]} size="sm" />
+										<div class="min-w-0">
+											<div class="truncate font-medium">
+												{row.model?.name ?? row.modelId.split('/').slice(1).join('/')}
 											</div>
-										{:else}
-											<span class="text-xs text-muted-foreground">-</span>
-										{/if}
-									</td>
-									<td class="px-4 py-3 text-center">
-										<input
-											type="checkbox"
-											checked={row.scopes.judge}
-											onchange={() => toggleScope(row.modelId, 'judge')}
-											class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
-										/>
-									</td>
-									<td class="px-4 py-3 text-center">
-										<input
-											type="checkbox"
-											checked={row.scopes.executor}
-											onchange={() => toggleScope(row.modelId, 'executor')}
-											class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
-										/>
-									</td>
-									<td class="px-4 py-3 text-center">
-										<input
-											type="checkbox"
-											checked={row.scopes.improve}
-											onchange={() => toggleScope(row.modelId, 'improve')}
-											class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
-										/>
-									</td>
-									<td class="px-3 py-2 text-center">
-										<input
-											type="checkbox"
-											checked={row.scopes.council}
-											onchange={() => toggleScope(row.modelId, 'council')}
-										/>
-									</td>
-									<td class="px-3 py-2 text-center">
-										<Button
-											variant="ghost"
-											size="sm"
-											onclick={() => removeAllowedModel(row.modelId)}
+											<div class="truncate font-mono text-[11px] text-muted-foreground">
+												{row.modelId}
+											</div>
+										</div>
+									</div>
+									<Button
+										variant="ghost"
+										size="icon"
+										onclick={() => removeAllowedModel(row.modelId)}
+										class="min-h-[44px] min-w-[44px] shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+										aria-label="Remove model"
+									>
+										<Trash2 class="h-4 w-4" />
+									</Button>
+								</div>
+
+								{#if row.model?.variantOptions && row.model.variantOptions.length > 0}
+									<div class="mt-3">
+										<p
+											class="mb-1.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
 										>
-											Remove
-										</Button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+											Variants
+										</p>
+										<div class="flex flex-wrap gap-1.5">
+											{#each row.model.variantOptions as variant}
+												<button
+													type="button"
+													onclick={() => toggleVariant(row.modelId, variant)}
+													class="min-h-[36px] rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:outline-none {row.allowedVariants.includes(
+														variant
+													)
+														? 'border-primary bg-primary/10 text-primary'
+														: 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:bg-muted/30'}"
+												>
+													{variant}
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+
+								<div class="mt-4">
+									<p
+										class="mb-2 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
+									>
+										Allowed Scopes
+									</p>
+									<div class="grid grid-cols-2 gap-2">
+										<label
+											class="flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors {row
+												.scopes.judge
+												? 'border-primary bg-primary/5'
+												: 'border-border hover:border-muted-foreground/30'}"
+										>
+											<span class="text-sm font-medium">Judge</span>
+											<input
+												type="checkbox"
+												checked={row.scopes.judge}
+												onchange={() => toggleScope(row.modelId, 'judge')}
+												class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring"
+											/>
+										</label>
+										<label
+											class="flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors {row
+												.scopes.executor
+												? 'border-primary bg-primary/5'
+												: 'border-border hover:border-muted-foreground/30'}"
+										>
+											<span class="text-sm font-medium">Executor</span>
+											<input
+												type="checkbox"
+												checked={row.scopes.executor}
+												onchange={() => toggleScope(row.modelId, 'executor')}
+												class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring"
+											/>
+										</label>
+										<label
+											class="flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors {row
+												.scopes.improve
+												? 'border-primary bg-primary/5'
+												: 'border-border hover:border-muted-foreground/30'}"
+										>
+											<span class="text-sm font-medium">Improve</span>
+											<input
+												type="checkbox"
+												checked={row.scopes.improve}
+												onchange={() => toggleScope(row.modelId, 'improve')}
+												class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring"
+											/>
+										</label>
+										<label
+											class="flex min-h-[48px] cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors {row
+												.scopes.council
+												? 'border-primary bg-primary/5'
+												: 'border-border hover:border-muted-foreground/30'}"
+										>
+											<span class="text-sm font-medium">Council</span>
+											<input
+												type="checkbox"
+												checked={row.scopes.council}
+												onchange={() => toggleScope(row.modelId, 'council')}
+												class="h-5 w-5 rounded border-input text-primary focus:ring-2 focus:ring-ring"
+											/>
+										</label>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
 				</div>
 			{/if}
 		{/if}

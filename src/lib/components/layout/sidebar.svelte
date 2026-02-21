@@ -76,11 +76,10 @@
 				<Button
 					variant={active ? 'secondary' : 'ghost'}
 					class={cn(
-						'w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all duration-200',
+						'w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
 						active
 							? 'border-l-2 border-primary bg-primary/10 text-primary'
-							: 'text-muted-foreground hover:translate-x-1 hover:bg-accent hover:text-foreground',
-						!active && 'border-l-2 border-transparent'
+							: 'border-l-2 border-transparent text-muted-foreground hover:translate-x-1 hover:bg-accent hover:text-foreground'
 					)}
 					href={item.href}
 				>

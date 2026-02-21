@@ -17,11 +17,56 @@ export const load: PageServerLoad = async ({ params }) => {
 
 		const versions = await getVersionHistory(id);
 
-		// Transform prompt data
+		// Transform prompt data with safe tag parsing
+		let parsedTags: string[] = [];
+		if (prompt.tags) {
+			if (typeof prompt.tags === 'string') {
+				const tagStr = prompt.tags.trim();
+				if (tagStr.startsWith('[')) {
+					try {
+						parsedTags = JSON.parse(tagStr);
+					} catch {
+						/* ignore */
+					}
+				} else if (tagStr.includes(',')) {
+					parsedTags = tagStr
+						.split(',')
+						.map((t) => t.trim())
+						.filter(Boolean);
+				} else {
+					parsedTags = tagStr ? [tagStr] : [];
+				}
+			} else if (Array.isArray(prompt.tags)) {
+				parsedTags = prompt.tags;
+			}
+		}
+
+		// Safe parse llm_providers - supports "all", JSON arrays, and comma-separated strings
+		let parsedProviders: string[] = [];
+		if (prompt.llm_providers) {
+			const provStr = String(prompt.llm_providers).trim();
+			if (provStr === 'all') {
+				parsedProviders = ['all'];
+			} else if (provStr.startsWith('[')) {
+				try {
+					parsedProviders = JSON.parse(provStr);
+				} catch {
+					/* ignore */
+				}
+			} else if (provStr.includes(',')) {
+				parsedProviders = provStr
+					.split(',')
+					.map((p) => p.trim())
+					.filter(Boolean);
+			} else if (provStr) {
+				parsedProviders = [provStr];
+			}
+		}
+
 		const transformedPrompt = {
 			...prompt,
-			tags: prompt.tags ? JSON.parse(prompt.tags) : [],
-			llmProviders: prompt.llm_providers ? JSON.parse(prompt.llm_providers) : []
+			tags: parsedTags,
+			llmProviders: parsedProviders
 		};
 
 		// Get current version (first in the sorted list, which is newest first)

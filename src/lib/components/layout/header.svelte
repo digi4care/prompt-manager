@@ -127,10 +127,10 @@
 						<a
 							href={item.href}
 							class={cn(
-								'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
+								'inline-flex min-h-[44px] items-center rounded-md px-4 py-2.5 text-sm font-medium transition-colors',
 								active
 									? 'bg-primary text-primary-foreground'
-									: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:text-foreground'
+									: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring'
 							)}
 						>
 							{item.label}
@@ -148,7 +148,7 @@
 					aria-label="Toggle menu"
 					aria-expanded={mobileNavOpen}
 					aria-controls="mobile-nav"
-					class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-sm font-medium whitespace-nowrap ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 md:hidden"
+					class="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-md text-sm font-medium whitespace-nowrap ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 md:hidden"
 				>
 					{#if mobileNavOpen}
 						<X class="h-5 w-5" />

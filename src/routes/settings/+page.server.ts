@@ -17,6 +17,7 @@ interface FunctionDefault {
 	type: 'executor' | 'judge' | 'improve';
 	modelId: string | null;
 	modelName?: string;
+	modelProvider?: string;
 	providerId?: string;
 	temperature: number;
 	maxTokens: number;
@@ -79,6 +80,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			settings[def.functionType] = {
 				type: def.functionType,
 				modelId: modelId,
+				modelProvider: providerId,
 				providerId: providerId,
 				temperature: def.temperature,
 				maxTokens: def.maxTokens,
@@ -190,6 +192,28 @@ export const load: PageServerLoad = async ({ url }) => {
 		}
 	} catch (err) {
 		console.error('[Settings] FAILED to load all providers:', err);
+	}
+
+	// Second pass: fill in modelProvider from models list for function defaults
+	// This is needed because database might store modelId without provider prefix
+	for (const type of ['executor', 'judge', 'improve'] as const) {
+		const config = settings[type];
+		if (config && !config.modelProvider) {
+			const model = models.find((m: unknown) => {
+				const typedModel = m as { id: string; provider: string };
+				return typedModel.id === config.modelId;
+			}) as { id: string; provider: string } | undefined;
+			if (model?.provider) {
+				settings[type] = {
+					...config,
+					modelProvider: model.provider,
+					providerId: model.provider
+				};
+				console.log(
+					`[Settings] Filled provider for ${type}: ${model.provider} (from model lookup)`
+				);
+			}
+		}
 	}
 
 	// Load council agents

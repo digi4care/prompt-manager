@@ -6,8 +6,19 @@
 	import { Input } from '$lib/components/ui/input';
 	import PromptCard from '$lib/components/prompts/prompt-card.svelte';
 	import PromptTable from '$lib/components/prompts/prompt-table.svelte';
-	import { LayoutGrid, Table, Search, Plus, Trash2, CheckSquare, X } from 'lucide-svelte';
+	import {
+		LayoutGrid,
+		Table,
+		Search,
+		Plus,
+		Trash2,
+		CheckSquare,
+		X,
+		FileText,
+		FolderOpen
+	} from 'lucide-svelte';
 	import type { Prompt } from '$lib/stores/prompts.svelte';
+	import PromptCardSkeleton from '$lib/components/prompts/prompt-card-skeleton.svelte';
 
 	interface Props {
 		data: PageData;
@@ -18,6 +29,8 @@
 	// View state
 	let viewMode: 'grid' | 'table' = $state('grid');
 	let searchQuery: string = $state($page.url.searchParams.get('search') || '');
+	let isLoading: boolean = $state(false);
+	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let selectedTags: string[] = $state([]);
 	let selectedPurpose: string = $state($page.url.searchParams.get('purpose') || '');
 	let sortField: string = $state($page.url.searchParams.get('sort') || 'updatedAt');
@@ -90,7 +103,15 @@
 		else url.searchParams.delete('purpose');
 		url.searchParams.set('sort', sortField);
 		url.searchParams.set('direction', sortDirection);
-		goto(url.toString(), { replaceState: true, invalidateAll: true });
+		isLoading = true;
+		goto(url.toString(), { replaceState: true, invalidateAll: true }).finally(() => {
+			isLoading = false;
+		});
+	}
+
+	function debouncedSearch() {
+		if (searchTimeout) clearTimeout(searchTimeout);
+		searchTimeout = setTimeout(updateUrl, 300);
 	}
 
 	// Toggle tag selection
@@ -252,7 +273,7 @@
 					<Input
 						placeholder="Search prompts..."
 						bind:value={searchQuery}
-						onchange={updateUrl}
+						oninput={debouncedSearch}
 						class="pl-9"
 					/>
 				</div>
@@ -297,7 +318,26 @@
 		</div>
 
 		<!-- Prompts List -->
-		{#if filteredPrompts.length > 0}
+		{#if isLoading}
+			{#if viewMode === 'grid'}
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					<PromptCardSkeleton count={6} />
+				</div>
+			{:else}
+				<div class="rounded-lg border">
+					<div class="animate-pulse divide-y">
+						{#each Array(6) as _}
+							<div class="flex h-16 items-center gap-4 px-4">
+								<div class="h-4 w-4 rounded bg-muted"></div>
+								<div class="h-4 w-1/4 rounded bg-muted"></div>
+								<div class="h-4 w-1/3 rounded bg-muted"></div>
+								<div class="ml-auto h-4 w-20 rounded bg-muted"></div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		{:else if filteredPrompts.length > 0}
 			{#if viewMode === 'grid'}
 				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{#each filteredPrompts as prompt (prompt.id)}
@@ -324,10 +364,30 @@
 					onduplicate={handleDuplicate}
 				/>
 			{/if}
+		{:else if prompts.length === 0}
+			<div class="flex flex-1 flex-col items-center justify-center py-16 text-center">
+				<div class="mb-6 rounded-full bg-muted p-6">
+					<FolderOpen class="h-12 w-12 text-muted-foreground" />
+				</div>
+				<h3 class="mb-2 text-xl font-semibold">No prompts yet</h3>
+				<p class="mb-6 max-w-sm text-muted-foreground">
+					Start building your prompt library by creating your first prompt.
+				</p>
+				<Button onclick={handleCreate}>
+					<Plus class="mr-2 h-4 w-4" />
+					Create Your First Prompt
+				</Button>
+			</div>
 		{:else}
-			<div class="flex flex-col items-center justify-center py-12 text-center">
-				<p class="text-lg text-muted-foreground">No prompts found</p>
-				<p class="text-sm text-muted-foreground">Create a new prompt or adjust your filters</p>
+			<div class="flex flex-1 flex-col items-center justify-center py-16 text-center">
+				<div class="mb-6 rounded-full bg-muted p-6">
+					<Search class="h-12 w-12 text-muted-foreground" />
+				</div>
+				<h3 class="mb-2 text-xl font-semibold">No prompts found</h3>
+				<p class="mb-6 max-w-sm text-muted-foreground">
+					No prompts match your search criteria. Try adjusting your filters.
+				</p>
+				<Button variant="outline" onclick={clearFilters}>Clear Filters</Button>
 			</div>
 		{/if}
 	</div>

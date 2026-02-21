@@ -8,6 +8,7 @@ export const functionTypeSchema = z.enum(['executor', 'judge', 'improve', 'counc
 export const functionSettingSchema = z.object({
 	functionType: functionTypeSchema,
 	modelId: z.string().min(1, 'Model is required'),
+	modelProvider: z.string().optional(),
 	temperature: z.number().min(0, 'Temperature must be >= 0').max(2, 'Temperature must be <= 2'),
 	maxTokens: z
 		.number()

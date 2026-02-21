@@ -123,8 +123,22 @@ export async function getAllTags(): Promise<string[]> {
 
 	const tags = new Set<string>();
 	for (const prompt of allPrompts) {
-		const promptTags =
-			typeof prompt.tags === 'string' ? JSON.parse(prompt.tags || '[]') : prompt.tags || [];
+		let promptTags: string[];
+		if (typeof prompt.tags === 'string') {
+			const tagStr = prompt.tags.trim();
+			if (tagStr.startsWith('[')) {
+				promptTags = JSON.parse(tagStr);
+			} else if (tagStr.includes(',')) {
+				promptTags = tagStr
+					.split(',')
+					.map((t) => t.trim())
+					.filter(Boolean);
+			} else {
+				promptTags = tagStr ? [tagStr] : [];
+			}
+		} else {
+			promptTags = prompt.tags || [];
+		}
 		for (const tag of promptTags) {
 			tags.add(tag);
 		}

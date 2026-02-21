@@ -6,7 +6,18 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import { goto } from '$app/navigation';
-	import { ChevronRight, Save, Sparkles, X, ChevronDown, ChevronUp, Keyboard } from 'lucide-svelte';
+	import {
+		ChevronRight,
+		Save,
+		Sparkles,
+		X,
+		ChevronDown,
+		ChevronUp,
+		Keyboard,
+		CheckCircle2,
+		Loader2,
+		AlertCircle
+	} from 'lucide-svelte';
 	import { cn } from '$lib/utils';
 	import { setupUnsavedChangesWarning } from '$lib/utils/unsaved-changes';
 	import { onMount } from 'svelte';
@@ -56,6 +67,7 @@
 	let contentError = $state('');
 	let changeNotesError = $state('');
 	let saving = $state(false);
+	let saveStatus = $state<'saved' | 'saving' | 'unsaved'>('saved');
 	let errorMessage = $state('');
 
 	// Calculate content change significance
@@ -133,6 +145,13 @@
 
 	// Overall dirty state
 	let isDirty = $derived(contentChanged || metadataChanged || frontmatterChanged);
+
+	// Update saveStatus when dirty state changes
+	$effect(() => {
+		if (isDirty && saveStatus !== 'saving') {
+			saveStatus = 'unsaved';
+		}
+	});
 
 	// Toggle variant expansion
 	function toggleVariantExpanded(idx: number) {
@@ -278,6 +297,7 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 		if (!validateForm()) return;
 
 		saving = true;
+		saveStatus = 'saving';
 		errorMessage = '';
 
 		try {
@@ -361,7 +381,7 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 	<!-- Page Header -->
 	<header
 		id="edit-prompt-header"
-		class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+		class="sticky top-0 z-10 flex flex-col gap-4 border-b bg-background/95 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div>
 			<!-- Breadcrumb -->
@@ -381,7 +401,27 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 			<h1 class="text-2xl font-bold tracking-tight">Edit Prompt</h1>
 			<p class="mt-1 text-sm text-muted-foreground">Update prompt content and metadata</p>
 		</div>
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-3">
+			<!-- Save Status Indicator -->
+			{#if saveStatus === 'saving'}
+				<div class="flex items-center gap-1.5 text-sm text-blue-500">
+					<div
+						class="h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"
+					></div>
+					<span>Saving...</span>
+				</div>
+			{:else if saveStatus === 'unsaved'}
+				<div class="flex items-center gap-1.5 text-sm text-amber-500">
+					<div class="h-2 w-2 rounded-full bg-amber-500"></div>
+					<span>Unsaved changes</span>
+				</div>
+			{:else if saveStatus === 'saved'}
+				<div class="flex items-center gap-1.5 text-sm text-green-500">
+					<CheckCircle2 size={14} />
+					<span>Saved</span>
+				</div>
+			{/if}
+
 			<Button id="cancel-button" variant="outline" onclick={handleCancel} disabled={saving}>
 				Cancel
 			</Button>

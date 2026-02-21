@@ -104,14 +104,24 @@ export const PUT: RequestHandler = async (event) => {
 	}
 
 	try {
+		// Combine modelId with modelProvider if both are provided
+		let updateData = validation.data || {};
+		if (updateData.modelProvider && updateData.modelId) {
+			// Store modelId in format: provider/modelId
+			updateData = {
+				...updateData,
+				modelId: `${updateData.modelProvider}/${updateData.modelId}`
+			};
+		}
+
 		// Log the update for audit purposes
 		const authUser = event.locals.auth?.user;
 		console.log(
 			`[AUDIT] User ${authUser?.id || 'unknown'} (${authUser?.email || 'unknown'}) updating function default: ${type}`,
-			validation.data
+			updateData
 		);
 
-		const updated = await updateFunctionDefaultByType(type as FunctionType, validation.data || {});
+		const updated = await updateFunctionDefaultByType(type as FunctionType, updateData);
 		return json({ data: updated });
 	} catch (err) {
 		console.error('Failed to update function default:', err);

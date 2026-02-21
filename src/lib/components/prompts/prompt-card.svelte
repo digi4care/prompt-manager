@@ -82,7 +82,7 @@
 
 <Card
 	class={cn(
-		'cursor-pointer transition-all duration-200 hover:shadow-md',
+		'cursor-pointer transition-all duration-200 focus-within:ring-2 focus-within:ring-ring hover:-translate-y-0.5 hover:shadow-lg',
 		selected ? 'ring-2 ring-primary' : '',
 		className
 	)}
@@ -127,7 +127,7 @@
 				<!-- Actions Dropdown -->
 				<DropdownMenu bind:open={showDropdown}>
 					<DropdownMenuTrigger
-						class="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+						class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 						onclick={(e: Event) => e.stopPropagation()}
 					>
 						<MoreHorizontal class="h-4 w-4" />

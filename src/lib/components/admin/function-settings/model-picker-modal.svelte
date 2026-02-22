@@ -96,7 +96,7 @@
 		}
 
 		if (multiSelect && showSelectedOnly) {
-			return baseList.filter((model) => selectedSet.has(model.id));
+			return baseList.filter((model) => selectedSet.has(`${model.providerId}/${model.id}`));
 		}
 
 		return baseList;

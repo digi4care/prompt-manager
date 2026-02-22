@@ -7,6 +7,7 @@
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import AlertCircle from '@lucide/svelte/icons/alert-circle';
 	import type { RunOverrides } from '$lib/server/services/settings-cascade.service';
+	import { onMount } from 'svelte';
 
 	// Execution result type matching API response
 	interface ExecutionResultData {
@@ -21,6 +22,16 @@
 		message: string;
 		code?: string;
 		recovery?: string;
+	}
+
+	interface FunctionDefault {
+		id: number;
+		functionType: string;
+		modelId: string;
+		temperature: number;
+		maxTokens: number;
+		createdAt: number;
+		updatedAt: number;
 	}
 
 	interface Props {
@@ -39,6 +50,15 @@
 	let result = $state(null) as ExecutionResultData | null;
 	let errorInfo = $state(null) as ErrorInfo | null;
 	let overrides = $state({}) as RunOverrides;
+	let isLoadingDefaults = $state(true);
+	let defaultsLoadError = $state<string | null>(null);
+
+	// Default settings (loaded from API)
+	let defaults = $state({
+		modelId: 'openai/glm-5', // fallback
+		temperature: 0.7,
+		maxTokens: 4096
+	});
 
 	// Derived states
 	let isExecuting = $derived(executionState === 'loading');
@@ -46,12 +66,28 @@
 	let hasResult = $derived(executionState === 'success' && result !== null);
 	let hasError = $derived(executionState === 'error' && errorInfo !== null);
 
-	// Default settings (could be made configurable via props in future)
-	const defaults = {
-		modelId: 'anthropic/claude-3-5-sonnet',
-		temperature: 0.7,
-		maxTokens: 4096
-	};
+	// Load function defaults on mount
+	onMount(async () => {
+		try {
+			const response = await fetch(`/api/admin/function-defaults/${functionType}`);
+			if (response.ok) {
+				const data: FunctionDefault = await response.json();
+				defaults = {
+					modelId: data.modelId,
+					temperature: data.temperature,
+					maxTokens: data.maxTokens
+				};
+			} else {
+				console.warn(`Failed to load ${functionType} defaults, using fallback`);
+				defaultsLoadError = 'Could not load defaults from settings';
+			}
+		} catch (e) {
+			console.error('Error loading function defaults:', e);
+			defaultsLoadError = e instanceof Error ? e.message : 'Unknown error';
+		} finally {
+			isLoadingDefaults = false;
+		}
+	});
 
 	async function handleExecute() {
 		if (!canExecute) return;
@@ -104,52 +140,70 @@
 </script>
 
 <div class={cn('execution-panel space-y-4', className)}>
-	<!-- Override controls (collapsible) -->
-	<ExecutionOverrides
-		{overrides}
-		onchange={handleOverridesChange}
-		{defaults}
-		disabled={isExecuting}
-	/>
+	<!-- Loading defaults indicator -->
+	{#if isLoadingDefaults}
+		<div class="flex items-center gap-2 text-sm text-muted-foreground">
+			<Loader2 class="h-4 w-4 animate-spin" />
+			Loading settings...
+		</div>
+	{:else}
+		<!-- Override controls (collapsible) -->
+		<ExecutionOverrides
+			{overrides}
+			onchange={handleOverridesChange}
+			{defaults}
+			disabled={isExecuting}
+		/>
 
-	<!-- Execute button -->
-	<Button onclick={handleExecute} disabled={!canExecute} class="w-full">
-		{#if isExecuting}
-			<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-			Executing...
-		{:else}
-			<Play class="mr-2 h-4 w-4" />
-			Execute
+		{#if defaultsLoadError}
+			<p class="text-xs text-amber-600 dark:text-amber-400">
+				⚠ Using fallback settings: {defaultsLoadError}
+			</p>
 		{/if}
-	</Button>
 
-	<!-- Error display -->
-	{#if hasError}
-		<div class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-			<div class="flex items-start gap-3">
-				<AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-				<div class="flex-1">
-					<p class="font-medium text-red-800 dark:text-red-200">{errorInfo?.message}</p>
-					{#if errorInfo?.recovery}
-						<p class="mt-1 text-sm text-red-600 dark:text-red-300">{errorInfo.recovery}</p>
-					{/if}
-					{#if errorInfo?.code}
-						<p class="mt-1 text-xs text-red-500 dark:text-red-400">Error code: {errorInfo.code}</p>
-					{/if}
+		<!-- Execute button -->
+		<Button onclick={handleExecute} disabled={!canExecute} class="w-full">
+			{#if isExecuting}
+				<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+				Executing...
+			{:else}
+				<Play class="mr-2 h-4 w-4" />
+				Execute
+			{/if}
+		</Button>
+
+		<!-- Error display -->
+		{#if hasError}
+			<div
+				class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950"
+			>
+				<div class="flex items-start gap-3">
+					<AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+					<div class="flex-1">
+						<p class="font-medium text-red-800 dark:text-red-200">{errorInfo?.message}</p>
+						{#if errorInfo?.recovery}
+							<p class="mt-1 text-sm text-red-600 dark:text-red-300">{errorInfo.recovery}</p>
+						{/if}
+						{#if errorInfo?.code}
+							<p class="mt-1 text-xs text-red-500 dark:text-red-400">
+								Error code: {errorInfo.code}
+							</p>
+						{/if}
+					</div>
+				</div>
+				<div class="mt-3 flex gap-2">
+					<Button variant="outline" size="sm" onclick={handleRetry}>Retry</Button>
+					<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
 				</div>
 			</div>
-			<div class="mt-3 flex gap-2">
-				<Button variant="outline" size="sm" onclick={handleRetry}>Retry</Button>
-				<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
-			</div>
-		</div>
-	{/if}
+		{/if}
 
-	<!-- Success result -->
-	{#if hasResult && result}
-		<ExecutionResult {result} />
-		<div class="flex justify-end">
-			<Button variant="outline" size="sm" onclick={handleReset}>Clear Result</Button>
-		</div>
+		<!-- Success result -->
+		{#if hasResult && result}
+			<ExecutionResult {result} />
+			<div class="flex justify-end">
+				<Button variant="outline" size="sm" onclick={handleReset}>Clear Result</Button>
+			</div>
+		{/if}
 	{/if}
 </div>

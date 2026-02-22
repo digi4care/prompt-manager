@@ -135,12 +135,20 @@
 		];
 
 		for (const candidate of candidates) {
+			// Handle array format: ["low", "medium", "high"]
 			if (Array.isArray(candidate)) {
 				const options = candidate.filter(
 					(value): value is string => typeof value === 'string' && value.trim().length > 0
 				);
 				if (options.length > 0) {
 					return Array.from(new Set(options));
+				}
+			}
+			// Handle object format: { "low": {...}, "medium": {...}, "high": {...} }
+			if (typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)) {
+				const keys = Object.keys(candidate as Record<string, unknown>);
+				if (keys.length > 0) {
+					return Array.from(new Set(keys));
 				}
 			}
 		}

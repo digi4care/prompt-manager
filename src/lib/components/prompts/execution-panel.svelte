@@ -124,11 +124,32 @@
 					modelsArray = provider.models;
 				} else {
 					// Models is an object with model IDs as keys
-					modelsArray = Object.entries(provider.models).map(([key, model]) => ({
-						...model,
-						id: model.id || model.modelID || key,
-						name: model.name || model.id || model.modelID || key
-					}));
+					modelsArray = Object.entries(provider.models).map(([key, model]) => {
+						// Extract variant options from variants object or variantOptions array
+						let variantOptions: string[] | undefined;
+						const m = model as {
+							name?: string;
+							id?: string;
+							modelID?: string;
+							variantOptions?: string[];
+							variants?: Record<string, unknown> | string[];
+						};
+
+						if (Array.isArray(m.variants)) {
+							variantOptions = m.variants.filter((v): v is string => typeof v === 'string');
+						} else if (m.variants && typeof m.variants === 'object') {
+							variantOptions = Object.keys(m.variants);
+						} else if (m.variantOptions) {
+							variantOptions = m.variantOptions;
+						}
+
+						return {
+							...model,
+							id: model.id || model.modelID || key,
+							name: model.name || model.id || model.modelID || key,
+							variantOptions
+						};
+					});
 				}
 			}
 			return {

@@ -8,6 +8,7 @@
 	import AlertCircle from '@lucide/svelte/icons/alert-circle';
 	import type { RunOverrides } from '$lib/server/services/settings-cascade.service';
 	import { onMount } from 'svelte';
+	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
 
 	// Execution result type matching API response
 	interface ExecutionResultData {
@@ -34,6 +35,18 @@
 		updatedAt: number;
 	}
 
+	interface GroupedModel {
+		id: string;
+		name: string;
+		variantOptions?: string[];
+	}
+
+	interface ProviderGroup {
+		providerName: string;
+		providerId: string;
+		models: GroupedModel[];
+	}
+
 	interface Props {
 		promptId: number;
 		content: string;
@@ -53,6 +66,9 @@
 	let isLoadingDefaults = $state(true);
 	let defaultsLoadError = $state<string | null>(null);
 
+	// Model catalog
+	let groupedModels = $state<ProviderGroup[]>([]);
+
 	// Default settings (loaded from API)
 	let defaults = $state({
 		modelId: 'openai/glm-5', // fallback
@@ -66,12 +82,60 @@
 	let hasResult = $derived(executionState === 'success' && result !== null);
 	let hasError = $derived(executionState === 'error' && errorInfo !== null);
 
-	// Load function defaults on mount
+	// Find selected model info for display
+	let selectedModel = $derived.by(() => {
+		const modelId = overrides.modelId || defaults.modelId;
+		for (const group of groupedModels) {
+			const model = group.models.find((entry) => entry.id === modelId);
+			if (model) {
+				return {
+					...model,
+					providerName: group.providerName,
+					providerId: group.providerId
+				};
+			}
+		}
+		return null;
+	});
+
+	// Normalize provider groups from API response
+	function normalizeProviderGroups(providers: unknown[]): ProviderGroup[] {
+		return providers.map((p: unknown) => {
+			const provider = p as {
+				name?: string;
+				id?: string;
+				providerID?: string;
+				models?: Array<{
+					name?: string;
+					id?: string;
+					modelID?: string;
+					variantOptions?: string[];
+				}>;
+			};
+			return {
+				providerName: provider.name || provider.id || 'Unknown',
+				providerId: provider.id || provider.providerID || 'unknown',
+				models: (provider.models || []).map((m) => ({
+					id: m.id || m.modelID || '',
+					name: m.name || m.id || m.modelID || 'Unknown',
+					variantOptions: m.variantOptions
+				}))
+			};
+		});
+	}
+
+	// Load defaults and model catalog on mount
 	onMount(async () => {
 		try {
-			const response = await fetch(`/api/admin/function-defaults/${functionType}`);
-			if (response.ok) {
-				const data: FunctionDefault = await response.json();
+			// Load in parallel
+			const [defaultsResponse, cachedCatalog] = await Promise.all([
+				fetch(`/api/admin/function-defaults/${functionType}`),
+				Promise.resolve(getCachedModelCatalog())
+			]);
+
+			// Process defaults
+			if (defaultsResponse.ok) {
+				const data: FunctionDefault = await defaultsResponse.json();
 				defaults = {
 					modelId: data.modelId,
 					temperature: data.temperature,
@@ -81,8 +145,25 @@
 				console.warn(`Failed to load ${functionType} defaults, using fallback`);
 				defaultsLoadError = 'Could not load defaults from settings';
 			}
+
+			// Process model catalog
+			if (cachedCatalog && Array.isArray(cachedCatalog)) {
+				groupedModels = cachedCatalog as ProviderGroup[];
+			} else {
+				try {
+					const providersResponse = await fetch('/api/opencode/providers');
+					if (providersResponse.ok) {
+						const data = await providersResponse.json();
+						const normalized = normalizeProviderGroups(data);
+						groupedModels = normalized;
+						setCachedModelCatalog(normalized);
+					}
+				} catch (e) {
+					console.warn('Failed to load model catalog:', e);
+				}
+			}
 		} catch (e) {
-			console.error('Error loading function defaults:', e);
+			console.error('Error loading settings:', e);
 			defaultsLoadError = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			isLoadingDefaults = false;
@@ -147,11 +228,33 @@
 			Loading settings...
 		</div>
 	{:else}
+		<!-- Current settings display -->
+		<div class="rounded-md border bg-muted/30 px-3 py-2">
+			<div class="flex items-center gap-2 text-xs text-muted-foreground">
+				{#if selectedModel}
+					<img
+						src="https://models.dev/logos/{selectedModel.providerId}.svg"
+						alt="{selectedModel.providerId} logo"
+						class="h-4 w-4 shrink-0"
+						onerror={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+					/>
+					<span>{selectedModel.providerName} / {selectedModel.name}</span>
+				{:else}
+					<span>{defaults.modelId}</span>
+				{/if}
+				<span class="text-muted-foreground/50">·</span>
+				<span>temp {(overrides.temperature ?? defaults.temperature).toFixed(1)}</span>
+				<span class="text-muted-foreground/50">·</span>
+				<span>{(overrides.maxTokens ?? defaults.maxTokens).toLocaleString()} tokens</span>
+			</div>
+		</div>
+
 		<!-- Override controls (collapsible) -->
 		<ExecutionOverrides
 			{overrides}
 			onchange={handleOverridesChange}
 			{defaults}
+			{groupedModels}
 			disabled={isExecuting}
 		/>
 

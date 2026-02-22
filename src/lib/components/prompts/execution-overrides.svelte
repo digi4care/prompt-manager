@@ -5,6 +5,18 @@
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import type { RunOverrides } from '$lib/server/services/settings-cascade.service';
 
+	interface GroupedModel {
+		id: string;
+		name: string;
+		variantOptions?: string[];
+	}
+
+	interface ProviderGroup {
+		providerName: string;
+		providerId: string;
+		models: GroupedModel[];
+	}
+
 	interface Props {
 		overrides: RunOverrides;
 		onchange: (overrides: RunOverrides) => void;
@@ -13,11 +25,19 @@
 			temperature: number;
 			maxTokens: number;
 		};
+		groupedModels?: ProviderGroup[];
 		disabled?: boolean;
 		class?: string;
 	}
 
-	let { overrides, onchange, defaults, disabled = false, class: className = '' }: Props = $props();
+	let {
+		overrides,
+		onchange,
+		defaults,
+		groupedModels = [],
+		disabled = false,
+		class: className = ''
+	}: Props = $props();
 
 	// Track if any overrides are set
 	let hasOverrides = $derived(
@@ -40,7 +60,7 @@
 
 	function handleModelChange(value: string) {
 		localModelId = value;
-		if (value.trim()) {
+		if (value.trim() && value !== defaults.modelId) {
 			onchange({ ...overrides, modelId: value.trim() });
 		} else {
 			const { modelId: _, ...rest } = overrides;
@@ -52,7 +72,12 @@
 		localTemperature = value;
 		const parsed = parseFloat(value);
 		if (!isNaN(parsed) && parsed >= 0 && parsed <= 2) {
-			onchange({ ...overrides, temperature: Math.round(parsed * 10) / 10 });
+			if (parsed !== defaults.temperature) {
+				onchange({ ...overrides, temperature: Math.round(parsed * 10) / 10 });
+			} else {
+				const { temperature: _, ...rest } = overrides;
+				onchange(rest);
+			}
 		} else if (value === '') {
 			const { temperature: _, ...rest } = overrides;
 			onchange(rest);
@@ -63,7 +88,12 @@
 		localMaxTokens = value;
 		const parsed = parseInt(value, 10);
 		if (!isNaN(parsed) && parsed >= 1 && parsed <= 1000000) {
-			onchange({ ...overrides, maxTokens: parsed });
+			if (parsed !== defaults.maxTokens) {
+				onchange({ ...overrides, maxTokens: parsed });
+			} else {
+				const { maxTokens: _, ...rest } = overrides;
+				onchange(rest);
+			}
 		} else if (value === '') {
 			const { maxTokens: _, ...rest } = overrides;
 			onchange(rest);
@@ -75,6 +105,17 @@
 		localTemperature = '';
 		localMaxTokens = '';
 		onchange({});
+	}
+
+	// Get model display name
+	function getModelDisplayName(modelId: string): string {
+		for (const group of groupedModels) {
+			const model = group.models.find((m) => m.id === modelId);
+			if (model) {
+				return `${group.providerName} / ${model.name}`;
+			}
+		}
+		return modelId;
 	}
 </script>
 
@@ -105,24 +146,48 @@
 			<!-- Default values display -->
 			<div class="rounded bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
 				<span class="font-medium">Defaults:</span>
-				{defaults.modelId} · temp {defaults.temperature} · {defaults.maxTokens.toLocaleString()} tokens
+				{getModelDisplayName(defaults.modelId)} · temp {defaults.temperature} · {defaults.maxTokens.toLocaleString()}
+				tokens
 			</div>
 
 			<!-- Model override -->
 			<div class="space-y-2">
 				<label for="override-model" class="text-sm font-medium"> Model Override </label>
-				<input
-					id="override-model"
-					type="text"
-					placeholder="e.g., anthropic/claude-3-5-sonnet"
-					value={localModelId}
-					oninput={(e) => handleModelChange(e.currentTarget.value)}
-					{disabled}
-					class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-				/>
-				<p class="text-xs text-muted-foreground">
-					Format: provider/model-id (e.g., anthropic/claude-3-5-sonnet)
-				</p>
+				{#if groupedModels.length > 0}
+					<select
+						id="override-model"
+						value={localModelId || defaults.modelId}
+						onchange={(e) => handleModelChange(e.currentTarget.value)}
+						{disabled}
+						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						<option value={defaults.modelId}
+							>Use default ({getModelDisplayName(defaults.modelId)})</option
+						>
+						{#each groupedModels as group}
+							<optgroup label={group.providerName}>
+								{#each group.models as model}
+									{#if model.id !== defaults.modelId}
+										<option value={model.id}>{model.name}</option>
+									{/if}
+								{/each}
+							</optgroup>
+						{/each}
+					</select>
+				{:else}
+					<input
+						id="override-model"
+						type="text"
+						placeholder="e.g., anthropic/claude-3-5-sonnet"
+						value={localModelId}
+						oninput={(e) => handleModelChange(e.currentTarget.value)}
+						{disabled}
+						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					/>
+					<p class="text-xs text-muted-foreground">
+						Format: provider/model-id (e.g., anthropic/claude-3-5-sonnet)
+					</p>
+				{/if}
 			</div>
 
 			<!-- Temperature override -->

@@ -2,6 +2,7 @@
 	import { cn } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
 	import ModelPickerModal from './model-picker-modal.svelte';
+	import Users from '@lucide/svelte/icons/users';
 
 	type SettingField = 'modelId' | 'modelVariant' | 'temperature' | 'maxTokens';
 
@@ -246,7 +247,10 @@
 <div class="space-y-3 rounded-lg border bg-card p-4">
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<div>
-			<h4 class="font-semibold">Council Agents</h4>
+			<h4 class="flex items-center gap-2 font-semibold">
+				<Users class="h-4 w-4 text-muted-foreground" />
+				Council Agents
+			</h4>
 			<p class="text-xs text-muted-foreground">
 				{agents.filter((a) => a.modelId).length} configured, minimum 2 agents
 			</p>

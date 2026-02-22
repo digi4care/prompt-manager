@@ -3,6 +3,17 @@
 	import { Button } from '$lib/components/ui/button';
 	import ModelPickerModal from './model-picker-modal.svelte';
 	import type { FunctionType, SettingField, FunctionSetting } from './types';
+	import Play from '@lucide/svelte/icons/play';
+	import Scale from '@lucide/svelte/icons/scale';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
+
+	// Map function types to icons
+	const functionIcons: Record<FunctionType, typeof Play> = {
+		executor: Play,
+		judge: Scale,
+		improve: Sparkles,
+		council: Play // Council uses Play icon as well
+	};
 
 	interface GroupedModel {
 		id: string;
@@ -176,6 +187,7 @@
 	<div class="mb-3 flex items-start justify-between gap-3">
 		<div>
 			<div class="flex items-center gap-2">
+				<svelte:component this={functionIcons[type]} class="h-4 w-4 text-muted-foreground" />
 				<span class="font-medium capitalize">{functionLabels[type]}</span>
 				<span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Default</span>
 			</div>

@@ -51,43 +51,63 @@
 ></div>
 
 <style>
-	@reference "tailwindcss";
 	:global(.markdown-content pre) {
-		@apply overflow-x-auto rounded-lg bg-muted p-4;
+		overflow-x: auto;
+		border-radius: 0.5rem;
+		background-color: var(--color-muted);
+		padding: 1rem;
 	}
 	:global(.markdown-content code) {
-		@apply font-mono text-sm;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.875rem;
 	}
 	:global(.markdown-content :not(pre) > code) {
-		@apply rounded bg-muted px-1.5 py-0.5;
+		border-radius: 0.25rem;
+		background-color: var(--color-muted);
+		padding: 0.125rem 0.375rem;
 	}
 	:global(.markdown-content ul),
 	:global(.markdown-content ol) {
-		@apply my-2;
+		margin-top: 0.5rem;
+		margin-bottom: 0.5rem;
 	}
 	:global(.markdown-content li) {
-		@apply my-1;
+		margin-top: 0.25rem;
+		margin-bottom: 0.25rem;
 	}
 	:global(.markdown-content h1),
 	:global(.markdown-content h2),
 	:global(.markdown-content h3),
 	:global(.markdown-content h4) {
-		@apply mt-4 mb-2 font-semibold;
+		margin-top: 1rem;
+		margin-bottom: 0.5rem;
+		font-weight: 600;
 	}
 	:global(.markdown-content p) {
-		@apply my-2;
+		margin-top: 0.5rem;
+		margin-bottom: 0.5rem;
 	}
 	:global(.markdown-content blockquote) {
-		@apply border-l-4 border-muted-foreground/30 pl-4 italic;
+		border-left-width: 4px;
+		border-left-style: solid;
+		border-left-color: rgb(from var(--color-muted-foreground) r g b / 0.3);
+		padding-left: 1rem;
+		font-style: italic;
 	}
 	:global(.markdown-content table) {
-		@apply w-full border-collapse;
+		width: 100%;
+		border-collapse: collapse;
 	}
 	:global(.markdown-content th),
 	:global(.markdown-content td) {
-		@apply border border-border px-3 py-2 text-left;
+		border-width: 1px;
+		border-style: solid;
+		border-color: var(--color-border);
+		padding: 0.5rem 0.75rem;
+		text-align: left;
 	}
 	:global(.markdown-content th) {
-		@apply bg-muted font-semibold;
+		background-color: var(--color-muted);
+		font-weight: 600;
 	}
 </style>

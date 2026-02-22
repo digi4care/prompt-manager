@@ -153,11 +153,24 @@
 	}
 
 	function normalizeProviderGroups(payload: unknown): ProviderGroup[] {
-		const providers =
-			typeof payload === 'object' && payload !== null && 'providers' in payload
-				? (payload as { providers?: unknown[] }).providers
-				: [];
+		// Handle both direct array and { providers: [...] } format
+		if (Array.isArray(payload)) {
+			// Check if already normalized (has providerId field)
+			if (payload.length > 0 && 'providerId' in payload[0]) {
+				// Already normalized ProviderGroup[], return as-is
+				return payload as ProviderGroup[];
+			}
+			// Raw array of providers
+			return normalizeProviders(payload);
+		} else if (typeof payload === 'object' && payload !== null && 'providers' in payload) {
+			// Raw API response { providers: [...] }
+			const providers = (payload as { providers?: unknown[] }).providers || [];
+			return normalizeProviders(providers);
+		}
+		return [];
+	}
 
+	function normalizeProviders(providers: unknown[]): ProviderGroup[] {
 		if (!Array.isArray(providers)) {
 			return [];
 		}

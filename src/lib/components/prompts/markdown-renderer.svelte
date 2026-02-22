@@ -32,11 +32,22 @@
 			return `<pre>${escapeHtml(content)}</pre>`;
 		}
 	});
+
+	// Reference to the container element
+	let container: HTMLDivElement;
+
+	// Update innerHTML when content changes
+	$effect(() => {
+		if (container) {
+			container.innerHTML = html;
+		}
+	});
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
+	bind:this={container}
 	class={cn('markdown-content prose prose-sm max-w-none dark:prose-invert', className)}
-	innerHTML={html}
 ></div>
 
 <style>

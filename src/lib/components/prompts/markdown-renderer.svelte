@@ -51,6 +51,7 @@
 ></div>
 
 <style>
+	@reference "tailwindcss";
 	:global(.markdown-content pre) {
 		@apply overflow-x-auto rounded-lg bg-muted p-4;
 	}

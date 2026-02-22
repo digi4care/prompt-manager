@@ -121,3 +121,14 @@ Resume file: None
 5. `feat(02-03): integrate execution panel with AI settings and model catalog`
 6. `fix(02-03): handle API response formats correctly`
 7. `fix(02-01): dynamically find provider for model ID without prefix`
+8. `fix(01-settings): handle both normalized and raw model catalog cache formats`
+
+### AI Policy Modal Fix
+
+**Problem:** AI Policy modal showed "No models match your current filters" after execution panel cached model catalog.
+
+**Root cause:** Cache format mismatch - execution-panel stored `ProviderGroup[]` (normalized), but policy-editor expected `{ providers: [...] }` (raw API response).
+
+**Solution:** Check for `providerId` field to detect already-normalized data and return directly instead of re-processing with wrong field names.
+
+**Result:** Modal now shows all 298 models with variants (e.g., Codex has 5 variants: default, low, medium, high, xhigh).

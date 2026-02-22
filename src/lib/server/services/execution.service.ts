@@ -10,7 +10,7 @@ import {
 	type RunOverrides,
 	type ResolutionResult
 } from './settings-cascade.service';
-import { getOpencodeClient } from './opencode.service';
+import { getOpencodeClient, getProviders } from './opencode.service';
 import type { FunctionType } from './function-defaults.service';
 
 /**
@@ -152,6 +152,17 @@ export interface ExecutionResult {
 		seconds: number;
 	};
 	source: 'run' | 'prompt' | 'default';
+	/** Debug info - only included in development */
+	debug?: {
+		responsePartsCount: number;
+		responsePartsTypes: string[];
+		hasInfo: boolean;
+		infoTokens?: { input?: number; output?: number };
+		rawError?: string;
+		sessionCreated?: boolean;
+		modelRequested?: { providerId: string; modelId: string };
+		promptError?: unknown;
+	};
 }
 
 /**
@@ -190,13 +201,36 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 		// Parse model ID format: providerId/modelId
 		const modelIdValue = settings.modelId.value;
 		const slashIndex = modelIdValue.indexOf('/');
-		let providerId: string;
+		let providerId: string = 'openai'; // default fallback
 		let modelId: string;
 
 		if (slashIndex === -1) {
-			// Default to 'openai' if no provider specified
-			providerId = 'openai';
+			// Model ID without provider prefix - find the provider from catalog
 			modelId = modelIdValue;
+
+			// Try to find the provider that has this model
+			try {
+				const providersResponse = await getProviders();
+				const providers = providersResponse?.providers || [];
+
+				for (const provider of providers) {
+					if (provider.models && provider.models[modelId]) {
+						providerId = provider.id || providerId;
+						console.log(`[ExecutionService] Found model "${modelId}" in provider "${providerId}"`);
+						break;
+					}
+				}
+
+				// Fallback to first connected provider if not found
+				if (providerId === 'openai' && providers.length > 0) {
+					providerId = providers[0].id || providerId;
+					console.log(
+						`[ExecutionService] Using first provider "${providerId}" as fallback for model "${modelId}"`
+					);
+				}
+			} catch (e) {
+				console.warn('[ExecutionService] Failed to get providers for model lookup:', e);
+			}
 		} else {
 			providerId = modelIdValue.substring(0, slashIndex);
 			modelId = modelIdValue.substring(slashIndex + 1);
@@ -207,6 +241,12 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 
 		// Create ephemeral session
 		const createResult = await client.session.create();
+
+		console.log('[ExecutionService] Session create result:', {
+			hasData: !!createResult.data,
+			error: createResult.error,
+			sessionId: (createResult.data as Session)?.id
+		});
 
 		if (createResult.error) {
 			throw new ExecutionError(
@@ -220,6 +260,12 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 		session = createResult.data as Session;
 
 		// Send prompt to session
+		console.log('[ExecutionService] Sending prompt:', {
+			sessionId: session.id,
+			contentLength: content.length,
+			model: { providerId, modelId }
+		});
+
 		const promptResult = await client.session.prompt({
 			path: { id: session.id },
 			body: {
@@ -229,6 +275,13 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 					modelID: modelId
 				}
 			}
+		});
+
+		console.log('[ExecutionService] Prompt result:', {
+			hasData: !!promptResult.data,
+			error: promptResult.error,
+			responseStatus: (promptResult as unknown as { response?: { status: number } }).response
+				?.status
 		});
 
 		if (promptResult.error) {
@@ -245,10 +298,16 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 			);
 		}
 
+		// Debug logging for response structure
+		console.log('[ExecutionService] Raw response:', JSON.stringify(response, null, 2));
+		console.log('[ExecutionService] Response parts:', response.parts);
+		console.log('[ExecutionService] Response info:', response.info);
+
 		// Extract text content from response parts
 		let responseContent = '';
 		if (response.parts && Array.isArray(response.parts)) {
 			for (const part of response.parts) {
+				console.log('[ExecutionService] Processing part:', part);
 				if ('type' in part && part.type === 'text' && 'text' in part) {
 					responseContent += (part as TextPart).text;
 				}
@@ -281,7 +340,18 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 				ms: durationMs,
 				seconds: Math.round(durationMs / 100) / 10
 			},
-			source: settings.modelId.source
+			source: settings.modelId.source,
+			// Debug info for development
+			debug: {
+				responsePartsCount: response.parts?.length ?? 0,
+				responsePartsTypes:
+					response.parts?.map((p: Part) => ('type' in p ? p.type : 'unknown')) ?? [],
+				hasInfo: !!info,
+				infoTokens: info?.tokens,
+				sessionCreated: !!session,
+				modelRequested: { providerId, modelId },
+				promptError: promptResult.error
+			}
 		};
 
 		return result;

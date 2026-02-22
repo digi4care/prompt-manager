@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
-	import { PromptContentViewer } from '$lib/components/prompts';
+	import { PromptContentViewer, ExecutionPanel } from '$lib/components/prompts';
 	import { VersionTimeline } from '$lib/components/versions';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import type { PromptVersion } from '$lib/stores/prompts.svelte';
@@ -191,6 +191,21 @@
 				</div>
 				<div class="p-4">
 					<PromptContentViewer content={currentContent} />
+				</div>
+			</section>
+
+			<!-- Execution Panel -->
+			<section class="rounded-lg border bg-card">
+				<div class="border-b p-4">
+					<h2 class="font-semibold">Execute Prompt</h2>
+					<p class="mt-0.5 text-xs text-muted-foreground">Test this prompt with AI model</p>
+				</div>
+				<div class="p-4">
+					{#if data.prompt?.id}
+						<ExecutionPanel promptId={data.prompt.id} content={currentContent} />
+					{:else}
+						<p class="text-sm text-muted-foreground">Save prompt to enable execution</p>
+					{/if}
 				</div>
 			</section>
 

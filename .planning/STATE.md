@@ -20,20 +20,20 @@ Progress: [████████░░] 80%
 
 **Velocity:**
 
-- Total plans completed: 3
-- Average duration: 12min
-- Total execution time: 0.6 hours
+- Total plans completed: 4
+- Average duration: 11.5min
+- Total execution time: 0.8 hours
 
 **By Phase:**
 
 | Phase                  | Plans | Total | Avg/Plan |
 | ---------------------- | ----- | ----- | -------- |
 | 01-settings-foundation | 2     | 25min | 12.5min  |
-| 02-prompt-execution    | 1     | 11min | 11min    |
+| 02-prompt-execution    | 2     | 23min | 11.5min  |
 
 **Recent Trend:**
 
-- Last 5 plans: 14min, 11min, 11min
+- Last 5 plans: 14min, 11min, 11min, 12min
 - Trend: Steady progress
 
 ## Accumulated Context
@@ -52,6 +52,8 @@ Recent decisions affecting current work:
 - [Phase 01-settings-foundation]: API endpoints use service layer pattern with JWT authentication
 - [Phase 02-prompt-execution]: HTML entity escaping instead of DOMPurify for XSS prevention (simpler)
 - [Phase 02-prompt-execution]: Use bind:this pattern for innerHTML in Svelte 5
+- [Phase 02-prompt-execution]: Use session.prompt() SDK method for prompt execution (not session.chat)
+- [Phase 02-prompt-execution]: Ephemeral sessions with try/finally cleanup guarantee
 
 ### Pending Todos
 
@@ -71,5 +73,5 @@ Phases likely needing deeper research during planning:
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 02-02-PLAN.md
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

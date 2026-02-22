@@ -105,17 +105,36 @@
 				name?: string;
 				id?: string;
 				providerID?: string;
-				models?: Array<{
-					name?: string;
-					id?: string;
-					modelID?: string;
-					variantOptions?: string[];
-				}>;
+				models?:
+					| Array<{ name?: string; id?: string; modelID?: string; variantOptions?: string[] }>
+					| Record<
+							string,
+							{ name?: string; id?: string; modelID?: string; variantOptions?: string[] }
+					  >;
 			};
+			// Convert models object to array if needed
+			let modelsArray: Array<{
+				name?: string;
+				id?: string;
+				modelID?: string;
+				variantOptions?: string[];
+			}> = [];
+			if (provider.models) {
+				if (Array.isArray(provider.models)) {
+					modelsArray = provider.models;
+				} else {
+					// Models is an object with model IDs as keys
+					modelsArray = Object.entries(provider.models).map(([key, model]) => ({
+						...model,
+						id: model.id || model.modelID || key,
+						name: model.name || model.id || model.modelID || key
+					}));
+				}
+			}
 			return {
 				providerName: provider.name || provider.id || 'Unknown',
 				providerId: provider.id || provider.providerID || 'unknown',
-				models: (provider.models || []).map((m) => ({
+				models: modelsArray.map((m) => ({
 					id: m.id || m.modelID || '',
 					name: m.name || m.id || m.modelID || 'Unknown',
 					variantOptions: m.variantOptions
@@ -135,12 +154,16 @@
 
 			// Process defaults
 			if (defaultsResponse.ok) {
-				const data: FunctionDefault = await defaultsResponse.json();
-				defaults = {
-					modelId: data.modelId,
-					temperature: data.temperature,
-					maxTokens: data.maxTokens
-				};
+				const responseData = await defaultsResponse.json();
+				// API returns { data: FunctionDefault }
+				const data = responseData.data || responseData;
+				if (data.modelId) {
+					defaults = {
+						modelId: data.modelId,
+						temperature: data.temperature ?? 0.7,
+						maxTokens: data.maxTokens ?? 4096
+					};
+				}
 			} else {
 				console.warn(`Failed to load ${functionType} defaults, using fallback`);
 				defaultsLoadError = 'Could not load defaults from settings';
@@ -154,9 +177,13 @@
 					const providersResponse = await fetch('/api/opencode/providers');
 					if (providersResponse.ok) {
 						const data = await providersResponse.json();
-						const normalized = normalizeProviderGroups(data);
-						groupedModels = normalized;
-						setCachedModelCatalog(normalized);
+						// API returns { providers: [...], ttlSeconds: number }
+						const providers = data.providers || data;
+						if (Array.isArray(providers)) {
+							const normalized = normalizeProviderGroups(providers);
+							groupedModels = normalized;
+							setCachedModelCatalog(normalized);
+						}
 					}
 				} catch (e) {
 					console.warn('Failed to load model catalog:', e);

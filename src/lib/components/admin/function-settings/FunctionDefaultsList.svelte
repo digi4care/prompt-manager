@@ -90,10 +90,10 @@
 		improve: { label: 'Improve', desc: 'Improves prompts', icon: '✨', color: 'amber' }
 	} as const;
 
-	function getConfig(type: 'executor' | 'judge' | 'improve'): FunctionConfig {
-		if (type === 'executor') return executor;
-		if (type === 'judge') return judge;
-		return improve ?? executor;
+	function getConfig(type: 'executor' | 'judge' | 'improve'): FunctionConfig | undefined {
+		if (type === 'executor') return executor ?? undefined;
+		if (type === 'judge') return judge ?? undefined;
+		return improve ?? executor ?? undefined;
 	}
 </script>
 
@@ -173,12 +173,15 @@
 </div>
 
 {#if activeModal}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
 		onclick={() => (activeModal = null)}
 		onkeydown={(e) => e.key === 'Escape' && (activeModal = null)}
-		role="dialog"
+		role="button"
+		tabindex="-1"
 	>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<div
 			class="max-h-[80vh] w-full max-w-lg overflow-hidden rounded-xl border bg-background shadow-xl"
 			onclick={(e) => e.stopPropagation()}
@@ -207,7 +210,7 @@
 					<p class="py-8 text-center text-sm text-muted-foreground">No models found</p>
 				{:else}
 					{#each filteredModels as model}
-						{@const isSelected = getConfig(activeModal).modelId === model.id}
+						{@const isSelected = getConfig(activeModal)?.modelId === model.id}
 						<button
 							type="button"
 							class="flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-accent {isSelected

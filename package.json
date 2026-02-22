@@ -86,6 +86,7 @@
 		"express-rate-limit": "^8.2.1",
 		"jsonwebtoken": "^9.0.3",
 		"lucide-svelte": "^0.572.0",
+		"marked": "^17.0.3",
 		"monaco-editor": "^0.55.1",
 		"qrcode": "^1.5.4",
 		"runed": "^0.37.1",

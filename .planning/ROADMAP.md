@@ -56,13 +56,14 @@ Plans:
 3. User can override model, temperature, and max_tokens per-execution
 4. Failed executions show clear error with context (model unavailable, rate limit, etc.)
 5. User sees execution duration and token counts in response
-   **Plans**: TBD
+
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 02-01: Execution endpoint with OpenCode SDK integration
-- [ ] 02-02: Model resolution and override handling
-- [ ] 02-03: Error handling and response formatting
+- [ ] 02-01-PLAN.md — Execution backend service and API endpoint with settings cascade
+- [ ] 02-02-PLAN.md — Result display components (markdown renderer + execution result)
+- [ ] 02-03-PLAN.md — Execution panel UI with overrides, state machine, and verification
 
 ---
 

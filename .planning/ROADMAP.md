@@ -78,12 +78,13 @@ Plans:
 2. User can view execution history for any prompt
 3. Logs show resolved input prompt (with variables substituted)
 4. Logs include output or error with context
-   **Plans**: TBD
+
+**Plans**: 2 plans
 
 Plans:
 
-- [ ] 03-01: Execution log schema and async logging service
-- [ ] 03-02: Execution history UI
+- [ ] 03-01-PLAN.md — Execution log schema, async logging service, and API endpoints for history
+- [ ] 03-02-PLAN.md — Execution history UI components and prompt detail page integration
 
 ---
 

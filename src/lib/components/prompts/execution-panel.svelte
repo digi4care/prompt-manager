@@ -67,7 +67,9 @@
 	let defaultsLoadError = $state<string | null>(null);
 
 	// Model catalog
-	let groupedModels = $state<ProviderGroup[]>([]);
+	let allGroupedModels = $state<ProviderGroup[]>([]); // All available models
+	let groupedModels = $state<ProviderGroup[]>([]); // Filtered by policy
+	let allowedModels = $state<string[]>([]); // AI Policy whitelist
 
 	// Default settings (loaded from API)
 	let defaults = $state({
@@ -164,13 +166,46 @@
 		});
 	}
 
+	/**
+	 * Filter models based on AI Policy whitelist.
+	 * If no whitelist (empty array), all models are allowed.
+	 * Whitelist contains model IDs in format "provider/model" or just "model".
+	 */
+	function filterModelsByPolicy(models: ProviderGroup[], allowed: string[]): ProviderGroup[] {
+		// No policy restriction - show all models
+		if (!allowed || allowed.length === 0) {
+			return models;
+		}
+
+		// Normalize whitelist for matching (both with and without provider prefix)
+		const allowedSet = new Set<string>();
+		for (const modelId of allowed) {
+			allowedSet.add(modelId);
+			// Also add without provider prefix for matching
+			if (modelId.includes('/')) {
+				allowedSet.add(modelId.split('/')[1]);
+			}
+		}
+
+		return models
+			.map((provider) => ({
+				...provider,
+				models: provider.models.filter((model) => {
+					// Check full ID (provider/model) and short ID (model)
+					return allowedSet.has(model.id) || allowedSet.has(model.name);
+				})
+			}))
+			.filter((provider) => provider.models.length > 0);
+	}
+
 	// Load defaults and model catalog on mount
 	onMount(async () => {
 		try {
-			// Load in parallel
-			const [defaultsResponse, cachedCatalog] = await Promise.all([
+			// Load in parallel: defaults, model catalog, and AI policy
+			const [defaultsResponse, cachedCatalog, policyResponse] = await Promise.all([
 				fetch(`/api/admin/function-defaults/${functionType}`),
-				Promise.resolve(getCachedModelCatalog())
+				Promise.resolve(getCachedModelCatalog()),
+				fetch('/api/admin/settings/opencode_allowed_models')
 			]);
 
 			// Process defaults
@@ -190,9 +225,23 @@
 				defaultsLoadError = 'Could not load defaults from settings';
 			}
 
+			// Process AI Policy - API returns { success: true, data: { key, value } }
+			// where value is JSON string of string[]
+			if (policyResponse.ok) {
+				const policyData = await policyResponse.json();
+				if (policyData.data?.value) {
+					try {
+						allowedModels = JSON.parse(policyData.data.value);
+					} catch {
+						console.warn('Failed to parse AI policy value');
+						allowedModels = [];
+					}
+				}
+			}
+
 			// Process model catalog
 			if (cachedCatalog && Array.isArray(cachedCatalog)) {
-				groupedModels = cachedCatalog as ProviderGroup[];
+				allGroupedModels = cachedCatalog as ProviderGroup[];
 			} else {
 				try {
 					const providersResponse = await fetch('/api/opencode/providers');
@@ -202,7 +251,7 @@
 						const providers = data.providers || data;
 						if (Array.isArray(providers)) {
 							const normalized = normalizeProviderGroups(providers);
-							groupedModels = normalized;
+							allGroupedModels = normalized;
 							setCachedModelCatalog(normalized);
 						}
 					}
@@ -210,6 +259,9 @@
 					console.warn('Failed to load model catalog:', e);
 				}
 			}
+
+			// Filter models by AI Policy
+			groupedModels = filterModelsByPolicy(allGroupedModels, allowedModels);
 		} catch (e) {
 			console.error('Error loading settings:', e);
 			defaultsLoadError = e instanceof Error ? e.message : 'Unknown error';

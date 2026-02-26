@@ -1,12 +1,18 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
-	import { PromptContentViewer, ExecutionPanel } from '$lib/components/prompts';
+	import {
+		PromptContentViewer,
+		ExecutionPanel,
+		ExecutionHistory,
+		ExecutionLogDetail
+	} from '$lib/components/prompts';
 	import { VersionTimeline } from '$lib/components/versions';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import type { PromptVersion } from '$lib/stores/prompts.svelte';
 	import { goto } from '$app/navigation';
-	import { ChevronRight, Edit, Sparkles, Trash2 } from 'lucide-svelte';
+	import { cn } from '$lib/utils';
+	import { ChevronRight, Edit, Sparkles, Trash2, History, ChevronDown } from 'lucide-svelte';
 
 	interface Props {
 		data: PageData;
@@ -25,6 +31,11 @@
 	let showDeleteConfirm = $state(false);
 	let deleting = $state(false);
 	let deleteError = $state('');
+
+	// Execution history state
+	let showHistory = $state(false);
+	let selectedLogId = $state<number | null>(null);
+	let showDetail = $state(false);
 
 	// Format date for display
 	function formatDate(date: Date | string): string {
@@ -208,6 +219,54 @@
 					{/if}
 				</div>
 			</section>
+
+			<!-- Execution History -->
+			{#if data.prompt?.id}
+				<div class="mt-6">
+					<button
+						class="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+						onclick={() => (showHistory = !showHistory)}
+					>
+						<History class="h-4 w-4" />
+						Execution History
+						<ChevronDown
+							class={cn('h-4 w-4 transition-transform duration-200', showHistory && 'rotate-180')}
+						/>
+					</button>
+
+					{#if showHistory}
+						<div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+							<div class="rounded-lg border bg-card p-4">
+								<h3 class="mb-2 text-xs font-medium text-muted-foreground">Recent Executions</h3>
+								<ExecutionHistory
+									promptId={data.prompt.id}
+									onselect={(log) => {
+										selectedLogId = log.id;
+										showDetail = true;
+									}}
+									{selectedLogId}
+								/>
+							</div>
+							{#if showDetail && selectedLogId}
+								<ExecutionLogDetail
+									logId={selectedLogId}
+									promptId={data.prompt.id}
+									onclose={() => {
+										showDetail = false;
+										selectedLogId = null;
+									}}
+								/>
+							{:else}
+								<div
+									class="flex items-center justify-center rounded-lg border border-dashed bg-muted/30 p-8 text-sm text-muted-foreground"
+								>
+									Select an execution to view details
+								</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/if}
 
 			<!-- Selected Version Details -->
 			{#if selectedVersion && selectedVersion.id !== currentVersionId}

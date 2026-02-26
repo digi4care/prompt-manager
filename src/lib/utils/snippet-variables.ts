@@ -68,3 +68,99 @@ export function extractVariables(content: string): ExtractedVariable[] {
 
 	return variables;
 }
+
+/**
+ * Escape {{ and }} in user-provided values to prevent injection
+ * Mustache-style security: prevent users from creating new placeholders
+ *
+ * @param value - User input that may contain {{ or }} characters
+ * @returns Escaped string with braces neutralized
+ *
+ * @example
+ * escapeVariableValue('{{DANGER}}') // '\\{\\{DANGER\\}\\}'
+ * escapeVariableValue('normal text') // 'normal text'
+ */
+export function escapeVariableValue(value: string): string {
+	return value.replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+}
+
+/**
+ * Result of variable resolution
+ */
+export interface ResolveResult {
+	/** Content with variables replaced */
+	content: string;
+	/** Names of required variables that were missing */
+	missingVariables: string[];
+	/** True if any required variables were missing */
+	hasErrors: boolean;
+}
+
+/**
+ * Variable values map (name -> value)
+ */
+export interface VariableValues {
+	[name: string]: string;
+}
+
+/**
+ * Replace {{VAR}} placeholders with values
+ * - Escapes {{ and }} in values to prevent injection
+ * - Returns list of missing required variables
+ * - Keeps original placeholders for missing vars in output
+ *
+ * @param template - Template content with {{VAR}} placeholders
+ * @param values - Map of variable names to their values
+ * @param definitions - Optional variable definitions for required/optional status
+ * @returns Resolution result with content and missing variable info
+ *
+ * @example
+ * resolveVariables('Hello {{NAME}}', { NAME: 'World' })
+ * // { content: 'Hello World', missingVariables: [], hasErrors: false }
+ *
+ * resolveVariables('Hello {{NAME}}', {}, [{ name: 'NAME', required: true }])
+ * // { content: 'Hello {{NAME}}', missingVariables: ['NAME'], hasErrors: true }
+ */
+export function resolveVariables(
+	template: string,
+	values: VariableValues,
+	definitions?: SnippetVariable[]
+): ResolveResult {
+	const missingVariables: string[] = [];
+
+	// Build set of required variable names from definitions
+	const requiredVars = new Set(
+		definitions?.filter((v) => v.required !== false).map((v) => v.name) || []
+	);
+
+	// Collect all variable names in template
+	const templateVars = new Set<string>();
+	const regex = new RegExp(VARIABLE_REGEX.source, 'g');
+
+	let match = regex.exec(template);
+	while (match !== null) {
+		templateVars.add(match[1]);
+		match = regex.exec(template);
+	}
+
+	// Check for missing required variables
+	for (const varName of templateVars) {
+		if (requiredVars.has(varName) && !(varName in values)) {
+			missingVariables.push(varName);
+		}
+	}
+
+	// Replace variables (escape values for security)
+	let resolved = template;
+	for (const [name, value] of Object.entries(values)) {
+		const escaped = escapeVariableValue(value);
+		const varRegex = new RegExp(`{{\\s*${name}\\s*}}`, 'g');
+		resolved = resolved.replace(varRegex, escaped);
+	}
+
+	return {
+		content: resolved,
+		missingVariables,
+		hasErrors: missingVariables.length > 0
+	};
+}

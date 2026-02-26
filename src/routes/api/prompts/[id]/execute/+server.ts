@@ -2,6 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { executePrompt, ExecutionError } from '$lib/server/services/execution.service';
+import { logExecution } from '$lib/server/services/execution-log.service';
 import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
 
 /**
@@ -101,10 +102,27 @@ export const POST: RequestHandler = async (event) => {
 			overrides
 		});
 
+		// Log successful execution (async, non-blocking)
+		logExecution({
+			promptId,
+			inputContent: content,
+			result,
+			functionType: 'executor'
+		});
+
 		return json(result);
 	} catch (err) {
 		// Handle ExecutionError instances
 		if (err instanceof ExecutionError) {
+			// Log failed execution (async, non-blocking)
+			logExecution({
+				promptId,
+				inputContent: content,
+				result: null,
+				error: { code: err.code, message: err.userMessage },
+				functionType: 'executor'
+			});
+
 			throw error(
 				err.statusCode,
 				JSON.stringify({

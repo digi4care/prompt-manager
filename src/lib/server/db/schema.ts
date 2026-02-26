@@ -342,6 +342,45 @@ export const promptFunctionSettings = sqliteTable(
 	})
 );
 
+// Execution logs for auditing prompt executions
+export const executionLogs = sqliteTable('execution_logs', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	promptId: integer('prompt_id')
+		.notNull()
+		.references(() => prompts.id, { onDelete: 'cascade' }),
+	versionId: integer('version_id').references(() => promptVersions.id, { onDelete: 'set null' }),
+
+	// Execution context
+	inputContent: text('input_content').notNull(),
+	outputContent: text('output_content'),
+
+	// Model provenance
+	modelId: text('model_id').notNull(),
+	modelSource: text('model_source').$type<'run' | 'prompt' | 'default'>().notNull(),
+
+	// Usage metrics
+	inputTokens: integer('input_tokens').notNull().default(0),
+	outputTokens: integer('output_tokens').notNull().default(0),
+	totalTokens: integer('total_tokens').notNull().default(0),
+
+	// Timing
+	durationMs: integer('duration_ms').notNull(),
+
+	// Error handling
+	status: text('status').$type<'success' | 'error'>().notNull(),
+	errorCode: text('error_code'),
+	errorMessage: text('error_message'),
+
+	// Metadata
+	functionType: text('function_type')
+		.$type<'executor' | 'judge' | 'improve' | 'council'>()
+		.notNull()
+		.default('executor'),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
 // Council agents for council repeater pattern
 export const councilAgents = sqliteTable('council_agents', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -401,7 +440,8 @@ export const promptsRelations = relations(prompts, ({ many, one }) => ({
 		fields: [prompts.latestVersionId],
 		references: [promptVersions.id]
 	}),
-	improvementLoops: many(improvementLoops)
+	improvementLoops: many(improvementLoops),
+	executionLogs: many(executionLogs)
 }));
 
 export const promptVersionsRelations = relations(promptVersions, ({ one, many }) => ({
@@ -442,6 +482,17 @@ export const improvementLoopsRelations = relations(improvementLoops, ({ one }) =
 	})
 }));
 
+export const executionLogsRelations = relations(executionLogs, ({ one }) => ({
+	prompt: one(prompts, {
+		fields: [executionLogs.promptId],
+		references: [prompts.id]
+	}),
+	version: one(promptVersions, {
+		fields: [executionLogs.versionId],
+		references: [promptVersions.id]
+	})
+}));
+
 // ==================== TYPES ====================
 
 export type User = typeof users.$inferSelect;
@@ -473,6 +524,9 @@ export type PromptFunctionSetting = typeof promptFunctionSettings.$inferSelect;
 export type NewPromptFunctionSetting = typeof promptFunctionSettings.$inferInsert;
 export type CouncilAgent = typeof councilAgents.$inferSelect;
 export type NewCouncilAgent = typeof councilAgents.$inferInsert;
+// Execution log types
+export type ExecutionLog = typeof executionLogs.$inferSelect;
+export type NewExecutionLog = typeof executionLogs.$inferInsert;
 // Better Auth types
 export type AuthUser = typeof authUsers.$inferSelect;
 export type NewAuthUser = typeof authUsers.$inferInsert;

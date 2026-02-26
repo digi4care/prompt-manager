@@ -79,12 +79,12 @@ Plans:
 3. Logs show resolved input prompt (with variables substituted)
 4. Logs include output or error with context
 
-**Plans**: 2 plans
+**Plans**: 2 plans ✓ COMPLETE
 
 Plans:
 
-- [ ] 03-01-PLAN.md — Execution log schema, async logging service, and API endpoints for history
-- [ ] 03-02-PLAN.md — Execution history UI components and prompt detail page integration
+- [x] 03-01-PLAN.md — Execution log schema, async logging service, and API endpoints for history
+- [x] 03-02-PLAN.md — Execution history UI components and prompt detail page integration
 
 ---
 
@@ -257,19 +257,19 @@ Plans:
 **Execution Order:**
 Phases execute in numeric order. Decimal phases (if inserted) execute between their surrounding integers.
 
-| Phase                      | Milestone | Requirements | Plans Complete | Status      | Completed |
-| -------------------------- | --------- | ------------ | -------------- | ----------- | --------- |
-| 1. Settings Foundation     | v1.0      | 5            | 0/3            | Planned     | -         |
-| 2. Prompt Execution        | v1.0      | 5            | 0/3            | Not started | -         |
-| 3. Execution Logging       | v1.0      | 4            | 0/2            | Not started | -         |
-| 4. Snippet Variables       | v1.0      | 5            | 0/3            | Not started | -         |
-| 5. Test Runner UI          | v1.0      | 4            | 0/3            | Not started | -         |
-| 6. Streaming Execution     | v2.0      | 3            | 0/3            | Not started | -         |
-| 7. Council Correct Mode    | v2.0      | 6            | 0/3            | Not started | -         |
-| 8. Snippet Library         | v2.0      | 3            | 0/3            | Not started | -         |
-| 9. Council Debate Mode     | v3.0      | 3            | 0/3            | Not started | -         |
-| 10. Council Consensus Mode | v3.0      | 3            | 0/3            | Not started | -         |
-| 11. JavaScript Snippets    | v3.0      | 2            | 0/2            | Not started | -         |
+| Phase                      | Milestone | Requirements | Plans Complete | Status      | Completed  |
+| -------------------------- | --------- | ------------ | -------------- | ----------- | ---------- |
+| 1. Settings Foundation     | v1.0      | 5            | 2/3            | Complete    | 2026-02-14 |
+| 2. Prompt Execution        | v1.0      | 5            | 2/3            | Complete    | 2026-02-22 |
+| 3. Execution Logging       | v1.0      | 4            | 2/2            | Complete    | 2026-02-26 |
+| 4. Snippet Variables       | v1.0      | 5            | 0/3            | Not started | -          |
+| 5. Test Runner UI          | v1.0      | 4            | 0/3            | Not started | -          |
+| 6. Streaming Execution     | v2.0      | 3            | 0/3            | Not started | -          |
+| 7. Council Correct Mode    | v2.0      | 6            | 0/3            | Not started | -          |
+| 8. Snippet Library         | v2.0      | 3            | 0/3            | Not started | -          |
+| 9. Council Debate Mode     | v3.0      | 3            | 0/3            | Not started | -          |
+| 10. Council Consensus Mode | v3.0      | 3            | 0/3            | Not started | -          |
+| 11. JavaScript Snippets    | v3.0      | 2            | 0/2            | Not started | -          |
 
 **Total: 11 phases, 43 requirements, 31 plans (estimated)**
 

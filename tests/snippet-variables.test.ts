@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { extractVariables } from '$lib/utils/snippet-variables';
+import {
+	extractVariables,
+	escapeVariableValue,
+	resolveVariables,
+	type SnippetVariable
+} from '$lib/utils/snippet-variables';
 import { parseSnippetFrontmatter } from '$lib/opencode/frontmatter';
 
 describe('extractVariables', () => {
@@ -67,5 +72,67 @@ variables:
 		const result = parseSnippetFrontmatter(yaml);
 		expect(result.variables).toHaveLength(1);
 		expect(result.variables[0].name).toBe('VALID');
+	});
+});
+
+describe('escapeVariableValue', () => {
+	it('escapes opening braces', () => {
+		expect(escapeVariableValue('{{DANGER}}')).toBe('\\{\\{DANGER\\}\\}');
+	});
+
+	it('escapes single braces', () => {
+		expect(escapeVariableValue('a { b } c')).toBe('a \\{ b \\} c');
+	});
+
+	it('returns plain text unchanged', () => {
+		expect(escapeVariableValue('normal text')).toBe('normal text');
+	});
+
+	it('handles empty string', () => {
+		expect(escapeVariableValue('')).toBe('');
+	});
+});
+
+describe('resolveVariables', () => {
+	it('replaces single variable', () => {
+		const result = resolveVariables('Hello {{NAME}}', { NAME: 'World' });
+		expect(result.content).toBe('Hello World');
+		expect(result.missingVariables).toEqual([]);
+		expect(result.hasErrors).toBe(false);
+	});
+
+	it('replaces multiple variables', () => {
+		const result = resolveVariables('{{A}} and {{B}}', { A: 'X', B: 'Y' });
+		expect(result.content).toBe('X and Y');
+	});
+
+	it('keeps placeholder for missing variables', () => {
+		const result = resolveVariables('Hello {{NAME}}', {});
+		expect(result.content).toBe('Hello {{NAME}}');
+	});
+
+	it('tracks missing required variables', () => {
+		const definitions: SnippetVariable[] = [{ name: 'NAME', required: true }];
+		const result = resolveVariables('Hello {{NAME}}', {}, definitions);
+		expect(result.missingVariables).toEqual(['NAME']);
+		expect(result.hasErrors).toBe(true);
+	});
+
+	it('does not track missing optional variables', () => {
+		const definitions: SnippetVariable[] = [{ name: 'NAME', required: false }];
+		const result = resolveVariables('Hello {{NAME}}', {}, definitions);
+		expect(result.missingVariables).toEqual([]);
+		expect(result.hasErrors).toBe(false);
+	});
+
+	it('escapes injection attempts', () => {
+		const result = resolveVariables('Value: {{X}}', { X: '{{INJECT}}' });
+		expect(result.content).toBe('Value: \\{\\{INJECT\\}\\}');
+		expect(result.content).not.toContain('{{INJECT}}');
+	});
+
+	it('handles variables with whitespace', () => {
+		const result = resolveVariables('{{  NAME  }}', { NAME: 'value' });
+		expect(result.content).toBe('value');
 	});
 });

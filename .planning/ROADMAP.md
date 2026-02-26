@@ -122,13 +122,12 @@ Plans:
 2. User can fill variable inputs and see resolved preview before execution
 3. User can run execution and see results inline in the panel
 4. User sees execution metrics (model, tokens, duration) in results
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
-- [ ] 05-01: Test runner panel component
-- [ ] 05-02: Variable input form integration
-- [ ] 05-03: Inline results display with metrics
+- [ ] 05-01-PLAN.md — TestRunnerPanel component composing variable inputs + execution + results
+- [ ] 05-02-PLAN.md — Edit page integration with collapsible test runner section
 
 ---
 
@@ -264,7 +263,7 @@ Phases execute in numeric order. Decimal phases (if inserted) execute between th
 | 2. Prompt Execution        | v1.0      | 5            | 2/3            | Complete    | 2026-02-22 |
 | 3. Execution Logging       | v1.0      | 4            | 2/2            | Complete    | 2026-02-26 |
 | 4. Snippet Variables       | v1.0      | 5            | 3/3            | Complete    | 2026-02-26 |
-| 5. Test Runner UI          | v1.0      | 4            | 0/3            | Not started | -          |
+| 5. Test Runner UI          | v1.0      | 4            | 0/2            | Planning    | -          |
 | 6. Streaming Execution     | v2.0      | 3            | 0/3            | Not started | -          |
 | 7. Council Correct Mode    | v2.0      | 6            | 0/3            | Not started | -          |
 | 8. Snippet Library         | v2.0      | 3            | 0/3            | Not started | -          |

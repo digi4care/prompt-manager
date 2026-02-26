@@ -7,6 +7,15 @@ import {
 } from '$lib/server/services/function-defaults.service';
 import { validateFunctionSettingUpdate } from '$lib/validators/function-settings';
 import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
+import { getProviderCatalog, type ProviderInfo } from '$lib/server/services/opencode.service';
+import {
+	validateModelVariantScope,
+	type PolicyScope,
+	type PolicyData,
+	type CatalogData,
+	type CatalogModel
+} from '$lib/server/validators/model-variant.validator';
 
 // Valid function types
 const VALID_FUNCTION_TYPES: FunctionType[] = ['executor', 'judge', 'improve', 'council'];
@@ -114,6 +123,66 @@ export const PUT: RequestHandler = async (event) => {
 			};
 		}
 
+		// Validate model+variant against policy and catalog (SPEC-14 AIC-008)
+		if (updateData.modelId) {
+			// Fetch policy and catalog for validation
+			const [policy, catalog] = await Promise.all([getOpenCodePolicy(), getProviderCatalog()]);
+
+			// Map function type to policy scope
+			const scope: PolicyScope = type as PolicyScope;
+
+			// Build policy data for validator
+			const policyData: PolicyData = {
+				allowedModels: policy.allowedModels || [],
+				allowedVariants: policy.allowedVariants || {}
+			};
+
+			// Build catalog data for validator (cast from unknown[])
+			const rawProviders = (catalog.providers || []) as ProviderInfo[];
+			const providers: CatalogData['providers'] = rawProviders.map((p) => ({
+				id: p.id,
+				name: p.name,
+				connected: true, // Assume connected if in catalog
+				models: Object.entries(p.models || {}).map(([id, m]) => ({
+					id,
+					name: m.name,
+					providerId: p.id,
+					status: m.status,
+					contextWindow: m.context_window,
+					maxOutputTokens: m.limit?.output,
+					variants: [] // Variants will be populated from policy.allowedVariants
+				}))
+			}));
+
+			const catalogData: CatalogData = {
+				providers,
+				connectedProviderIds: rawProviders.map((p) => p.id)
+			};
+
+			// Validate model+variant combination
+			const variantValidation = validateModelVariantScope({
+				modelId: updateData.modelId,
+				modelVariant: updateData.modelVariant,
+				scope,
+				policy: policyData,
+				catalog: catalogData,
+				requireConnected: true
+			});
+
+			if (!variantValidation.valid) {
+				const errorCode = variantValidation.error?.code || 'MODEL_NOT_FOUND';
+				const httpStatus = errorCode === 'VARIANT_REQUIRED' ? 400 : 422;
+				throw error(
+					httpStatus,
+					JSON.stringify({
+						message: variantValidation.error?.message || 'Model/variant validation failed',
+						code: errorCode,
+						errors: { modelVariant: variantValidation.error?.message }
+					})
+				);
+			}
+		}
+
 		// Log the update for audit purposes
 		const authUser = event.locals.auth?.user;
 		console.log(
@@ -124,6 +193,10 @@ export const PUT: RequestHandler = async (event) => {
 		const updated = await updateFunctionDefaultByType(type as FunctionType, updateData);
 		return json({ data: updated });
 	} catch (err) {
+		// Re-throw SvelteKit HttpError (has status property)
+		if (err && typeof err === 'object' && 'status' in err) {
+			throw err;
+		}
 		console.error('Failed to update function default:', err);
 		throw error(
 			500,

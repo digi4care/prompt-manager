@@ -34,7 +34,16 @@ export const GET: RequestHandler = async () => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
-		const { name, description, instruction, model, temperature, allowedModels, isDefault } = body;
+		const {
+			name,
+			description,
+			instruction,
+			model,
+			modelVariant,
+			temperature,
+			allowedModels,
+			isDefault
+		} = body;
 
 		// Validate required fields
 		if (!name || !instruction) {
@@ -50,7 +59,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		const policy = await getOpenCodePolicy();
 
 		// Validate preset data against policy
-		const validation = validatePresetData({ model, temperature, allowedModels }, policy);
+		const validation = validatePresetData(
+			{ model, modelVariant, temperature, allowedModels },
+			policy
+		);
 
 		if (!validation.valid) {
 			throw error(
@@ -68,6 +80,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			description,
 			instruction,
 			model: model || null,
+			modelVariant: modelVariant || null,
 			temperature: temperature !== undefined ? temperature : null,
 			allowedModels: allowedModels || null,
 			isDefault: isDefault || false,
@@ -76,8 +89,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		return json({ success: true, data: preset }, { status: 201 });
 	} catch (err) {
-		if (err instanceof Error && err.message.includes('Validation failed')) {
-			throw err; // Re-throw validation errors
+		// Re-throw HttpErrors (they have a status property)
+		if (err && typeof err === 'object' && 'status' in err) {
+			throw err;
 		}
 
 		console.error('Failed to create improve preset:', err);

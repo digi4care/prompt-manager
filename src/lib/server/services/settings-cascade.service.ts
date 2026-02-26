@@ -19,6 +19,7 @@ export interface ResolvedSetting<T> {
 // Resolution result for all settings
 export interface ResolutionResult {
 	modelId: ResolvedSetting<string>;
+	modelVariant: ResolvedSetting<string | null>;
 	temperature: ResolvedSetting<number>;
 	maxTokens: ResolvedSetting<number>;
 	promptId: number | null;
@@ -27,6 +28,7 @@ export interface ResolutionResult {
 // Run-level overrides (highest priority)
 export interface RunOverrides {
 	modelId?: string;
+	modelVariant?: string | null;
 	temperature?: number;
 	maxTokens?: number;
 }
@@ -128,6 +130,13 @@ export async function resolveFunctionSettings(options: ResolveOptions): Promise<
 		'modelId'
 	);
 
+	const modelVariant = resolveSetting(
+		runOverrides.modelVariant ?? undefined,
+		promptSettings?.modelVariantOverride,
+		globalDefault.modelVariant,
+		'modelVariant'
+	);
+
 	const temperature = resolveSetting(
 		runOverrides.temperature,
 		promptSettings?.temperature,
@@ -147,6 +156,7 @@ export async function resolveFunctionSettings(options: ResolveOptions): Promise<
 
 	return {
 		modelId,
+		modelVariant,
 		temperature,
 		maxTokens,
 		promptId: effectivePromptId

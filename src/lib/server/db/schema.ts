@@ -176,6 +176,7 @@ export const improvePresets = sqliteTable('improve_presets', {
 	description: text('description'), // Human-readable description
 	instruction: text('instruction').notNull(), // Instruction template (can include placeholders like {{content}})
 	model: text('model'), // Optional model override (if null, use policy default)
+	modelVariant: text('model_variant'), // Optional variant override
 	temperature: real('temperature'), // Optional temperature override (if null, use policy default)
 	allowedModels: text('allowed_models'), // Optional JSON array of allowed model IDs for this preset
 	isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false), // Whether this is the default preset
@@ -298,6 +299,7 @@ export const functionDefaults = sqliteTable('function_defaults', {
 		.notNull()
 		.unique(),
 	modelId: text('model_id').notNull(), // Format: 'providerID/modelID'
+	modelVariant: text('model_variant'), // Variant id (e.g., 'low', 'medium', 'high', 'xhigh')
 	temperature: real('temperature').notNull(),
 	maxTokens: integer('max_tokens').notNull(),
 	promptId: integer('prompt_id').references(() => prompts.id), // Optional prompt linking
@@ -321,6 +323,7 @@ export const promptFunctionSettings = sqliteTable(
 			.$type<'executor' | 'judge' | 'improve' | 'council'>()
 			.notNull(),
 		modelOverride: text('model_override'),
+		modelVariantOverride: text('model_variant_override'), // Variant id override
 		temperature: real('temperature'),
 		maxTokens: integer('max_tokens'),
 		promptLinkId: integer('prompt_link_id').references(() => prompts.id),
@@ -348,6 +351,7 @@ export const councilAgents = sqliteTable('council_agents', {
 	parentId: integer('parent_id').notNull(),
 	agentOrder: integer('agent_order').notNull(),
 	modelId: text('model_id').notNull(),
+	modelVariant: text('model_variant'), // Variant id (e.g., 'low', 'medium', 'high', 'xhigh')
 	modelName: text('model_name'),
 	modelProvider: text('model_provider'),
 	modelLogo: text('model_logo'),

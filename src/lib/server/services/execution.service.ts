@@ -142,6 +142,10 @@ export interface ExecutionResult {
 		modelId: string;
 		displayName: string;
 	};
+	variant?: {
+		id: string;
+		source: 'run' | 'prompt' | 'default' | 'provider_default';
+	};
 	usage: {
 		inputTokens: number;
 		outputTokens: number;
@@ -324,6 +328,7 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 		const durationMs = endTime - startTime;
 
 		// Build result
+		const resolvedVariant = settings.modelVariant.value;
 		const result: ExecutionResult = {
 			content: responseContent,
 			model: {
@@ -331,6 +336,12 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 				modelId: info?.modelID ?? modelId,
 				displayName: `${info?.providerID ?? providerId}/${info?.modelID ?? modelId}`
 			},
+			variant: resolvedVariant
+				? {
+						id: resolvedVariant,
+						source: settings.modelVariant.source
+					}
+				: undefined,
 			usage: {
 				inputTokens,
 				outputTokens,

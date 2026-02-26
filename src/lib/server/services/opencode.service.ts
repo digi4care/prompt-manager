@@ -191,7 +191,7 @@ export async function getProviderCatalog(forceRefresh = false): Promise<CatalogR
 		const age = (now - catalogCache.timestamp) / 1000;
 		if (age < catalogCache.ttlSeconds) {
 			const data = catalogCache.data as {
-				providers?: unknown[];
+				providers?: ProviderInfo[];
 				default?: { model?: string };
 			};
 			return {
@@ -214,7 +214,7 @@ export async function getProviderCatalog(forceRefresh = false): Promise<CatalogR
 	};
 
 	return {
-		providers: (data as { providers?: unknown[] }).providers || [],
+		providers: (data as unknown as { providers?: ProviderInfo[] }).providers || [],
 		default: (data as { default?: { model?: string } }).default,
 		ttlSeconds: DEFAULT_CATALOG_TTL_SECONDS,
 		cached: false,
@@ -243,7 +243,7 @@ export interface ProviderInfo {
 	description?: string;
 	source?: string;
 	env?: string[];
-	models?: Record<string, ModelInfo>;
+	models?: Record<string, ModelInfo> | ModelInfo[];
 }
 
 export interface ModelInfo {
@@ -258,6 +258,7 @@ export interface ModelInfo {
 		context: number;
 		output: number;
 	};
+	variants?: Array<{ id: string; label?: string; isDefault?: boolean }>;
 }
 
 export interface HealthCheckResult {
@@ -273,18 +274,11 @@ export interface HealthCheckResult {
 }
 
 export interface CatalogResponse {
-	providers: unknown[];
+	providers: ProviderInfo[];
 	default?: { model?: string };
 	ttlSeconds: number;
 	cached: boolean;
 	cachedAt?: number;
-}
-
-export interface ModelInfo {
-	id: string;
-	name: string;
-	context_window?: number;
-	supports_vision?: boolean;
 }
 
 /**

@@ -59,8 +59,14 @@ const RATE_LIMIT_MAX_AUTH_REQUESTS = 30; // 30 requests per minute for auth rout
 
 /**
  * Check if request exceeds rate limit
+ * Skips rate limiting in development mode for easier E2E testing
  */
 function isRateLimited(event: RequestEvent): { limited: boolean; retryAfter: number } {
+	// Skip rate limiting in development mode for easier E2E testing
+	if (dev) {
+		return { limited: false, retryAfter: 0 };
+	}
+
 	const clientIP = event.getClientAddress?.() || 'unknown';
 	const route = event.url.pathname;
 	const isAuthRoute =
@@ -132,11 +138,17 @@ function requiresJwtAuthentication(pathname: string): boolean {
 
 /**
  * Verify admin authentication from Better Auth session or JWT
+ * In development mode without ADMIN_PASSWORD, allows bypass access
  */
 function isAdminAuthenticated(event: RequestEvent): boolean {
 	const pathname = event.url.pathname;
 	const isJwtRequiredRoute = requiresJwtAuthentication(pathname);
 	const hasJsonAccept = event.request.headers.get('accept')?.includes('application/json');
+
+	// DEV MODE BYPASS: Allow admin access when ADMIN_PASSWORD is not set
+	if (dev && !process.env.ADMIN_PASSWORD) {
+		return true;
+	}
 
 	// Logout and profile pages only need Better Auth session, not JWT
 	if (pathname === '/logout' || pathname === '/admin/profile') {

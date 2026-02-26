@@ -108,6 +108,7 @@ export async function deleteImprovePreset(id: number): Promise<boolean> {
 export function validatePresetData(
 	data: {
 		model?: string | null;
+		modelVariant?: string | null;
 		temperature?: number | null;
 		allowedModels?: string | null;
 	},
@@ -121,6 +122,13 @@ export function validatePresetData(
 			errors.push('Model cannot be empty');
 		} else if (!isModelAllowed(data.model, policy)) {
 			errors.push(`Model "${data.model}" is not in the allowed list`);
+		}
+	}
+
+	// Validate modelVariant if provided (basic validation)
+	if (data.modelVariant !== null && data.modelVariant !== undefined) {
+		if (typeof data.modelVariant !== 'string' || data.modelVariant.trim().length === 0) {
+			errors.push('Model variant cannot be empty string');
 		}
 	}
 

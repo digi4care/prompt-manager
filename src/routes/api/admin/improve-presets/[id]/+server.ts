@@ -38,7 +38,8 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		return json({ success: true, data: preset });
 	} catch (err) {
-		if (err instanceof Error && err.message.includes('not found')) {
+		// Re-throw HttpErrors (they have a status property)
+		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
 		}
 
@@ -82,13 +83,25 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		}
 
 		const body = await request.json();
-		const { name, description, instruction, model, temperature, allowedModels, isDefault } = body;
+		const {
+			name,
+			description,
+			instruction,
+			model,
+			modelVariant,
+			temperature,
+			allowedModels,
+			isDefault
+		} = body;
 
 		// Get current policy for validation
 		const policy = await getOpenCodePolicy();
 
 		// Validate preset data against policy
-		const validation = validatePresetData({ model, temperature, allowedModels }, policy);
+		const validation = validatePresetData(
+			{ model, modelVariant, temperature, allowedModels },
+			policy
+		);
 
 		if (!validation.valid) {
 			throw error(
@@ -106,6 +119,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			description,
 			instruction,
 			model: model !== undefined ? model : undefined,
+			modelVariant: modelVariant !== undefined ? modelVariant : undefined,
 			temperature: temperature !== undefined ? temperature : undefined,
 			allowedModels: allowedModels !== undefined ? allowedModels : undefined,
 			isDefault: isDefault !== undefined ? isDefault : undefined,
@@ -123,10 +137,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		return json({ success: true, data: updated });
 	} catch (err) {
-		if (
-			err instanceof Error &&
-			(err.message.includes('not found') || err.message.includes('Validation failed'))
-		) {
+		// Re-throw HttpErrors (they have a status property)
+		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
 		}
 
@@ -182,7 +194,8 @@ export const DELETE: RequestHandler = async ({ params }) => {
 
 		return json({ success: true, message: 'Improve preset deleted successfully' });
 	} catch (err) {
-		if (err instanceof Error && err.message.includes('not found')) {
+		// Re-throw HttpErrors (they have a status property)
+		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
 		}
 

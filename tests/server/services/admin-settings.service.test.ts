@@ -333,6 +333,9 @@ describe('admin-settings.service', () => {
 									updatedBy: 'admin'
 								}
 							])
+							// Mock new variant-aware settings (return empty/not set)
+							.mockResolvedValueOnce([]) // opencode_allowed_models_matrix
+							.mockResolvedValueOnce([]) // opencode_allowed_model_variants
 					})
 				})
 			} as any);

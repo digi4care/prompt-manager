@@ -59,9 +59,8 @@
 				groupedModels={displayGroupedModelsByScope[type]}
 				allGroupedModels={allGroupedModelsWithVariantPolicy}
 				{prompts}
-				onModelChange={(modelId) => validateField(type, 'modelId', 'shared', modelId, true)}
-				onValidate={(field, value, immediate) =>
-					validateField(type, field, 'shared', value, immediate)}
+				onModelChange={(modelId) => validateField(type, 'modelId', type, modelId, true)}
+				onValidate={(field, value, immediate) => validateField(type, field, type, value, immediate)}
 				onReset={() => handleReset(type)}
 			/>
 		</div>

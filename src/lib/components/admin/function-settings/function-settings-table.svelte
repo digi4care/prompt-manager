@@ -581,14 +581,17 @@
 	}
 
 	function buildSnapshot(): string {
-		const functionState = rowTypes.map((type) => ({
-			type,
-			modelId: settings[type].modelId,
-			modelVariant: settings[type].modelVariant ?? null,
-			temperature: settings[type].temperature,
-			maxTokens: settings[type].maxTokens,
-			promptId: settings[type].promptId ?? null
-		}));
+		const functionState = rowTypes.map((type) => {
+			const s = settings[type];
+			return {
+				type,
+				modelId: s!.modelId,
+				modelVariant: s!.modelVariant ?? null,
+				temperature: s!.temperature,
+				maxTokens: s!.maxTokens,
+				promptId: s!.promptId ?? null
+			};
+		});
 
 		const councilState = councilAgents
 			.filter((agent) => agent.modelId.trim().length > 0)
@@ -607,7 +610,8 @@
 		let isValid = true;
 
 		for (const type of rowTypes) {
-			const message = getFieldError('modelId', settings[type].modelId, type);
+			const s = settings[type]!;
+			const message = getFieldError('modelId', s.modelId, type);
 			updateFieldError(type, 'modelId', message);
 			if (message) {
 				isValid = false;
@@ -615,7 +619,7 @@
 
 			const variantError = getFieldError(
 				'modelVariant',
-				{ modelId: settings[type].modelId, modelVariant: settings[type].modelVariant ?? null },
+				{ modelId: s.modelId, modelVariant: s.modelVariant ?? null },
 				type
 			);
 			updateFieldError(type, 'modelVariant', variantError);
@@ -661,12 +665,10 @@
 		}
 
 		for (const type of rowTypes) {
-			const normalizedVariant = normalizeVariantForModel(
-				settings[type].modelId,
-				settings[type].modelVariant
-			);
-			if ((settings[type].modelVariant ?? null) !== normalizedVariant) {
-				settings[type].modelVariant = normalizedVariant;
+			const s = settings[type]!;
+			const normalizedVariant = normalizeVariantForModel(s.modelId, s.modelVariant);
+			if ((s.modelVariant ?? null) !== normalizedVariant) {
+				s.modelVariant = normalizedVariant;
 			}
 		}
 
@@ -951,6 +953,7 @@
 		try {
 			const saveRows = rowTypes.map(async (type) => {
 				const setting = settings[type];
+				if (!setting) return;
 				const response = await fetch(`/api/admin/function-defaults/${type}`, {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
@@ -1090,8 +1093,12 @@
 				};
 			};
 
+			const currentSetting = settings[functionType];
+			if (!currentSetting) return;
+
 			settings[functionType] = {
-				...settings[functionType],
+				...currentSetting,
+				functionType: functionType,
 				modelId: result.data.modelId || '',
 				modelVariant: result.data.modelVariant ?? null,
 				temperature: result.data.temperature,

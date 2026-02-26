@@ -22,6 +22,7 @@ interface FunctionDefault {
 	temperature: number;
 	maxTokens: number;
 	promptId?: number;
+	modelVariant?: string | null;
 }
 
 interface CouncilAgent {
@@ -37,6 +38,7 @@ interface CouncilAgent {
 	modelLogo?: string;
 	promptTemplate?: string;
 	promptLinkId?: number;
+	modelVariant?: string | null;
 }
 
 interface FunctionDefaultsSettings {
@@ -84,7 +86,8 @@ export const load: PageServerLoad = async ({ url }) => {
 				providerId: providerId,
 				temperature: def.temperature,
 				maxTokens: def.maxTokens,
-				promptId: def.promptId ?? undefined
+				promptId: def.promptId ?? undefined,
+				modelVariant: def.modelVariant ?? undefined
 			};
 		}
 	}
@@ -255,6 +258,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				temperature: agent.temperature,
 				maxTokens: agent.maxTokens,
 				promptLinkId: agent.promptLinkId || undefined,
+				modelVariant: agent.modelVariant ?? undefined,
 				createdAt: agent.createdAt?.toISOString(),
 				updatedAt: agent.updatedAt?.toISOString()
 			};

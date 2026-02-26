@@ -28,9 +28,16 @@
 		temperature: number;
 	}
 
+	interface ModelVariant {
+		id: string;
+		label?: string;
+		isDefault?: boolean;
+	}
+
 	interface GroupedModel {
 		id: string;
 		name: string;
+		variants?: ModelVariant[];
 	}
 
 	interface ProviderGroup {
@@ -56,6 +63,7 @@
 	let formDescription = $state('');
 	let formInstruction = $state('');
 	let formModel = $state('');
+	let formVariant = $state('');
 	let formTemperature = $state<number>(0.5);
 	let formAllowedModels = $state<string[]>([]);
 	let formIsDefault = $state(false);
@@ -155,7 +163,8 @@
 					.filter((model) => model?.id && (!model.status || model.status === 'active'))
 					.map((model) => ({
 						id: model.id,
-						name: model.name || model.id
+						name: model.name || model.id,
+						variants: model.variants ?? undefined
 					}))
 					.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -205,6 +214,18 @@
 	}
 
 	let selectedOverrideModel = $derived(resolveModelById(formModel));
+
+	let availableVariants = $derived.by(() => {
+		if (!selectedOverrideModel) return [];
+		// Find the model in groupedModels to get variants
+		for (const provider of groupedModels) {
+			if (provider.providerId === selectedOverrideModel.providerId) {
+				const model = provider.models.find((m) => m.id === selectedOverrideModel.id);
+				return model?.variants ?? [];
+			}
+		}
+		return [];
+	});
 
 	let selectedAllowedModels = $derived.by(() => {
 		const selectedSet = new Set(formAllowedModels);
@@ -287,6 +308,7 @@
 		formDescription = preset.description || '';
 		formInstruction = preset.instruction;
 		formModel = preset.model || '';
+		formVariant = preset.modelVariant || '';
 		formTemperature =
 			preset.temperature !== null && preset.temperature !== undefined ? preset.temperature : 0.5;
 		formAllowedModels = preset.allowedModels ? JSON.parse(preset.allowedModels) : [];
@@ -299,6 +321,7 @@
 		formDescription = '';
 		formInstruction = '';
 		formModel = '';
+		formVariant = '';
 		formTemperature = 0.5;
 		formAllowedModels = [];
 		formIsDefault = false;
@@ -325,6 +348,7 @@
 				description: formDescription,
 				instruction: formInstruction,
 				model: formModel || null,
+				modelVariant: formVariant || null,
 				temperature: formTemperature !== 0.5 ? formTemperature : null,
 				allowedModels: formAllowedModels.length > 0 ? JSON.stringify(formAllowedModels) : null,
 				isDefault: formIsDefault
@@ -536,6 +560,30 @@
 								{/if}
 							</div>
 						</div>
+
+						{#if availableVariants.length > 0}
+							<div class="space-y-2">
+								<label for="preset-variant" class="text-sm font-medium">Model Variant</label>
+								<select
+									id="preset-variant"
+									class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-primary/30 focus:outline-none"
+									value={formVariant}
+									onchange={(e) => {
+										formVariant = (e.target as HTMLSelectElement).value;
+									}}
+								>
+									<option value="">Default variant</option>
+									{#each availableVariants as variant}
+										<option value={variant.id} selected={formVariant === variant.id}>
+											{variant.label || variant.id}
+										</option>
+									{/each}
+								</select>
+								<p class="text-xs text-muted-foreground">
+									Select a specific variant for this model (e.g., low, medium, high context).
+								</p>
+							</div>
+						{/if}
 
 						<div class="space-y-2">
 							<label for="preset-temp" class="text-sm font-medium"> Temperature Override </label>

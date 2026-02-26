@@ -1,0 +1,19 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "WorkflowEnums",
+	"type": "object",
+	"properties": {
+		"priority": {
+			"type": "string",
+			"enum": ["P0", "P1", "P2"]
+		},
+		"status": {
+			"type": "string",
+			"enum": ["Planned", "Partial", "Covered", "Blocked"]
+		},
+		"todoStatus": {
+			"type": "string",
+			"enum": ["pending", "in_progress", "completed", "blocked", "cancelled"]
+		}
+	}
+}

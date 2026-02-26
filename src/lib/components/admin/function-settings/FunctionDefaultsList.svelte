@@ -2,11 +2,18 @@
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 	import { Button } from '$lib/components/ui/button';
 
+	interface ModelVariant {
+		id: string;
+		label?: string;
+		isDefault?: boolean;
+	}
+
 	interface Model {
 		id: string;
 		name: string;
 		provider: string;
 		logo?: string;
+		variants?: ModelVariant[];
 	}
 
 	interface FunctionConfig {
@@ -18,6 +25,7 @@
 		maxTokens: number;
 		promptTemplate?: string | null;
 		promptLinkId?: number | null;
+		modelVariant?: string | null;
 	}
 
 	interface Props {
@@ -28,6 +36,7 @@
 		models?: Model[];
 		allowedModels?: string[];
 		onModelSelect: (type: 'executor' | 'judge' | 'improve', model: Model) => void;
+		onVariantChange?: (type: 'executor' | 'judge' | 'improve', variant: string | null) => void;
 		onPromptChange?: (type: 'executor' | 'judge' | 'improve', promptId: number | null) => void;
 		onSave?: () => void;
 		isSaving?: boolean;
@@ -42,6 +51,7 @@
 		models = [],
 		allowedModels = [],
 		onModelSelect,
+		onVariantChange,
 		onPromptChange,
 		onSave,
 		isSaving = false,
@@ -95,6 +105,26 @@
 		if (type === 'judge') return judge ?? undefined;
 		return improve ?? executor ?? undefined;
 	}
+
+	/**
+	 * Find the model object for a given function config
+	 */
+	function getModelForConfig(config: FunctionConfig | undefined): Model | undefined {
+		if (!config?.modelId) return undefined;
+		return models.find(
+			(m) =>
+				m.id === config.modelId ||
+				(config.modelProvider && `${config.modelProvider}/${m.id}` === config.modelId)
+		);
+	}
+
+	/**
+	 * Get available variants for a config's model
+	 */
+	function getAvailableVariants(config: FunctionConfig | undefined): ModelVariant[] {
+		const model = getModelForConfig(config);
+		return model?.variants ?? [];
+	}
 </script>
 
 <div class="space-y-2">
@@ -140,6 +170,25 @@
 						</span>
 						<span class="shrink-0 text-xs text-muted-foreground">Change</span>
 					</button>
+
+					{#if getAvailableVariants(config).length > 0}
+						{@const availableVariants = getAvailableVariants(config)}
+						<select
+							class="h-9 min-w-[100px] rounded-md border border-border/60 bg-background px-2 text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+							value={config.modelVariant ?? ''}
+							onchange={(e) => {
+								const val = (e.target as HTMLSelectElement).value;
+								onVariantChange?.(type, val || null);
+							}}
+						>
+							<option value="">Default</option>
+							{#each availableVariants as variant}
+								<option value={variant.id} selected={config.modelVariant === variant.id}>
+									{variant.label || variant.id}
+								</option>
+							{/each}
+						</select>
+					{/if}
 
 					{#if prompts.length > 0}
 						<select

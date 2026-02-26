@@ -1,0 +1,53 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "DependencyTestMatrixRow",
+	"type": "object",
+	"required": [
+		"testId",
+		"block",
+		"dependsOn",
+		"scenario",
+		"behavior",
+		"layer",
+		"targetFile",
+		"priority",
+		"status"
+	],
+	"properties": {
+		"testId": {
+			"type": "string",
+			"pattern": "^SET-[A-Z0-9]+-[0-9]{3}$"
+		},
+		"block": {
+			"type": "string",
+			"minLength": 1
+		},
+		"dependsOn": {
+			"type": "string"
+		},
+		"scenario": {
+			"type": "string",
+			"minLength": 1
+		},
+		"behavior": {
+			"type": "string",
+			"enum": ["Good", "Bad"]
+		},
+		"layer": {
+			"type": "string",
+			"enum": ["Unit", "Integration", "Component", "E2E"]
+		},
+		"targetFile": {
+			"type": "string",
+			"minLength": 1
+		},
+		"priority": {
+			"type": "string",
+			"enum": ["P0", "P1", "P2"]
+		},
+		"status": {
+			"type": "string",
+			"enum": ["Planned", "Partial", "Covered", "Blocked"]
+		}
+	}
+}

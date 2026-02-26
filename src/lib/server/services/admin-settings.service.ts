@@ -294,6 +294,7 @@ export function validateSettingValue(
 
 /**
  * OpenCode Policy Interface
+ * Simple: allowed models + allowed variants per model
  */
 export interface OpenCodePolicy {
 	allowedModels: string[];
@@ -301,6 +302,8 @@ export interface OpenCodePolicy {
 	judgeDefaultModel: string;
 	improveTemperature: number;
 	judgeTemperature: number;
+	// Variant whitelist: model -> allowed variants
+	allowedVariants?: Record<string, string[]>;
 }
 
 /**
@@ -314,6 +317,10 @@ export async function getOpenCodePolicy(): Promise<OpenCodePolicy> {
 	const opencodeJudgeModel = await getSetting('opencode_judge_default_model');
 	const opencodeImproveTemp = await getSetting('opencode_improve_temperature');
 	const opencodeJudgeTemp = await getSetting('opencode_judge_temperature');
+
+	// Variant-aware policy keys (SPEC-14)
+	const opencodeScopeMatrix = await getSetting('opencode_allowed_models_matrix');
+	const opencodeAllowedVariants = await getSetting('opencode_allowed_model_variants');
 
 	// Fallback to legacy keys if OpenCode keys are not set or have default values
 	const allowedModels = opencodeAllowedModels ? JSON.parse(opencodeAllowedModels) : [];
@@ -330,12 +337,33 @@ export async function getOpenCodePolicy(): Promise<OpenCodePolicy> {
 		? parseFloat(opencodeJudgeTemp)
 		: parseFloat((await getSetting('judge_temperature')) || JUDGE_TEMPERATURE.toString());
 
+	// Parse variant-aware policy keys
+	let scopeMatrix: Record<string, Record<string, boolean>> | undefined;
+	let allowedVariants: Record<string, string[]> | undefined;
+
+	try {
+		if (opencodeScopeMatrix) {
+			scopeMatrix = JSON.parse(opencodeScopeMatrix);
+		}
+	} catch (e) {
+		console.error('Failed to parse opencode_allowed_models_matrix:', e);
+	}
+
+	try {
+		if (opencodeAllowedVariants) {
+			allowedVariants = JSON.parse(opencodeAllowedVariants);
+		}
+	} catch (e) {
+		console.error('Failed to parse opencode_allowed_model_variants:', e);
+	}
+
 	return {
 		allowedModels,
 		improveDefaultModel,
 		judgeDefaultModel,
 		improveTemperature,
-		judgeTemperature
+		judgeTemperature,
+		allowedVariants
 	};
 }
 

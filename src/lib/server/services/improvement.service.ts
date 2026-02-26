@@ -16,6 +16,7 @@ export type ImproveOptions = {
 	preset?: string | number;
 	providerId?: string;
 	modelId?: string;
+	modelVariant?: string | null;
 	temperature?: number;
 	maxTokens?: number;
 };
@@ -27,6 +28,7 @@ export type ImproveResult = {
 			providerId: string;
 			modelId: string;
 		};
+		variant?: string | null;
 		temperature: number;
 		preset?: {
 			id: number;
@@ -98,7 +100,7 @@ export async function generateVariantsWithModelSelection(
 	const policy = await getOpenCodePolicy();
 
 	// Resolve effective model and parameters
-	const { modelSelection, temperature, presetInfo, effectiveInstruction } =
+	const { modelSelection, modelVariant, temperature, presetInfo, effectiveInstruction } =
 		await resolveImproveParameters(policy, options);
 
 	// Build agent input
@@ -134,6 +136,7 @@ export async function generateVariantsWithModelSelection(
 				providerId: modelSelection.providerID,
 				modelId: modelSelection.modelID
 			},
+			variant: modelVariant,
 			temperature,
 			preset: presetInfo,
 			instruction: effectiveInstruction
@@ -149,6 +152,7 @@ async function resolveImproveParameters(
 	options: ImproveOptions
 ): Promise<{
 	modelSelection: ModelSelection;
+	modelVariant?: string | null;
 	temperature: number;
 	presetInfo?: { id: number; name: string };
 	effectiveInstruction?: string;
@@ -156,6 +160,7 @@ async function resolveImproveParameters(
 	let effectiveInstruction = options.instruction;
 	let effectiveTemperature = policy.improveTemperature;
 	let effectiveModel = policy.improveDefaultModel;
+	let effectiveVariant = options.modelVariant;
 	let presetInfo: { id: number; name: string } | undefined;
 
 	// Load preset if provided
@@ -172,6 +177,11 @@ async function resolveImproveParameters(
 			// Use preset's effective model
 			effectiveModel = preset.effectiveModel;
 			effectiveTemperature = preset.effectiveTemperature;
+
+			// Use preset's variant if available and not overridden
+			if (!effectiveVariant && (preset as any).modelVariant) {
+				effectiveVariant = (preset as any).modelVariant;
+			}
 		}
 	}
 
@@ -206,6 +216,7 @@ async function resolveImproveParameters(
 
 	return {
 		modelSelection,
+		modelVariant: effectiveVariant,
 		temperature: effectiveTemperature,
 		presetInfo,
 		effectiveInstruction

@@ -3,11 +3,18 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Plus, Trash2, GripVertical } from 'lucide-svelte';
 
+	interface ModelVariant {
+		id: string;
+		label?: string;
+		isDefault?: boolean;
+	}
+
 	interface Model {
 		id: string;
 		name: string;
 		provider: string;
 		logo?: string;
+		variants?: ModelVariant[];
 	}
 
 	interface CouncilAgent {
@@ -19,6 +26,7 @@
 		temperature?: number;
 		maxTokens?: number;
 		promptLinkId?: number | null;
+		modelVariant?: string | null;
 	}
 
 	interface Props {
@@ -27,6 +35,7 @@
 		models?: Model[];
 		allowedModels?: string[];
 		onModelChange: (agentId: number, model: Model) => void;
+		onVariantChange?: (agentId: number, variant: string | null) => void;
 		onDelete: (agentId: number) => void;
 		onAdd: () => void;
 		onPromptChange?: (agentId: number, promptId: number | null) => void;
@@ -38,6 +47,7 @@
 		models = [],
 		allowedModels = [],
 		onModelChange,
+		onVariantChange,
 		onDelete,
 		onAdd,
 		onPromptChange
@@ -77,6 +87,26 @@
 			onModelChange(activeModal, model);
 			activeModal = null;
 		}
+	}
+
+	/**
+	 * Find the model object for a given agent
+	 */
+	function getModelForAgent(agent: CouncilAgent): Model | undefined {
+		if (!agent.modelId) return undefined;
+		return models.find(
+			(m) =>
+				m.id === agent.modelId ||
+				(agent.modelProvider && `${agent.modelProvider}/${m.id}` === agent.modelId)
+		);
+	}
+
+	/**
+	 * Get available variants for an agent's model
+	 */
+	function getAvailableVariants(agent: CouncilAgent): ModelVariant[] {
+		const model = getModelForAgent(agent);
+		return model?.variants ?? [];
 	}
 </script>
 
@@ -127,6 +157,25 @@
 							{/if}
 						</span>
 					</button>
+
+					{#if getAvailableVariants(agent).length > 0}
+						{@const availableVariants = getAvailableVariants(agent)}
+						<select
+							class="h-8 min-w-[90px] rounded-md border border-border/60 bg-background px-2 text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+							value={agent.modelVariant ?? ''}
+							onchange={(e) => {
+								const val = (e.target as HTMLSelectElement).value;
+								onVariantChange?.(agent.id, val || null);
+							}}
+						>
+							<option value="">Default</option>
+							{#each availableVariants as variant}
+								<option value={variant.id} selected={agent.modelVariant === variant.id}>
+									{variant.label || variant.id}
+								</option>
+							{/each}
+						</select>
+					{/if}
 
 					{#if prompts.length > 0}
 						<select

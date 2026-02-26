@@ -30,6 +30,7 @@ export interface EvaluationResult {
 	rawText: string;
 	providerId?: string;
 	modelId?: string;
+	modelVariant?: string | null;
 	temperature?: number;
 	maxTokens?: number;
 	allowedModels?: string[]; // Requested allowed models subset (for metadata)

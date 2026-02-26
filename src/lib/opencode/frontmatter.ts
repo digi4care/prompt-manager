@@ -1,4 +1,5 @@
 import * as YAML from 'yaml';
+import { SnippetVariableSchema, type SnippetVariable } from '$lib/utils/snippet-variables';
 
 export class FrontmatterError extends Error {
 	name = 'FrontmatterError';
@@ -313,4 +314,49 @@ export function validateFrontmatterWithPolicy(
 	}
 
 	return { ok: errors.length === 0, errors, config: merged, extras: parsed.extras };
+}
+
+/**
+ * Result of parsing snippet frontmatter with variables section
+ */
+export type SnippetParseResult = FrontmatterParseResult & {
+	variables: SnippetVariable[];
+};
+
+/**
+ * Parse frontmatter YAML with snippet variable extraction
+ *
+ * Extracts and validates a `variables:` section from frontmatter YAML.
+ * Invalid variable definitions are silently skipped.
+ *
+ * @param frontmatterYaml - Raw YAML frontmatter string
+ * @returns Parsed result with variables array
+ *
+ * @example
+ * const yaml = `
+ * temperature: 0.7
+ * variables:
+ *   - name: CONTEXT
+ *     description: User context
+ *     required: true
+ * `;
+ * const result = parseSnippetFrontmatter(yaml);
+ * // result.variables = [{ name: 'CONTEXT', description: 'User context', required: true }]
+ */
+export function parseSnippetFrontmatter(
+	frontmatterYaml: string | null | undefined
+): SnippetParseResult {
+	const base = parseFrontmatterYaml(frontmatterYaml);
+	const variables: SnippetVariable[] = [];
+
+	if (base.extras.variables && Array.isArray(base.extras.variables)) {
+		for (const v of base.extras.variables) {
+			const result = SnippetVariableSchema.safeParse(v);
+			if (result.success) {
+				variables.push(result.data);
+			}
+		}
+	}
+
+	return { ...base, variables };
 }

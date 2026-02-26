@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { extractVariables } from '$lib/utils/snippet-variables';
+import { parseSnippetFrontmatter } from '$lib/opencode/frontmatter';
 
 describe('extractVariables', () => {
 	it('extracts single variable', () => {
@@ -30,5 +31,41 @@ describe('extractVariables', () => {
 	it('does not match invalid variable names', () => {
 		expect(extractVariables('{{1INVALID}}')).toEqual([]);
 		expect(extractVariables('{{}}')).toEqual([]);
+	});
+});
+
+describe('parseSnippetFrontmatter', () => {
+	it('parses variables section', () => {
+		const yaml = `
+variables:
+  - name: CONTEXT
+    description: User context
+    required: true
+  - name: FORMAT
+    default: markdown
+    required: false
+`;
+		const result = parseSnippetFrontmatter(yaml);
+		expect(result.variables).toHaveLength(2);
+		expect(result.variables[0].name).toBe('CONTEXT');
+		expect(result.variables[1].default).toBe('markdown');
+	});
+
+	it('returns empty array when no variables', () => {
+		const result = parseSnippetFrontmatter('temperature: 0.7');
+		expect(result.variables).toEqual([]);
+	});
+
+	it('skips invalid variable definitions', () => {
+		const yaml = `
+variables:
+  - name: VALID
+    required: true
+  - name: "1INVALID"
+    required: true
+`;
+		const result = parseSnippetFrontmatter(yaml);
+		expect(result.variables).toHaveLength(1);
+		expect(result.variables[0].name).toBe('VALID');
 	});
 });

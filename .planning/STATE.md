@@ -36,6 +36,7 @@ Progress: [██████████] 100%
 
 - Last 5 plans: 13min, 14min, 11min, 11min, 15min
 - Trend: Steady progress
+| Phase 04-02 P02 | 3min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,8 @@ Recent decisions affecting current work:
 - [Phase 03-execution-logging]: Fire-and-forget async logging to avoid blocking execution responses
 - [Phase 03-execution-logging]: Model ID stored as providerId/modelId format for consistency
 - [Phase 03-execution-logging]: Model override dropdown filters by AI Policy whitelist (opencode_allowed_models)
+- [Phase 04-02]: Use backslash escaping for injection prevention in variable values — Matches Mustache convention, prevents template injection attacks
+- [Phase 04-02]: Keep original placeholder when variable value missing — Preserves template structure for user to see what needs filling
 
 ### Pending Todos
 

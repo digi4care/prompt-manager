@@ -10,3 +10,4 @@ export { default as ExecutionOverrides } from './execution-overrides.svelte';
 export { default as ExecutionPanel } from './execution-panel.svelte';
 export { default as ExecutionHistory } from './execution-history.svelte';
 export { default as ExecutionLogDetail } from './execution-log-detail.svelte';
+export { default as SnippetPreview } from './snippet-preview.svelte';

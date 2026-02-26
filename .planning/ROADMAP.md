@@ -100,13 +100,14 @@ Plans:
 3. Preview updates on every keystroke (reactive)
 4. Missing required variables show clear error message in preview
 5. Variable values containing {{ or }} are safely escaped (injection prevention)
-   **Plans**: TBD
+
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 04-01: Snippet variable syntax and frontmatter parsing
-- [ ] 04-02: Variable replacement service with escaping
-- [ ] 04-03: Live preview component
+- [ ] 04-01-PLAN.md — Variable extraction types, Zod schema, and frontmatter parsing extension
+- [ ] 04-02-PLAN.md — Variable resolution with escaping and missing variable tracking
+- [ ] 04-03-PLAN.md — Live preview component with reactive updates
 
 ---
 

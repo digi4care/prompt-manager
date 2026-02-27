@@ -5,6 +5,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import ExecutionResult from './execution-result.svelte';
 	import { CouncilReviewPanel } from '$lib/components/council';
+	import { cn } from '$lib/utils';
 	import Play from 'lucide-svelte/icons/play';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import AlertCircle from 'lucide-svelte/icons/alert-circle';
@@ -91,19 +92,39 @@
 	type ExecutionMode = 'single' | 'council';
 	let executionMode = $state<ExecutionMode>('single');
 
+	// Track council review state (received from CouncilReviewPanel)
+	type CouncilState = 'idle' | 'running' | 'complete' | 'error';
+	let councilState = $state<CouncilState>('idle');
+
 	// State machine for execution
 	type ExecutionState = 'idle' | 'loading' | 'success' | 'error';
 	let executionState = $state<ExecutionState>('idle');
 	let result = $state<ExecutionResultData | null>(null);
 	let errorInfo = $state<ErrorInfo | null>(null);
 
+	// Derived: is anything currently executing?
+	let isAnyExecuting = $derived(executionState === 'loading' || councilState === 'running');
+
 	// Derived states
 	let isExecuting = $derived(executionState === 'loading');
 	let canExecute = $derived(
-		executionState !== 'loading' && preview.content.trim().length > 0 && !preview.hasErrors
+		executionState !== 'loading' &&
+			preview.content.trim().length > 0 &&
+			!preview.hasErrors &&
+			missingRequired.length === 0
 	);
 	let hasResult = $derived(executionState === 'success' && result !== null);
 	let hasError = $derived(executionState === 'error' && errorInfo !== null);
+
+	// Can run council review?
+	let canRunCouncil = $derived(
+		councilState !== 'running' && preview.content.trim().length > 0 && missingRequired.length === 0
+	);
+
+	// Handler for council state changes
+	function handleCouncilStateChange(state: CouncilState) {
+		councilState = state;
+	}
 
 	async function handleExecute() {
 		if (!canExecute) return;
@@ -184,13 +205,16 @@
 	{/if}
 
 	<!-- Execution Mode Toggle -->
-	<div class="mb-4 flex items-center gap-4">
+	<div
+		class={cn('mb-4 flex items-center gap-4', isAnyExecuting && 'pointer-events-none opacity-50')}
+	>
 		<label class="flex cursor-pointer items-center gap-2 text-sm">
 			<input
 				type="radio"
 				name="mode-{promptId}"
 				value="single"
 				bind:group={executionMode}
+				disabled={isAnyExecuting}
 				class="h-4 w-4"
 			/>
 			<span>Single Execution</span>
@@ -201,10 +225,14 @@
 				name="mode-{promptId}"
 				value="council"
 				bind:group={executionMode}
+				disabled={isAnyExecuting}
 				class="h-4 w-4"
 			/>
 			<span>Council Review</span>
 		</label>
+		{#if isAnyExecuting}
+			<span class="ml-auto text-xs text-muted-foreground">Running...</span>
+		{/if}
 	</div>
 
 	{#if executionMode === 'council'}
@@ -242,6 +270,20 @@
 
 	<!-- Conditional execution based on mode -->
 	{#if executionMode === 'single'}
+		<!-- Validation message for missing required variables -->
+		{#if missingRequired.length > 0}
+			<div
+				class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950"
+			>
+				<div class="flex items-center gap-2">
+					<AlertCircle class="h-4 w-4 text-red-500" />
+					<p class="text-sm text-red-700 dark:text-red-300">
+						Please fill in all required variables: {missingRequired.join(', ')}
+					</p>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Execute button -->
 		<Button onclick={handleExecute} disabled={!canExecute} class="w-full">
 			{#if isExecuting}
@@ -290,6 +332,23 @@
 		{/if}
 	{:else}
 		<!-- Council Review Mode -->
-		<CouncilReviewPanel {promptId} userPrompt={preview.content} />
+		{#if missingRequired.length > 0}
+			<div
+				class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950"
+			>
+				<div class="flex items-center gap-2">
+					<AlertCircle class="h-4 w-4 text-red-500" />
+					<p class="text-sm text-red-700 dark:text-red-300">
+						Please fill in all required variables: {missingRequired.join(', ')}
+					</p>
+				</div>
+			</div>
+		{/if}
+		<CouncilReviewPanel
+			{promptId}
+			userPrompt={preview.content}
+			onstatechange={handleCouncilStateChange}
+			disabled={missingRequired.length > 0}
+		/>
 	{/if}
 </div>

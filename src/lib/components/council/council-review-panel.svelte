@@ -57,15 +57,36 @@
 		promptId: number;
 		userPrompt: string;
 		class?: string;
+		/** Called when the council review state changes */
+		onstatechange?: (state: CouncilUIState) => void;
+		/** Called when council review completes or is aborted with results */
+		oncomplete?: (results: {
+			agentStates: Map<number, AgentState>;
+			summary: string | null;
+		}) => void;
+		/** Disable execution (e.g., when required variables are missing) */
+		disabled?: boolean;
 	}
 
-	let { promptId, userPrompt, class: className = '' }: Props = $props();
+	let {
+		promptId,
+		userPrompt,
+		class: className = '',
+		onstatechange,
+		oncomplete,
+		disabled = false
+	}: Props = $props();
 
 	// State machine
 	let uiState = $state<CouncilUIState>('idle');
 	let agentStates = $state<Map<number, AgentState>>(new Map());
 	let errorMessage = $state<string | null>(null);
 	let reviewSummary = $state<string | null>(null);
+
+	// Notify parent of state changes
+	$effect(() => {
+		onstatechange?.(uiState);
+	});
 
 	// Timing
 	let startTime = $state<number | null>(null);
@@ -85,8 +106,8 @@
 	// Derived: any agent has output
 	let hasAnyOutput = $derived(Array.from(agentStates.values()).some((a) => a.output.length > 0));
 
-	// Derived: can execute
-	let canExecute = $derived(uiState === 'idle' && userPrompt.trim().length > 0);
+	// Derived: can execute (considering parent's disabled prop)
+	let canExecute = $derived(uiState === 'idle' && userPrompt.trim().length > 0 && !disabled);
 
 	// Update elapsed time
 	$effect(() => {

@@ -152,24 +152,24 @@ Plans:
 
 ### Phase 7: Council Correct Mode
 
-**Goal**: Users can run iterative producer → reviewer → fix workflow
+**Goal**: Users can run parallel council review with multiple AI agents
 **Depends on**: Phase 1 (function defaults), Phase 2 (execution)
 **Requirements**: COUNCIL-01, COUNCIL-02, COUNCIL-03, COUNCIL-04, COUNCIL-05, COUNCIL-06
 **Success Criteria** (what must be TRUE):
 
-1. User can trigger producer → reviewer → fix workflow
-2. Producer step generates initial output using executor function defaults
-3. Reviewer step identifies issues using judge function defaults
-4. Fix step resolves issues using improve function defaults
-5. Round limit enforced (max 3 rounds) to prevent infinite loops
-6. User sees all step outputs with clear progression indicators
+1. User can trigger parallel council review with 3 AI agents
+2. Each agent reviews the user's prompt from their unique perspective
+3. Agents use their configured system prompts and models
+4. User can override agent prompts per-session
+5. Results stream in real-time via SSE
+6. User sees all agent feedback with clear agent identification
 
-**Plans**: 2 plans
+**Plans**: 2 plans ✓ COMPLETE
 
 Plans:
 
-- [ ] 07-01-PLAN.md — Council backend: schema, orchestrator service, SSE streaming API
-- [ ] 07-02-PLAN.md — Council UI: panel component with step progression, test runner integration
+- [x] 07-01-PLAN.md — Council backend: schema, orchestrator service, SSE streaming API
+- [x] 07-02-PLAN.md — Council UI: panel component with parallel agent display, test runner integration
 
 ---
 

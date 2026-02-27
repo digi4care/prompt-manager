@@ -381,6 +381,29 @@ export const executionLogs = sqliteTable('execution_logs', {
 		.$defaultFn(() => new Date())
 });
 
+// Council runs for council correct workflow state persistence
+export const councilRuns = sqliteTable('council_runs', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	promptId: integer('prompt_id')
+		.notNull()
+		.references(() => prompts.id, { onDelete: 'cascade' }),
+	inputContent: text('input_content').notNull(),
+	currentRound: integer('current_round').notNull().default(1),
+	maxRounds: integer('max_rounds').notNull().default(3),
+	state: text('state')
+		.$type<'idle' | 'producing' | 'reviewing' | 'fixing' | 'complete' | 'error'>()
+		.notNull()
+		.default('idle'),
+	steps: text('steps'), // JSON array of CouncilStepResult objects
+	finalOutput: text('final_output'),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
 // Council agents for council repeater pattern
 export const councilAgents = sqliteTable('council_agents', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -441,7 +464,8 @@ export const promptsRelations = relations(prompts, ({ many, one }) => ({
 		references: [promptVersions.id]
 	}),
 	improvementLoops: many(improvementLoops),
-	executionLogs: many(executionLogs)
+	executionLogs: many(executionLogs),
+	councilRuns: many(councilRuns)
 }));
 
 export const promptVersionsRelations = relations(promptVersions, ({ one, many }) => ({
@@ -493,6 +517,13 @@ export const executionLogsRelations = relations(executionLogs, ({ one }) => ({
 	})
 }));
 
+export const councilRunsRelations = relations(councilRuns, ({ one }) => ({
+	prompt: one(prompts, {
+		fields: [councilRuns.promptId],
+		references: [prompts.id]
+	})
+}));
+
 // ==================== TYPES ====================
 
 export type User = typeof users.$inferSelect;
@@ -524,6 +555,9 @@ export type PromptFunctionSetting = typeof promptFunctionSettings.$inferSelect;
 export type NewPromptFunctionSetting = typeof promptFunctionSettings.$inferInsert;
 export type CouncilAgent = typeof councilAgents.$inferSelect;
 export type NewCouncilAgent = typeof councilAgents.$inferInsert;
+// Council run types
+export type CouncilRun = typeof councilRuns.$inferSelect;
+export type NewCouncilRun = typeof councilRuns.$inferInsert;
 // Execution log types
 export type ExecutionLog = typeof executionLogs.$inferSelect;
 export type NewExecutionLog = typeof executionLogs.$inferInsert;

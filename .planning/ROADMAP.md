@@ -163,13 +163,13 @@ Plans:
 4. Fix step resolves issues using improve function defaults
 5. Round limit enforced (max 3 rounds) to prevent infinite loops
 6. User sees all step outputs with clear progression indicators
-   **Plans**: TBD
+
+**Plans**: 2 plans
 
 Plans:
 
-- [ ] 07-01: Council orchestrator service
-- [ ] 07-02: Sequential step execution with state persistence
-- [ ] 07-03: Council UI with step progression display
+- [ ] 07-01-PLAN.md — Council backend: schema, orchestrator service, SSE streaming API
+- [ ] 07-02-PLAN.md — Council UI: panel component with step progression, test runner integration
 
 ---
 
@@ -263,8 +263,8 @@ Phases execute in numeric order. Decimal phases (if inserted) execute between th
 | 3. Execution Logging       | v1.0      | 4            | 2/2            | Complete    | 2026-02-26 |
 | 4. Snippet Variables       | v1.0      | 5            | 3/3            | Complete    | 2026-02-26 |
 | 5. Test Runner UI          | v1.0      | 4            | 2/2            | Complete    | 2026-02-27 |
-| 6. Streaming Execution     | v2.0      | 3            | 0/2            | Not started | -          |
-| 7. Council Correct Mode    | v2.0      | 6            | 0/3            | Not started | -          |
+| 6. Streaming Execution     | v2.0      | 3            | 2/2            | Complete    | 2026-02-27 |
+| 7. Council Correct Mode    | v2.0      | 6            | 0/2            | Ready       | -          |
 | 8. Snippet Library         | v2.0      | 3            | 0/3            | Not started | -          |
 | 9. Council Debate Mode     | v3.0      | 3            | 0/3            | Not started | -          |
 | 10. Council Consensus Mode | v3.0      | 3            | 0/3            | Not started | -          |

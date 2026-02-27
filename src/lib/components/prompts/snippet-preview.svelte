@@ -4,16 +4,21 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import AlertCircle from 'lucide-svelte/icons/alert-circle';
 	import CheckCircle from 'lucide-svelte/icons/check-circle';
-	import { extractVariables, resolveVariables } from '$lib/utils/snippet-variables';
-	import type { SnippetVariable } from '$lib/utils/snippet-variables';
+	import {
+		extractVariables,
+		resolveVariables,
+		type SnippetVariable,
+		type ResolveResult
+	} from '$lib/utils/snippet-variables';
 
 	interface Props {
 		template: string;
 		variables?: SnippetVariable[];
 		class?: string;
+		onchange?: (data: { values: Record<string, string>; preview: ResolveResult }) => void;
 	}
 
-	let { template, variables = [], class: className }: Props = $props();
+	let { template, variables = [], class: className, onchange }: Props = $props();
 
 	// Extract variable names from template
 	let templateVars = $derived(extractVariables(template).map((v) => v.name));
@@ -39,6 +44,11 @@
 
 	// Reactive preview - updates on every keystroke
 	let preview = $derived(resolveVariables(template, values, variables));
+
+	// Notify parent when values or preview changes
+	$effect(() => {
+		onchange?.({ values, preview });
+	});
 
 	// Required variable names from definitions
 	let requiredVarNames = $derived(

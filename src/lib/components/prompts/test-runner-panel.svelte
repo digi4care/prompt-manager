@@ -4,7 +4,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
 	import ExecutionResult from './execution-result.svelte';
-	import { CouncilCorrectPanel } from '$lib/components/council';
+	import { CouncilReviewPanel } from '$lib/components/council';
 	import Play from 'lucide-svelte/icons/play';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import AlertCircle from 'lucide-svelte/icons/alert-circle';
@@ -203,13 +203,13 @@
 				bind:group={executionMode}
 				class="h-4 w-4"
 			/>
-			<span>Council Correct</span>
+			<span>Council Review</span>
 		</label>
 	</div>
 
 	{#if executionMode === 'council'}
 		<p class="mb-2 text-xs text-muted-foreground">
-			Council mode runs producer → reviewer → fixer workflow up to 3 rounds
+			3 AI agents review your prompt in parallel from different perspectives
 		</p>
 	{/if}
 
@@ -289,7 +289,7 @@
 			</div>
 		{/if}
 	{:else}
-		<!-- Council Correct Mode -->
-		<CouncilCorrectPanel {promptId} content={preview.content} />
+		<!-- Council Review Mode -->
+		<CouncilReviewPanel {promptId} userPrompt={preview.content} />
 	{/if}
 </div>

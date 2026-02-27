@@ -46,6 +46,7 @@ key-decisions:
   - 'Council review uses PARALLEL execution (3 agents review same prompt simultaneously)'
   - 'Each agent has unique system prompt defining review perspective'
   - 'Default agents: Code Quality Reviewer, Security Reviewer, Best Practices Reviewer'
+  - 'Agent names come from linked prompt titles in council_agents configuration'
 
 patterns-established:
   - 'Parallel council review with 3 independent agents'
@@ -95,6 +96,7 @@ Each task was committed atomically:
 8. **Fix: Disable mode toggle during execution** - `92f5316` (fix)
 9. **Fix: Validate all unresolved variables** - `f4111db` (fix)
 10. **Fix: Validate all template variables** - `132c5f2` (fix)
+11. **Feature: Display linked prompt titles as agent names** - `c2dd04d` (feat)
 
 ## Files Created/Modified
 

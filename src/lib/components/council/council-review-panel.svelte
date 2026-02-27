@@ -209,25 +209,31 @@
 		versionsList = [];
 		showOverrideModal = true;
 
-		// Fetch prompts list if not already loaded
-		if (promptsList.length === 0) {
-			promptsLoading = true;
-			try {
-				const response = await fetch('/api/prompts?limit=100');
-				if (response.ok) {
-					const data = await response.json();
-					// API returns { data: { prompts: [...], totalCount } }
-					const promptArray = data.data?.prompts || data.data || [];
-					promptsList = (promptArray || []).map((p: { id: number; title: string }) => ({
+		// Always fetch fresh prompts list (don't cache to ensure we have latest)
+		promptsLoading = true;
+		try {
+			const response = await fetch('/api/prompts?limit=100');
+			if (response.ok) {
+				const data = await response.json();
+				console.log('[CouncilReviewPanel] Prompts API response:', data);
+				// API returns { data: { prompts: [...], totalCount }, pagination: {...} }
+				const promptArray = data.data?.prompts || [];
+				console.log('[CouncilReviewPanel] Prompt array:', promptArray);
+				promptsList = (promptArray || []).map(
+					(p: { id: number; title: string; latestVersionId?: number }) => ({
 						id: p.id,
-						title: p.title
-					}));
-				}
-			} catch (err) {
-				console.error('[CouncilReviewPanel] Failed to fetch prompts:', err);
+						title: p.title,
+						versionCount: p.latestVersionId ? 1 : 0
+					})
+				);
+				console.log('[CouncilReviewPanel] Mapped prompts list:', promptsList);
+			} else {
+				console.error('[CouncilReviewPanel] API error:', response.status, response.statusText);
 			}
-			promptsLoading = false;
+		} catch (err) {
+			console.error('[CouncilReviewPanel] Failed to fetch prompts:', err);
 		}
+		promptsLoading = false;
 
 		// If we have an expanded prompt, load its versions
 		if (expandedPromptId) {
@@ -258,6 +264,7 @@
 			const response = await fetch(`/api/prompts/${promptId}/versions`);
 			if (response.ok) {
 				const data = await response.json();
+				console.log('[CouncilReviewPanel] Versions API response for prompt', promptId, ':', data);
 				versionsList = (data.data?.versions || []).map(
 					(v: {
 						id: number;
@@ -271,6 +278,9 @@
 						createdAt: v.createdAt ? new Date(v.createdAt) : null
 					})
 				);
+				console.log('[CouncilReviewPanel] Mapped versions list:', versionsList);
+			} else {
+				console.error('[CouncilReviewPanel] Versions API error:', response.status);
 			}
 		} catch (err) {
 			console.error('[CouncilReviewPanel] Failed to fetch versions:', err);
@@ -819,11 +829,35 @@
 					</p>
 					<p class="mt-1 text-[10px] opacity-70">Click agent name to override prompt</p>
 				{:else}
+					<!-- Default agents when no council run yet - these are clickable -->
 					<p class="flex flex-wrap justify-center gap-2">
-						<span class="rounded bg-blue-100 px-2 py-0.5 dark:bg-blue-900">Code Quality</span>
-						<span class="rounded bg-amber-100 px-2 py-0.5 dark:bg-amber-900">Security</span>
-						<span class="rounded bg-green-100 px-2 py-0.5 dark:bg-green-900">Best Practices</span>
+						{#each [{ id: 1, name: 'Code Quality' }, { id: 2, name: 'Security' }, { id: 3, name: 'Best Practices' }] as defaultAgent, i (defaultAgent.id)}
+							{@const hasOverrideForAgent = hasOverride(defaultAgent.id)}
+							<button
+								type="button"
+								class="group relative cursor-pointer rounded px-2 py-0.5 transition-colors hover:ring-2 hover:ring-primary/50"
+								class:bg-blue-100={i === 0}
+								class:dark:bg-blue-900={i === 0}
+								class:bg-amber-100={i === 1}
+								class:dark:bg-amber-900={i === 1}
+								class:bg-green-100={i === 2}
+								class:dark:bg-green-900={i === 2}
+								class:ring-2={hasOverrideForAgent}
+								class:ring-amber-500={hasOverrideForAgent}
+								onclick={() => openOverrideModal(defaultAgent.id, defaultAgent.name)}
+								title="Click to override prompt"
+							>
+								{defaultAgent.name}
+								{#if hasOverrideForAgent}
+									<span class="ml-1 text-amber-600 dark:text-amber-400">*</span>
+								{/if}
+								<Edit
+									class="ml-1 inline-block h-3 w-3 opacity-0 transition-opacity group-hover:opacity-50"
+								/>
+							</button>
+						{/each}
 					</p>
+					<p class="mt-1 text-[10px] opacity-70">Click agent name to override prompt</p>
 				{/if}
 			</div>
 		</div>

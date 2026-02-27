@@ -3,11 +3,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { cn } from '$lib/utils';
-	import Play from '@lucide/svelte/icons/play';
-	import Loader2 from '@lucide/svelte/icons/loader-2';
-	import AlertCircle from '@lucide/svelte/icons/alert-circle';
-	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
-	import CheckCircle from '@lucide/svelte/icons/check-circle';
+	import Play from 'lucide-svelte/icons/play';
+	import Loader2 from 'lucide-svelte/icons/loader-2';
+	import AlertCircle from 'lucide-svelte/icons/alert-circle';
+	import RotateCcw from 'lucide-svelte/icons/rotate-ccw';
+	import CheckCircle from 'lucide-svelte/icons/check-circle';
+	import Clock from 'lucide-svelte/icons/clock';
 
 	/**
 	 * Council workflow states
@@ -56,6 +57,11 @@
 	let errorMessage = $state<string | null>(null);
 	let streamContent = $state('');
 
+	// Timing for long-running steps
+	let stepStartTime = $state<number | null>(null);
+	let elapsedSeconds = $state(0);
+	let elapsedInterval: ReturnType<typeof setInterval> | null = null;
+
 	// SSE connection
 	let connection = $state<Source | null>(null);
 
@@ -79,6 +85,37 @@
 	// Derived states
 	let canExecute = $derived(uiState === 'idle' && content.trim().length > 0);
 
+	// Update elapsed time while step is running
+	$effect(() => {
+		if (uiState === 'running' && stepStartTime !== null) {
+			const startTime = stepStartTime; // Capture for closure
+			elapsedInterval = setInterval(() => {
+				elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+			}, 1000);
+		} else {
+			if (elapsedInterval) {
+				clearInterval(elapsedInterval);
+				elapsedInterval = null;
+			}
+		}
+
+		return () => {
+			if (elapsedInterval) {
+				clearInterval(elapsedInterval);
+			}
+		};
+	});
+
+	// Format elapsed time for display
+	function formatElapsed(seconds: number): string {
+		if (seconds < 60) {
+			return `${seconds}s`;
+		}
+		const mins = Math.floor(seconds / 60);
+		const secs = seconds % 60;
+		return `${mins}m ${secs}s`;
+	}
+
 	/**
 	 * Start council correct workflow
 	 */
@@ -91,6 +128,8 @@
 		streamContent = '';
 		finalOutput = null;
 		errorMessage = null;
+		stepStartTime = Date.now();
+		elapsedSeconds = 0;
 
 		// Create SSE connection via sveltekit-sse source()
 		connection = source(`/api/council/correct`, {
@@ -429,12 +468,29 @@
 				</Badge>
 				<span class="font-medium capitalize">{activeStep}</span>
 				<Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+				{#if elapsedSeconds > 0}
+					<span class="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+						<Clock class="h-3 w-3" />
+						{formatElapsed(elapsedSeconds)}
+					</span>
+				{/if}
 			</div>
 			<div class="prose prose-sm max-w-none whitespace-pre-wrap dark:prose-invert">
 				{#if streamContent}
 					{streamContent}
 				{:else}
-					<span class="text-muted-foreground">Starting...</span>
+					<span class="flex items-center gap-2 text-muted-foreground">
+						<Loader2 class="h-3 w-3 animate-spin" />
+						{#if elapsedSeconds < 5}
+							Connecting...
+						{:else if elapsedSeconds < 15}
+							Waiting for response...
+						{:else if elapsedSeconds < 30}
+							Processing request...
+						{:else}
+							Still working... ({formatElapsed(elapsedSeconds)})
+						{/if}
+					</span>
 				{/if}
 				<span class="inline-block w-2 animate-pulse text-primary">▊</span>
 			</div>

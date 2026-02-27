@@ -92,6 +92,9 @@ Each task was committed atomically:
 5. **Feature: Add elapsed time indicator** - `d2b9a23` (feat)
 6. **Feature: Parallel council review workflow** - `c8c5214` (feat)
 7. **Feature: Abort/stop button for council review** - `9b260ab` (feat)
+8. **Fix: Disable mode toggle during execution** - `92f5316` (fix)
+9. **Fix: Validate all unresolved variables** - `f4111db` (fix)
+10. **Fix: Validate all template variables** - `132c5f2` (fix)
 
 ## Files Created/Modified
 

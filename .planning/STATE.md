@@ -40,6 +40,7 @@ Progress: [███████████] 100%
 
 - Last 5 plans: 5min, 12min, 15min, 15min, 9min
 - Trend: Consistent execution with established patterns
+| Phase 07-council-correct-mode P02 | 43 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 07-01]: Steps stored as JSON text in councilRuns table (not separate stepResults table)
 - [Phase 07-01]: Council step mapping: producer→executor, reviewer→judge, fixer→improve
 - [Phase 07-01]: Max 3 rounds hardcoded to prevent infinite loops in council workflow
+- [Phase 07-council-correct-mode]: Test runner moved to main content area for better UX
+- [Phase 07-council-correct-mode]: Use oninput instead of bind:value to avoid Svelte 5 binding errors
 
 ### Pending Todos
 

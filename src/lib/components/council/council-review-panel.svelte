@@ -10,6 +10,7 @@
 	import CheckCircle from 'lucide-svelte/icons/check-circle';
 	import Clock from 'lucide-svelte/icons/clock';
 	import Users from 'lucide-svelte/icons/users';
+	import Square from 'lucide-svelte/icons/square';
 
 	/**
 	 * Council review states
@@ -343,6 +344,41 @@
 			connection = null;
 		}
 	}
+
+	/**
+	 * Abort the current council review
+	 */
+	function abortReview() {
+		if (connection) {
+			connection.close();
+			connection = null;
+		}
+
+		// Keep partial results if any agents completed
+		const hasPartialResults = Array.from(agentStates.values()).some((a) => a.output.length > 0);
+
+		if (hasPartialResults) {
+			// Show partial results - mark running agents as aborted
+			const newStates = new Map(agentStates);
+			for (const [id, state] of newStates) {
+				if (state.status === 'streaming' || state.status === 'pending') {
+					state.status = 'error';
+					state.error = 'Aborted by user';
+				}
+			}
+			agentStates = newStates;
+			uiState = 'complete'; // Show partial results
+			reviewSummary = 'Review aborted by user. Showing partial results.';
+		} else {
+			// No results - just reset
+			uiState = 'idle';
+			agentStates = new Map();
+			reviewSummary = null;
+		}
+
+		startTime = null;
+		elapsedSeconds = 0;
+	}
 </script>
 
 <div class={cn('council-review-panel space-y-4', className)}>
@@ -435,16 +471,42 @@
 				</div>
 			{/each}
 		</div>
+
+		<!-- Abort button during execution -->
+		<Button variant="destructive" onclick={abortReview} class="w-full">
+			<Square class="mr-2 h-4 w-4" />
+			Stop Review
+		</Button>
 	{/if}
 
 	<!-- Review summary -->
 	{#if uiState === 'complete' && reviewSummary}
 		<div
-			class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950"
+			class="rounded-lg border p-4"
+			class:border-green-200={reviewSummary !== 'Review aborted by user. Showing partial results.'}
+			class:bg-green-50={reviewSummary !== 'Review aborted by user. Showing partial results.'}
+			class:dark:border-green-900={reviewSummary !==
+				'Review aborted by user. Showing partial results.'}
+			class:dark:bg-green-950={reviewSummary !== 'Review aborted by user. Showing partial results.'}
+			class:border-amber-200={reviewSummary === 'Review aborted by user. Showing partial results.'}
+			class:bg-amber-50={reviewSummary === 'Review aborted by user. Showing partial results.'}
+			class:dark:border-amber-900={reviewSummary ===
+				'Review aborted by user. Showing partial results.'}
+			class:dark:bg-amber-950={reviewSummary === 'Review aborted by user. Showing partial results.'}
 		>
 			<div class="mb-2 flex items-center gap-2">
-				<CheckCircle class="h-5 w-5 text-green-600 dark:text-green-400" />
-				<h3 class="font-semibold">Review Complete</h3>
+				{#if reviewSummary === 'Review aborted by user. Showing partial results.'}
+					<AlertCircle class="h-5 w-5 text-amber-600 dark:text-amber-400" />
+				{:else}
+					<CheckCircle class="h-5 w-5 text-green-600 dark:text-green-400" />
+				{/if}
+				<h3 class="font-semibold">
+					{#if reviewSummary === 'Review aborted by user. Showing partial results.'}
+						Review Aborted
+					{:else}
+						Review Complete
+					{/if}
+				</h3>
 			</div>
 			<p class="text-sm">{reviewSummary}</p>
 		</div>

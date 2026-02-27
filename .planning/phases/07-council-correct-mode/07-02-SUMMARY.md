@@ -54,6 +54,7 @@ patterns-established:
   - 'Real-time streaming from all agents simultaneously'
   - 'Mode toggle pattern for execution mode selection'
   - 'Elapsed time indicator during long-running operations'
+  - 'Abort functionality with partial results preservation'
 
 duration: 90min
 completed: 2026-02-27
@@ -90,6 +91,7 @@ Each task was committed atomically:
 4. **Refactor: Move test runner to main content** - `8834955` (refactor)
 5. **Feature: Add elapsed time indicator** - `d2b9a23` (feat)
 6. **Feature: Parallel council review workflow** - `c8c5214` (feat)
+7. **Feature: Abort/stop button for council review** - `9b260ab` (feat)
 
 ## Files Created/Modified
 

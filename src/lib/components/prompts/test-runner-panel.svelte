@@ -85,6 +85,14 @@
 		preview.missingVariables.filter((name) => requiredVarNames.has(name))
 	);
 
+	// Also include any unresolved template variables as missing if no definitions provided
+	let unresolvedVars = $derived(
+		preview.missingVariables.filter((name) => !variables.some((v) => v.name === name))
+	);
+
+	// Combined missing variables for validation
+	let allMissing = $derived([...new Set([...missingRequired, ...unresolvedVars])]);
+
 	// Has any variables to show
 	let hasVariables = $derived(allVarNames().length > 0);
 
@@ -111,14 +119,14 @@
 		executionState !== 'loading' &&
 			preview.content.trim().length > 0 &&
 			!preview.hasErrors &&
-			missingRequired.length === 0
+			allMissing.length === 0
 	);
 	let hasResult = $derived(executionState === 'success' && result !== null);
 	let hasError = $derived(executionState === 'error' && errorInfo !== null);
 
 	// Can run council review?
 	let canRunCouncil = $derived(
-		councilState !== 'running' && preview.content.trim().length > 0 && missingRequired.length === 0
+		councilState !== 'running' && preview.content.trim().length > 0 && allMissing.length === 0
 	);
 
 	// Handler for council state changes
@@ -245,10 +253,10 @@
 	<Card class="mb-4 p-4">
 		<div class="mb-2 flex items-center justify-between">
 			<h3 class="text-sm font-medium">Preview</h3>
-			{#if missingRequired.length > 0}
+			{#if allMissing.length > 0}
 				<Badge variant="destructive" class="flex items-center gap-1">
 					<AlertCircle class="h-3 w-3" />
-					{missingRequired.length} missing
+					{allMissing.length} missing
 				</Badge>
 			{:else if hasVariables}
 				<Badge variant="default" class="flex items-center gap-1 bg-green-600">
@@ -258,9 +266,9 @@
 			{/if}
 		</div>
 
-		{#if missingRequired.length > 0}
+		{#if allMissing.length > 0}
 			<div class="mb-2 rounded bg-destructive/10 p-2 text-sm text-destructive">
-				Missing required variables: {missingRequired.join(', ')}
+				Missing required variables: {allMissing.join(', ')}
 			</div>
 		{/if}
 
@@ -271,14 +279,14 @@
 	<!-- Conditional execution based on mode -->
 	{#if executionMode === 'single'}
 		<!-- Validation message for missing required variables -->
-		{#if missingRequired.length > 0}
+		{#if allMissing.length > 0}
 			<div
 				class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950"
 			>
 				<div class="flex items-center gap-2">
 					<AlertCircle class="h-4 w-4 text-red-500" />
 					<p class="text-sm text-red-700 dark:text-red-300">
-						Please fill in all required variables: {missingRequired.join(', ')}
+						Please fill in all required variables: {allMissing.join(', ')}
 					</p>
 				</div>
 			</div>
@@ -332,14 +340,14 @@
 		{/if}
 	{:else}
 		<!-- Council Review Mode -->
-		{#if missingRequired.length > 0}
+		{#if allMissing.length > 0}
 			<div
 				class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950"
 			>
 				<div class="flex items-center gap-2">
 					<AlertCircle class="h-4 w-4 text-red-500" />
 					<p class="text-sm text-red-700 dark:text-red-300">
-						Please fill in all required variables: {missingRequired.join(', ')}
+						Please fill in all required variables: {allMissing.join(', ')}
 					</p>
 				</div>
 			</div>
@@ -348,7 +356,7 @@
 			{promptId}
 			userPrompt={preview.content}
 			onstatechange={handleCouncilStateChange}
-			disabled={missingRequired.length > 0}
+			disabled={allMissing.length > 0}
 		/>
 	{/if}
 </div>

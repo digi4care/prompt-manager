@@ -128,7 +128,7 @@
 
 			result = await response.json();
 			executionState = 'success';
-			onexecute?.(result);
+			if (result) onexecute?.(result);
 		} catch (e) {
 			errorInfo = e instanceof Error ? { message: e.message } : (e as ErrorInfo);
 			executionState = 'error';

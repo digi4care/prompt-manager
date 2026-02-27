@@ -383,6 +383,8 @@
 		// Reset state
 		uiState = 'running';
 		agentStates = new Map();
+		internalAgentStates = new Map(); // Reset internal state
+		connectionIntentionallyClosed = false; // Reset flag for new run
 		errorMessage = null;
 		reviewSummary = null;
 		startTime = Date.now();
@@ -420,13 +422,19 @@
 	// Internal mutable state for SSE event processing (avoids $effect race conditions)
 	let internalAgentStates = new Map<number, AgentState>();
 
+	// Flag to track intentional connection closure (prevents clearing agent states)
+	let connectionIntentionallyClosed = false;
+
 	// Single SSE subscription effect - processes all events in one place
 	// This avoids race conditions where updating agentStates in one effect
 	// triggers other effects to re-subscribe and miss events
 	$effect(() => {
 		if (!connection) {
-			// Reset internal state when connection is null
-			internalAgentStates = new Map();
+			// Only reset internal state if connection was NOT intentionally closed
+			// (i.e., user clicked reset, not after successful completion)
+			if (!connectionIntentionallyClosed) {
+				internalAgentStates = new Map();
+			}
 			return;
 		}
 
@@ -435,13 +443,19 @@
 		const unsubs: (() => void)[] = [];
 
 		// Helper to update a single agent state
+		// IMPORTANT: Must create NEW objects for Svelte 5 reactivity to detect changes
 		function updateAgentState(
 			agentId: number,
 			updates: Partial<AgentState> & { name?: string }
 		): void {
 			const existing = internalAgentStates.get(agentId);
 			if (existing) {
-				Object.assign(existing, updates);
+				// Create a NEW object with updated properties (not mutate in place)
+				// This is critical for Svelte 5's fine-grained reactivity
+				internalAgentStates.set(agentId, {
+					...existing,
+					...updates
+				});
 			} else if (updates.name) {
 				// Create new state if name is provided
 				internalAgentStates.set(agentId, {
@@ -452,7 +466,7 @@
 					error: updates.error
 				});
 			}
-			// Trigger reactivity by creating new Map
+			// Trigger reactivity by creating new Map with new object references
 			agentStates = new Map(internalAgentStates);
 		}
 
@@ -515,7 +529,11 @@
 					const state = internalAgentStates.get(event.agentId);
 					if (state && event.data) {
 						const newOutput = event.data.accumulated || state.output + (event.data.delta || '');
-						state.output = newOutput;
+						// Create NEW object for Svelte 5 reactivity (don't mutate in place)
+						internalAgentStates.set(event.agentId, {
+							...state,
+							output: newOutput
+						});
 						agentStates = new Map(internalAgentStates);
 					}
 				} catch (err) {
@@ -557,10 +575,13 @@
 		unsubs.push(
 			connection.select('review_complete').subscribe((data) => {
 				console.log('[CouncilReviewPanel] review_complete raw data:', data);
+
+				// Guard: Ignore empty review_complete events (can happen with duplicate SSE messages)
 				if (!data) {
-					console.warn('[CouncilReviewPanel] review_complete received with no data');
+					console.warn('[CouncilReviewPanel] Ignoring review_complete with no data');
 					return;
 				}
+
 				try {
 					const event = JSON.parse(data) as {
 						type: 'review_complete';
@@ -569,8 +590,17 @@
 					console.log('[CouncilReviewPanel] review_complete parsed:', event);
 					console.log('[CouncilReviewPanel] results count:', event.data?.results?.length);
 
+					// Guard: Ignore review_complete with no results array
+					if (!event.data || !event.data.results || !Array.isArray(event.data.results)) {
+						console.warn(
+							'[CouncilReviewPanel] Ignoring review_complete with no results array',
+							event.data
+						);
+						return;
+					}
+
 					// Update agent states with final results - this is the authoritative source
-					for (const result of event.data.results || []) {
+					for (const result of event.data.results) {
 						console.log(
 							'[CouncilReviewPanel] Processing result for agent',
 							result.agentId,
@@ -588,6 +618,9 @@
 					reviewSummary = event.data.summary;
 					uiState = 'complete';
 
+					// Final reactivity trigger - ensure UI sees the latest state
+					agentStates = new Map(internalAgentStates);
+
 					// Notify parent with final results
 					if (oncomplete) {
 						oncomplete({
@@ -595,6 +628,10 @@
 							summary: reviewSummary
 						});
 					}
+
+					// Mark connection as intentionally closed BEFORE closing
+					// This prevents the effect from clearing agentStates when connection becomes null
+					connectionIntentionallyClosed = true;
 
 					// Close connection
 					if (connection) {
@@ -655,6 +692,8 @@
 		errorMessage = null;
 		startTime = null;
 		elapsedSeconds = 0;
+		connectionIntentionallyClosed = false; // Reset flag for next run
+		internalAgentStates = new Map(); // Clear internal state for fresh start
 		if (connection) {
 			connection.close();
 			connection = null;
@@ -665,6 +704,9 @@
 	 * Abort the current council review
 	 */
 	function abortReview() {
+		// Mark as intentionally closed to preserve any partial results
+		connectionIntentionallyClosed = true;
+
 		if (connection) {
 			connection.close();
 			connection = null;

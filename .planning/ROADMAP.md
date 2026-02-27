@@ -141,13 +141,12 @@ Plans:
 1. Execution results stream in real-time via SSE
 2. User can abort streaming execution mid-response
 3. Connection handles heartbeat and automatic reconnection
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
-- [ ] 06-01: SSE streaming endpoint with sveltekit-sse
-- [ ] 06-02: Abort handling and connection management
-- [ ] 06-03: Client-side streaming component
+- [ ] 06-01-PLAN.md — SSE streaming backend (service + endpoint with sveltekit-sse)
+- [ ] 06-02-PLAN.md — Client streaming component with abort/reconnection + ExecutionPanel integration
 
 ---
 
@@ -264,14 +263,14 @@ Phases execute in numeric order. Decimal phases (if inserted) execute between th
 | 3. Execution Logging       | v1.0      | 4            | 2/2            | Complete    | 2026-02-26 |
 | 4. Snippet Variables       | v1.0      | 5            | 3/3            | Complete    | 2026-02-26 |
 | 5. Test Runner UI          | v1.0      | 4            | 2/2            | Complete    | 2026-02-27 |
-| 6. Streaming Execution     | v2.0      | 3            | 0/3            | Not started | -          |
+| 6. Streaming Execution     | v2.0      | 3            | 0/2            | Not started | -          |
 | 7. Council Correct Mode    | v2.0      | 6            | 0/3            | Not started | -          |
 | 8. Snippet Library         | v2.0      | 3            | 0/3            | Not started | -          |
 | 9. Council Debate Mode     | v3.0      | 3            | 0/3            | Not started | -          |
 | 10. Council Consensus Mode | v3.0      | 3            | 0/3            | Not started | -          |
 | 11. JavaScript Snippets    | v3.0      | 2            | 0/2            | Not started | -          |
 
-**Total: 11 phases, 43 requirements, 31 plans (estimated)**
+**Total: 11 phases, 43 requirements, 30 plans**
 
 ---
 

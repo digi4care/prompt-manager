@@ -11,7 +11,15 @@ import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
 const councilReviewRequestSchema = z.object({
 	promptId: z.number().int().positive(),
 	userPrompt: z.string().min(1, 'Prompt content is required').max(100000, 'Content too long'),
-	agentOverrides: z.record(z.number(), z.number().int().positive()).optional()
+	agentOverrides: z
+		.record(
+			z.number().int().positive(),
+			z.object({
+				promptId: z.number().int().positive(),
+				versionId: z.number().int().positive().optional()
+			})
+		)
+		.optional()
 });
 
 /**

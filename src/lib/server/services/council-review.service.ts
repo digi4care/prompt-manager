@@ -168,12 +168,20 @@ Format your response as:
 ];
 
 /**
+ * Agent override configuration
+ */
+export interface AgentOverride {
+	promptId: number;
+	versionId?: number;
+}
+
+/**
  * Load council agents from database with linked prompt titles
- * @param overrides - Map of agentId -> promptId to use instead of linked prompt
+ * @param overrides - Map of agentId -> { promptId, versionId? } to use instead of linked prompt
  */
 async function loadCouncilAgents(
 	_promptId: number,
-	overrides?: Map<number, number>
+	overrides?: Map<number, AgentOverride>
 ): Promise<CouncilAgent[]> {
 	try {
 		// Load council agents from database
@@ -204,10 +212,12 @@ async function loadCouncilAgents(
 			let systemPrompt = '';
 
 			// Check if there's an override for this agent
-			const effectivePromptId = overrides?.get(agent.id) || agent.promptLinkId;
+			const override = overrides?.get(agent.id);
+			const effectivePromptId = override?.promptId || agent.promptLinkId;
+			const effectiveVersionId = override?.versionId;
 
 			if (effectivePromptId) {
-				// Get the linked prompt's title and latest version content
+				// Get the linked prompt's title
 				const [linkedPrompt] = await db
 					.select({ title: prompts.title, latestVersionId: prompts.latestVersionId })
 					.from(prompts)
@@ -217,12 +227,13 @@ async function loadCouncilAgents(
 				if (linkedPrompt) {
 					name = linkedPrompt.title || name;
 
-					// Get the content from the latest version
-					if (linkedPrompt.latestVersionId) {
+					// Get the content - use specific version ID if provided, otherwise latest
+					const versionIdToUse = effectiveVersionId || linkedPrompt.latestVersionId;
+					if (versionIdToUse) {
 						const [version] = await db
 							.select({ content: promptVersions.content })
 							.from(promptVersions)
-							.where(eq(promptVersions.id, linkedPrompt.latestVersionId))
+							.where(eq(promptVersions.id, versionIdToUse))
 							.limit(1);
 
 						if (version) {
@@ -425,19 +436,19 @@ ${userPrompt}
  *
  * @param promptId - The ID of the prompt being reviewed
  * @param userPrompt - The content of the prompt to review
- * @param agentOverrides - Map of agentId -> promptId to use instead of linked prompt
+ * @param agentOverrides - Map of agentId -> { promptId, versionId? } to use instead of linked prompt
  * @yields CouncilReviewEvent - events from all agents running in parallel
  */
 export async function* executeCouncilReview(options: {
 	promptId: number;
 	userPrompt: string;
-	agentOverrides?: Record<number, number>;
+	agentOverrides?: Record<number, AgentOverride>;
 }): AsyncGenerator<CouncilReviewEvent, CouncilAgentResult[], unknown> {
 	const { promptId, userPrompt, agentOverrides } = options;
 
 	// Convert overrides to Map for easier lookup
 	const overridesMap = agentOverrides
-		? new Map(Object.entries(agentOverrides).map(([k, v]) => [parseInt(k, 10), v]))
+		? new Map(Object.entries(agentOverrides).map(([k, v]) => [parseInt(k, 10), v as AgentOverride]))
 		: undefined;
 
 	// Load agents

@@ -104,13 +104,25 @@
 	let showOverrideModal = $state(false);
 	let overrideAgentId = $state<number | null>(null);
 	let overrideAgentName = $state('');
-	let promptsList = $state<{ id: number; title: string }[]>([]);
+	let promptsList = $state<{ id: number; title: string; versionCount?: number }[]>([]);
 	let promptsLoading = $state(false);
 	let searchQuery = $state('');
-	let selectedOverridePrompt = $state<number | null>(null);
+	// Selected override: { promptId, versionId? } - versionId null means use latest
+	let selectedOverride = $state<{ promptId: number; versionId?: number } | null>(null);
+	let expandedPromptId = $state<number | null>(null);
+	let versionsLoading = $state(false);
+	let versionsList = $state<
+		{ id: number; version: string; changeNotes: string | null; createdAt: Date | null }[]
+	>([]);
 
-	// Agent overrides (promptId to use instead of linked one)
-	let agentOverrides = $state<Map<number, number>>(new Map());
+	// Agent overrides (promptId or versionId to use instead of linked one)
+	// Key: agentId, Value: { promptId, versionId? }
+	let agentOverrides = $state<Map<number, { promptId: number; versionId?: number }>>(new Map());
+
+	// Version info for display (stores selected version names for UI feedback)
+	let versionInfo = $state<Map<number, { version: string; changeNotes?: string | null }>>(
+		new Map()
+	);
 
 	// Derived: filtered prompts list
 	let filteredPrompts = $derived(
@@ -182,7 +194,19 @@
 		overrideAgentId = agentId;
 		overrideAgentName = agentName;
 		searchQuery = '';
-		selectedOverridePrompt = agentOverrides.get(agentId) || null;
+		// Get existing override for this agent (could be { promptId, versionId? })
+		const existingOverride = agentOverrides.get(agentId);
+		if (existingOverride) {
+			selectedOverride = {
+				promptId: existingOverride.promptId,
+				versionId: existingOverride.versionId
+			};
+			expandedPromptId = existingOverride.promptId;
+		} else {
+			selectedOverride = null;
+			expandedPromptId = null;
+		}
+		versionsList = [];
 		showOverrideModal = true;
 
 		// Fetch prompts list if not already loaded
@@ -204,6 +228,11 @@
 			}
 			promptsLoading = false;
 		}
+
+		// If we have an expanded prompt, load its versions
+		if (expandedPromptId) {
+			await loadVersionsForPrompt(expandedPromptId);
+		}
 	}
 
 	/**
@@ -214,21 +243,109 @@
 		overrideAgentId = null;
 		overrideAgentName = '';
 		searchQuery = '';
+		selectedOverride = null;
+		expandedPromptId = null;
+		versionsList = [];
+	}
+
+	/**
+	 * Load versions for a specific prompt
+	 */
+	async function loadVersionsForPrompt(promptId: number) {
+		versionsLoading = true;
+		versionsList = [];
+		try {
+			const response = await fetch(`/api/prompts/${promptId}/versions`);
+			if (response.ok) {
+				const data = await response.json();
+				versionsList = (data.data?.versions || []).map(
+					(v: {
+						id: number;
+						version: string;
+						changeNotes: string | null;
+						createdAt: string | null;
+					}) => ({
+						id: v.id,
+						version: v.version,
+						changeNotes: v.changeNotes,
+						createdAt: v.createdAt ? new Date(v.createdAt) : null
+					})
+				);
+			}
+		} catch (err) {
+			console.error('[CouncilReviewPanel] Failed to fetch versions:', err);
+		}
+		versionsLoading = false;
+	}
+
+	/**
+	 * Toggle expand/collapse for a prompt to show versions
+	 */
+	async function togglePromptExpand(promptId: number) {
+		if (expandedPromptId === promptId) {
+			// Collapse
+			expandedPromptId = null;
+			versionsList = [];
+		} else {
+			// Expand and load versions
+			expandedPromptId = promptId;
+			await loadVersionsForPrompt(promptId);
+		}
+	}
+
+	/**
+	 * Select a prompt (using latest version)
+	 */
+	function selectPrompt(promptId: number) {
+		if (selectedOverride?.promptId === promptId && !selectedOverride.versionId) {
+			// Already selected with no version - deselect
+			selectedOverride = null;
+		} else {
+			// Select prompt with latest version (no versionId)
+			selectedOverride = { promptId };
+		}
+	}
+
+	/**
+	 * Select a specific version of a prompt
+	 */
+	function selectVersion(promptId: number, versionId: number) {
+		if (selectedOverride?.promptId === promptId && selectedOverride.versionId === versionId) {
+			// Already selected - deselect to use latest
+			selectedOverride = { promptId };
+		} else {
+			selectedOverride = { promptId, versionId };
+		}
 	}
 
 	/**
 	 * Apply override for an agent
 	 */
 	function applyOverride() {
-		if (overrideAgentId !== null) {
-			if (selectedOverridePrompt) {
-				agentOverrides = new Map(agentOverrides).set(overrideAgentId, selectedOverridePrompt);
+		if (overrideAgentId !== null && selectedOverride) {
+			agentOverrides = new Map(agentOverrides).set(overrideAgentId, selectedOverride);
+			// Store version info for display
+			const versionId = selectedOverride.versionId;
+			if (versionId !== undefined) {
+				const version = versionsList.find((v) => v.id === versionId);
+				if (version) {
+					versionInfo = new Map(versionInfo).set(overrideAgentId, {
+						version: version.version,
+						changeNotes: version.changeNotes
+					});
+				}
 			} else {
-				// Remove override if none selected
-				const newOverrides = new Map(agentOverrides);
-				newOverrides.delete(overrideAgentId);
-				agentOverrides = newOverrides;
+				versionInfo.delete(overrideAgentId);
+				versionInfo = new Map(versionInfo);
 			}
+		} else if (overrideAgentId !== null) {
+			// Remove override if none selected
+			const newOverrides = new Map(agentOverrides);
+			newOverrides.delete(overrideAgentId);
+			agentOverrides = newOverrides;
+			// Clear version info too
+			versionInfo.delete(overrideAgentId);
+			versionInfo = new Map(versionInfo);
 		}
 		closeOverrideModal();
 	}
@@ -261,10 +378,10 @@
 		startTime = Date.now();
 		elapsedSeconds = 0;
 
-		// Build overrides object
-		const overrides: Record<number, number> = {};
-		for (const [agentId, promptId] of agentOverrides) {
-			overrides[agentId] = promptId;
+		// Build overrides object (API expects Record<agentId, { promptId, versionId? }>)
+		const overrides: Record<number, { promptId: number; versionId?: number }> = {};
+		for (const [agentId, override] of agentOverrides) {
+			overrides[agentId] = override;
 		}
 
 		// Create SSE connection
@@ -755,7 +872,7 @@
 				</div>
 
 				<!-- Prompts list -->
-				<div class="max-h-64 overflow-y-auto rounded border">
+				<div class="max-h-80 overflow-y-auto rounded border">
 					{#if promptsLoading}
 						<div class="flex items-center justify-center p-4 text-muted-foreground">
 							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
@@ -771,27 +888,93 @@
 						</div>
 					{:else}
 						{#each filteredPrompts as prompt (prompt.id)}
-							{@const isSelected = selectedOverridePrompt === prompt.id}
-							<button
-								type="button"
-								class="w-full border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted {isSelected
-									? 'bg-primary/10 font-medium'
-									: ''}"
-								onclick={() => {
-									if (selectedOverridePrompt === prompt.id) {
-										selectedOverridePrompt = null;
-									} else {
-										selectedOverridePrompt = prompt.id;
-									}
-								}}
-							>
-								<span class="flex items-center justify-between">
-									{prompt.title}
-									{#if isSelected}
-										<CheckCircle class="h-4 w-4 text-primary" />
-									{/if}
-								</span>
-							</button>
+							{@const isExpanded = expandedPromptId === prompt.id}
+							{@const isSelected =
+								selectedOverride?.promptId === prompt.id && !selectedOverride.versionId}
+							<div class="border-b last:border-b-0">
+								<!-- Prompt row -->
+								<div class="flex items-center">
+									<button
+										type="button"
+										class="flex-1 px-3 py-2 text-left text-sm hover:bg-muted {isSelected
+											? 'bg-primary/10 font-medium'
+											: ''}"
+										onclick={() => selectPrompt(prompt.id)}
+									>
+										<span class="flex items-center justify-between">
+											<span>{prompt.title}</span>
+											<span class="flex items-center gap-1">
+												{#if isSelected}
+													<CheckCircle class="h-4 w-4 text-primary" />
+												{/if}
+												<span class="text-[10px] text-muted-foreground">(latest)</span>
+											</span>
+										</span>
+									</button>
+									<!-- Expand button -->
+									<button
+										type="button"
+										class="px-2 py-2 text-muted-foreground hover:bg-muted"
+										onclick={() => togglePromptExpand(prompt.id)}
+										title={isExpanded ? 'Collapse versions' : 'Show versions'}
+									>
+										<svg
+											class="h-4 w-4 transition-transform {isExpanded ? 'rotate-180' : ''}"
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<path d="M6 9l6 6 6-6" />
+										</svg>
+									</button>
+								</div>
+								<!-- Versions list (expandable) -->
+								{#if isExpanded}
+									<div class="border-t bg-muted/30">
+										{#if versionsLoading}
+											<div
+												class="flex items-center justify-center p-2 text-xs text-muted-foreground"
+											>
+												<Loader2 class="mr-1 h-3 w-3 animate-spin" />
+												Loading versions...
+											</div>
+										{:else if versionsList.length === 0}
+											<div class="p-2 text-center text-xs text-muted-foreground">
+												No versions found
+											</div>
+										{:else}
+											{#each versionsList as version (version.id)}
+												{@const isVersionSelected =
+													selectedOverride?.promptId === prompt.id &&
+													selectedOverride.versionId === version.id}
+												<button
+													type="button"
+													class="w-full px-3 py-1.5 pr-4 text-left text-xs hover:bg-muted {isVersionSelected
+														? 'bg-primary/10 font-medium'
+														: ''}"
+													onclick={() => selectVersion(prompt.id, version.id)}
+												>
+													<span class="flex items-center justify-between">
+														<span>
+															<span class="font-mono text-muted-foreground">{version.version}</span>
+															{#if version.changeNotes}
+																<span class="ml-2 text-muted-foreground"
+																	>- {version.changeNotes}</span
+																>
+															{/if}
+														</span>
+														{#if isVersionSelected}
+															<CheckCircle class="h-3 w-3 text-primary" />
+														{/if}
+													</span>
+												</button>
+											{/each}
+										{/if}
+									</div>
+								{/if}
+							</div>
 						{/each}
 					{/if}
 				</div>
@@ -800,13 +983,19 @@
 				<div class="mt-4 flex justify-end gap-2">
 					<Button variant="outline" size="sm" onclick={closeOverrideModal}>Cancel</Button>
 					<Button size="sm" onclick={applyOverride}>
-						{selectedOverridePrompt ? 'Apply Override' : 'Use Default'}
+						{selectedOverride ? 'Apply Override' : 'Use Default'}
 					</Button>
 				</div>
 
 				<!-- Info -->
 				<p class="mt-2 text-center text-[10px] text-muted-foreground">
-					Override applies only to this review session
+					{#if selectedOverride?.versionId}
+						Selected specific version. Click prompt title for latest.
+					{:else if selectedOverride}
+						Using latest version. Expand to select specific version.
+					{:else}
+						Select a prompt to override the agent's default.
+					{/if}
 				</p>
 			</div>
 		</div>

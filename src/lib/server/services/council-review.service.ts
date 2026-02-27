@@ -11,7 +11,9 @@
  * 4. Aggregate all feedback when complete
  */
 import { db } from '../db/client';
+import { councilAgents, prompts, promptVersions } from '../db/schema';
 import { getOpencodeClient } from './opencode.service';
+import { eq, asc } from 'drizzle-orm';
 import type { Session } from '@opencode-ai/sdk';
 
 /**
@@ -166,14 +168,83 @@ Format your response as:
 ];
 
 /**
- * Load council agents from database or use defaults
+ * Load council agents from database with linked prompt titles
  */
 async function loadCouncilAgents(_promptId: number): Promise<CouncilAgent[]> {
 	try {
-		// For now, use default agents with different perspectives
-		// TODO: Load from council_agents table when properly configured
-		console.log('[CouncilReview] Using default council agents');
-		return DEFAULT_AGENTS;
+		// Load council agents from database
+		const agents = await db
+			.select({
+				id: councilAgents.id,
+				modelId: councilAgents.modelId,
+				providerId: councilAgents.modelProvider,
+				temperature: councilAgents.temperature,
+				maxTokens: councilAgents.maxTokens,
+				order: councilAgents.agentOrder,
+				promptLinkId: councilAgents.promptLinkId
+			})
+			.from(councilAgents)
+			.where(eq(councilAgents.parentType, 'function_defaults'))
+			.orderBy(asc(councilAgents.agentOrder));
+
+		if (agents.length === 0) {
+			console.log('[CouncilReview] No configured agents, using defaults');
+			return DEFAULT_AGENTS;
+		}
+
+		// Fetch linked prompt titles and content for each agent
+		const agentsWithPrompts: CouncilAgent[] = [];
+
+		for (const agent of agents) {
+			let name = `Agent ${agent.order}`;
+			let systemPrompt = '';
+
+			if (agent.promptLinkId) {
+				// Get the linked prompt's title and latest version content
+				const [linkedPrompt] = await db
+					.select({ title: prompts.title, latestVersionId: prompts.latestVersionId })
+					.from(prompts)
+					.where(eq(prompts.id, agent.promptLinkId))
+					.limit(1);
+
+				if (linkedPrompt) {
+					name = linkedPrompt.title || name;
+
+					// Get the content from the latest version
+					if (linkedPrompt.latestVersionId) {
+						const [version] = await db
+							.select({ content: promptVersions.content })
+							.from(promptVersions)
+							.where(eq(promptVersions.id, linkedPrompt.latestVersionId))
+							.limit(1);
+
+						if (version) {
+							systemPrompt = version.content || '';
+						}
+					}
+				}
+			}
+
+			// Parse model ID to get provider and model
+			const { providerId, modelId } = parseModelId(agent.modelId);
+
+			agentsWithPrompts.push({
+				id: agent.id,
+				name,
+				systemPrompt,
+				modelId,
+				providerId: agent.providerId || providerId,
+				temperature: agent.temperature,
+				maxTokens: agent.maxTokens,
+				order: agent.order
+			});
+		}
+
+		console.log(
+			`[CouncilReview] Loaded ${agentsWithPrompts.length} agents:`,
+			agentsWithPrompts.map((a) => a.name)
+		);
+		return agentsWithPrompts;
 	} catch (error) {
 		console.error('[CouncilReview] Error loading agents:', error);
 		return DEFAULT_AGENTS;

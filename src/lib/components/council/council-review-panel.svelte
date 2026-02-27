@@ -80,6 +80,7 @@
 	// State machine
 	let uiState = $state<CouncilUIState>('idle');
 	let agentStates = $state<Map<number, AgentState>>(new Map());
+	let agentList = $state<{ id: number; name: string }[]>([]);
 	let errorMessage = $state<string | null>(null);
 	let reviewSummary = $state<string | null>(null);
 
@@ -197,6 +198,8 @@
 						type: 'review_start';
 						data: { agentCount: number; agents: { id: number; name: string }[] };
 					};
+					// Store agent list for display
+					agentList = event.data.agents;
 					// Initialize agent states
 					const newStates = new Map<number, AgentState>();
 					for (const agent of event.data.agents) {
@@ -356,6 +359,7 @@
 	function handleReset() {
 		uiState = 'idle';
 		agentStates = new Map();
+		agentList = [];
 		reviewSummary = null;
 		errorMessage = null;
 		startTime = null;
@@ -560,12 +564,31 @@
 				Run Council Review
 			</Button>
 			<div class="text-center text-xs text-muted-foreground">
-				<p class="mb-1">3 AI agents will review your prompt in parallel:</p>
-				<p class="flex flex-wrap justify-center gap-2">
-					<span class="rounded bg-blue-100 px-2 py-0.5 dark:bg-blue-900">Code Quality</span>
-					<span class="rounded bg-amber-100 px-2 py-0.5 dark:bg-amber-900">Security</span>
-					<span class="rounded bg-green-100 px-2 py-0.5 dark:bg-green-900">Best Practices</span>
+				<p class="mb-1">
+					{agentList.length || 3} AI agents will review your prompt in parallel
+					{#if agentList.length > 0}
+						:
+					{/if}
 				</p>
+				{#if agentList.length > 0}
+					<p class="flex flex-wrap justify-center gap-2">
+						{#each agentList as agent, i (agent.id)}
+							{#if i === 0}
+								<span class="rounded bg-blue-100 px-2 py-0.5 dark:bg-blue-900">{agent.name}</span>
+							{:else if i === 1}
+								<span class="rounded bg-amber-100 px-2 py-0.5 dark:bg-amber-900">{agent.name}</span>
+							{:else}
+								<span class="rounded bg-green-100 px-2 py-0.5 dark:bg-green-900">{agent.name}</span>
+							{/if}
+						{/each}
+					</p>
+				{:else}
+					<p class="flex flex-wrap justify-center gap-2">
+						<span class="rounded bg-blue-100 px-2 py-0.5 dark:bg-blue-900">Code Quality</span>
+						<span class="rounded bg-amber-100 px-2 py-0.5 dark:bg-amber-900">Security</span>
+						<span class="rounded bg-green-100 px-2 py-0.5 dark:bg-green-900">Best Practices</span>
+					</p>
+				{/if}
 			</div>
 		</div>
 	{/if}

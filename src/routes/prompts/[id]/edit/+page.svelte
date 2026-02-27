@@ -2,7 +2,6 @@
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { PromptEditor, PromptMetadata, TestRunnerPanel } from '$lib/components/prompts';
-	import PromptFrontmatterEditor from '$lib/components/prompts/prompt-frontmatter-editor.svelte';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import { goto } from '$app/navigation';
@@ -35,7 +34,6 @@
 	let description = $state('');
 	let purpose = $state('');
 	let tags = $state<string[]>([]);
-	let llmProviders = $state<string[]>([]);
 	let content = $state('');
 	let frontmatterYaml = $state('');
 	let showTestRunner = $state(false);
@@ -45,7 +43,6 @@
 		description = data.prompt.description || '';
 		purpose = data.prompt.purpose || '';
 		tags = data.prompt.tags || [];
-		llmProviders = (((data.prompt as any).llmProviders as string[]) || []) as string[];
 		content = data.currentVersion?.content || '';
 		frontmatterYaml = (((data.currentVersion as any)?.frontmatterYaml as string) || '') as string;
 	});
@@ -139,9 +136,7 @@
 		title.trim() !== (data.prompt.title || '').trim() ||
 			description.trim() !== (data.prompt.description || '').trim() ||
 			purpose !== (data.prompt.purpose || '') ||
-			JSON.stringify(tags) !== JSON.stringify(data.prompt.tags || []) ||
-			JSON.stringify(llmProviders) !==
-				JSON.stringify((((data.prompt as any).llmProviders as string[]) || []) as string[])
+			JSON.stringify(tags) !== JSON.stringify(data.prompt.tags || [])
 	);
 
 	// Check if frontmatter changed
@@ -314,8 +309,7 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 					title: title.trim(),
 					description: description.trim() || undefined,
 					purpose: purpose || undefined,
-					tags: tags.length > 0 ? tags : undefined,
-					llmProviders: llmProviders.length > 0 ? llmProviders : undefined
+					tags: tags.length > 0 ? tags : undefined
 				});
 			}
 
@@ -620,12 +614,11 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 			<div id="edit-prompt-metadata-form" class="space-y-4 rounded-lg border bg-card p-4">
 				<h2 class="mb-3 text-sm font-semibold">Prompt Details</h2>
 
-				<!-- Title, Purpose, Tags, LLM Providers (no description) -->
+				<!-- Title, Purpose, Tags (no description, no LLM providers) -->
 				<PromptMetadata
 					bind:title
 					bind:purpose
 					bind:tags
-					bind:llmProviders
 					showDescription={false}
 					errors={{ title: titleError }}
 				/>
@@ -654,7 +647,6 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 					<p class="mt-1 text-xs text-muted-foreground">{description.length}/500 characters</p>
 				</div>
 			</div>
-			<PromptFrontmatterEditor bind:frontmatterYaml />
 
 			<!-- Current Version Info -->
 			<div id="current-version-section" class="rounded-lg border bg-muted/50 p-4">

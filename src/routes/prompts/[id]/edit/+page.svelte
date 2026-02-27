@@ -456,7 +456,7 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 
 	<!-- Main Content -->
 	<div id="edit-prompt-layout" class="grid gap-6 lg:grid-cols-3">
-		<!-- Main Editor Area -->
+		<!-- Main Editor Area (spans full width on mobile, 2 cols on desktop) -->
 		<div id="edit-prompt-main-content" class="space-y-6 lg:col-span-2">
 			<!-- Prompt Content with Improve Button -->
 			<section id="edit-prompt-content-editor" class="rounded-lg border bg-card p-4">
@@ -488,6 +488,36 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 				<PromptEditor bind:value={content} placeholder="Enter your prompt here..." class="w-full" />
 				{#if contentError}
 					<p class="mt-2 text-xs text-destructive">{contentError}</p>
+				{/if}
+			</section>
+
+			<!-- Test Runner Section (Full Width Bento) -->
+			<section id="test-runner-section" class="rounded-lg border bg-card p-4">
+				<button
+					type="button"
+					onclick={() => (showTestRunner = !showTestRunner)}
+					class="flex w-full items-center justify-between text-left"
+				>
+					<div class="flex items-center gap-2">
+						<FlaskConical class="h-4 w-4 text-muted-foreground" />
+						<h2 class="font-semibold">Test Runner</h2>
+					</div>
+					{#if showTestRunner}
+						<ChevronUp class="h-4 w-4 text-muted-foreground" />
+					{:else}
+						<ChevronDown class="h-4 w-4 text-muted-foreground" />
+					{/if}
+				</button>
+
+				{#if showTestRunner}
+					<div class="mt-4">
+						<TestRunnerPanel
+							promptId={data.prompt.id}
+							template={content}
+							variables={snippetVariables}
+							functionType="executor"
+						/>
+					</div>
 				{/if}
 			</section>
 
@@ -624,38 +654,7 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 					<p class="mt-1 text-xs text-muted-foreground">{description.length}/500 characters</p>
 				</div>
 			</div>
-
 			<PromptFrontmatterEditor bind:frontmatterYaml />
-
-			<!-- Test Runner Section -->
-			<div class="rounded-lg border bg-card p-4">
-				<button
-					type="button"
-					onclick={() => (showTestRunner = !showTestRunner)}
-					class="flex w-full items-center justify-between text-left"
-				>
-					<div class="flex items-center gap-2">
-						<FlaskConical class="h-4 w-4 text-muted-foreground" />
-						<h3 class="text-sm font-semibold">Test Runner</h3>
-					</div>
-					{#if showTestRunner}
-						<ChevronUp class="h-4 w-4 text-muted-foreground" />
-					{:else}
-						<ChevronDown class="h-4 w-4 text-muted-foreground" />
-					{/if}
-				</button>
-
-				{#if showTestRunner}
-					<div class="mt-4">
-						<TestRunnerPanel
-							promptId={data.prompt.id}
-							template={content}
-							variables={snippetVariables}
-							functionType="executor"
-						/>
-					</div>
-				{/if}
-			</div>
 
 			<!-- Current Version Info -->
 			<div id="current-version-section" class="rounded-lg border bg-muted/50 p-4">

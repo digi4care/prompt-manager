@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 
 ## Current Position
 
-Phase: 7 of 11 (Council Correct) - READY
-Plan: 0 of 2 in current phase
-Status: Phase 6 complete - SSE streaming fully implemented (backend + client)
-Last activity: 2026-02-27 — Phase 6 streaming execution complete
+Phase: 7 of 11 (Council Correct) - IN PROGRESS
+Plan: 1 of 2 in current phase
+Status: Plan 07-01 complete - Council correct orchestrator with SSE streaming
+Last activity: 2026-02-27 — Plan 07-01: Schema, service, API endpoint complete
 
 Progress: [███████████] 100%
 
@@ -20,9 +20,9 @@ Progress: [███████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 11min
-- Total execution time: 2.4 hours
+- Total execution time: 2.6 hours
 
 **By Phase:**
 
@@ -34,10 +34,11 @@ Progress: [███████████] 100%
 | 04-snippet-variables   | 3     | ~25min | 8min     |
 | 05-test-runner-ui      | 2     | 20min  | 10min    |
 | 06-streaming-execution | 2     | 27min  | 13.5min  |
+| 07-council-correct     | 1     | 9min   | 9min     |
 
 **Recent Trend:**
 
-- Last 5 plans: 15min, 5min, 12min, 15min, 15min
+- Last 5 plans: 5min, 12min, 15min, 15min, 9min
 - Trend: Consistent execution with established patterns
 
 ## Accumulated Context
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 06-02]: Default to streaming mode (useStreaming = true) for best real-time UX
 - [Phase 06-02]: Max 3 reconnection attempts with exponential backoff (1s, 2s, 3s)
 - [Phase 06-02]: State machine extended with 'streaming' state distinct from 'loading'
+- [Phase 07-01]: Steps stored as JSON text in councilRuns table (not separate stepResults table)
+- [Phase 07-01]: Council step mapping: producer→executor, reviewer→judge, fixer→improve
+- [Phase 07-01]: Max 3 rounds hardcoded to prevent infinite loops in council workflow
 
 ### Pending Todos
 
@@ -100,7 +104,7 @@ Phases likely needing deeper research during planning:
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Phase 6 complete - Streaming execution fully implemented
+Stopped At: Plan 07-01 complete - Council correct backend (schema, service, API)
 Resume file: None
 
 ## Phase 6 Implementation Details

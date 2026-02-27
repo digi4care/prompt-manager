@@ -10,7 +10,8 @@ import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
  */
 const councilReviewRequestSchema = z.object({
 	promptId: z.number().int().positive(),
-	userPrompt: z.string().min(1, 'Prompt content is required').max(100000, 'Content too long')
+	userPrompt: z.string().min(1, 'Prompt content is required').max(100000, 'Content too long'),
+	agentOverrides: z.record(z.number(), z.number().int().positive()).optional()
 });
 
 /**
@@ -74,7 +75,7 @@ export const POST: RequestHandler = async (event) => {
 		);
 	}
 
-	const { promptId, userPrompt } = validation.data;
+	const { promptId, userPrompt, agentOverrides } = validation.data;
 
 	// Create SSE stream using sveltekit-sse produce()
 	return produce(
@@ -83,7 +84,8 @@ export const POST: RequestHandler = async (event) => {
 				// Create the council review generator
 				const generator = executeCouncilReview({
 					promptId,
-					userPrompt
+					userPrompt,
+					agentOverrides
 				});
 
 				// Iterate over review events

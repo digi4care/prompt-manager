@@ -169,8 +169,12 @@ Format your response as:
 
 /**
  * Load council agents from database with linked prompt titles
+ * @param overrides - Map of agentId -> promptId to use instead of linked prompt
  */
-async function loadCouncilAgents(_promptId: number): Promise<CouncilAgent[]> {
+async function loadCouncilAgents(
+	_promptId: number,
+	overrides?: Map<number, number>
+): Promise<CouncilAgent[]> {
 	try {
 		// Load council agents from database
 		const agents = await db
@@ -199,12 +203,15 @@ async function loadCouncilAgents(_promptId: number): Promise<CouncilAgent[]> {
 			let name = `Agent ${agent.order}`;
 			let systemPrompt = '';
 
-			if (agent.promptLinkId) {
+			// Check if there's an override for this agent
+			const effectivePromptId = overrides?.get(agent.id) || agent.promptLinkId;
+
+			if (effectivePromptId) {
 				// Get the linked prompt's title and latest version content
 				const [linkedPrompt] = await db
 					.select({ title: prompts.title, latestVersionId: prompts.latestVersionId })
 					.from(prompts)
-					.where(eq(prompts.id, agent.promptLinkId))
+					.where(eq(prompts.id, effectivePromptId))
 					.limit(1);
 
 				if (linkedPrompt) {
@@ -418,16 +425,23 @@ ${userPrompt}
  *
  * @param promptId - The ID of the prompt being reviewed
  * @param userPrompt - The content of the prompt to review
+ * @param agentOverrides - Map of agentId -> promptId to use instead of linked prompt
  * @yields CouncilReviewEvent - events from all agents running in parallel
  */
 export async function* executeCouncilReview(options: {
 	promptId: number;
 	userPrompt: string;
+	agentOverrides?: Record<number, number>;
 }): AsyncGenerator<CouncilReviewEvent, CouncilAgentResult[], unknown> {
-	const { promptId, userPrompt } = options;
+	const { promptId, userPrompt, agentOverrides } = options;
+
+	// Convert overrides to Map for easier lookup
+	const overridesMap = agentOverrides
+		? new Map(Object.entries(agentOverrides).map(([k, v]) => [parseInt(k, 10), v]))
+		: undefined;
 
 	// Load agents
-	const agents = await loadCouncilAgents(promptId);
+	const agents = await loadCouncilAgents(promptId, overridesMap);
 	console.log(`[CouncilReview] Loaded ${agents.length} agents for parallel review`);
 
 	// Yield review start event

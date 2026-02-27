@@ -11,6 +11,9 @@
 	import Clock from 'lucide-svelte/icons/clock';
 	import Users from 'lucide-svelte/icons/users';
 	import Square from 'lucide-svelte/icons/square';
+	import Edit from 'lucide-svelte/icons/edit';
+	import X from 'lucide-svelte/icons/x';
+	import Search from 'lucide-svelte/icons/search';
 
 	/**
 	 * Council review states
@@ -97,6 +100,25 @@
 	// SSE connection
 	let connection = $state<Source | null>(null);
 
+	// Agent override modal state
+	let showOverrideModal = $state(false);
+	let overrideAgentId = $state<number | null>(null);
+	let overrideAgentName = $state('');
+	let promptsList = $state<{ id: number; title: string }[]>([]);
+	let promptsLoading = $state(false);
+	let searchQuery = $state('');
+	let selectedOverridePrompt = $state<number | null>(null);
+
+	// Agent overrides (promptId to use instead of linked one)
+	let agentOverrides = $state<Map<number, number>>(new Map());
+
+	// Derived: filtered prompts list
+	let filteredPrompts = $derived(
+		searchQuery.trim()
+			? promptsList.filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
+			: promptsList
+	);
+
 	// Derived: all agents complete?
 	let allComplete = $derived(
 		uiState === 'complete' ||
@@ -154,6 +176,78 @@
 	}
 
 	/**
+	 * Open override modal for an agent
+	 */
+	async function openOverrideModal(agentId: number, agentName: string) {
+		overrideAgentId = agentId;
+		overrideAgentName = agentName;
+		searchQuery = '';
+		selectedOverridePrompt = agentOverrides.get(agentId) || null;
+		showOverrideModal = true;
+
+		// Fetch prompts list if not already loaded
+		if (promptsList.length === 0) {
+			promptsLoading = true;
+			try {
+				const response = await fetch('/api/prompts?limit=100');
+				if (response.ok) {
+					const data = await response.json();
+					promptsList = (data.data || []).map((p: { id: number; title: string }) => ({
+						id: p.id,
+						title: p.title
+					}));
+				}
+			} catch (err) {
+				console.error('[CouncilReviewPanel] Failed to fetch prompts:', err);
+			}
+			promptsLoading = false;
+		}
+	}
+
+	/**
+	 * Close override modal
+	 */
+	function closeOverrideModal() {
+		showOverrideModal = false;
+		overrideAgentId = null;
+		overrideAgentName = '';
+		searchQuery = '';
+	}
+
+	/**
+	 * Apply override for an agent
+	 */
+	function applyOverride() {
+		if (overrideAgentId !== null) {
+			if (selectedOverridePrompt) {
+				agentOverrides = new Map(agentOverrides).set(overrideAgentId, selectedOverridePrompt);
+			} else {
+				// Remove override if none selected
+				const newOverrides = new Map(agentOverrides);
+				newOverrides.delete(overrideAgentId);
+				agentOverrides = newOverrides;
+			}
+		}
+		closeOverrideModal();
+	}
+
+	/**
+	 * Clear override for an agent
+	 */
+	function clearOverride(agentId: number) {
+		const newOverrides = new Map(agentOverrides);
+		newOverrides.delete(agentId);
+		agentOverrides = newOverrides;
+	}
+
+	/**
+	 * Check if agent has an override
+	 */
+	function hasOverride(agentId: number): boolean {
+		return agentOverrides.has(agentId);
+	}
+
+	/**
 	 * Start council review
 	 */
 	function startCouncilReview() {
@@ -165,11 +259,17 @@
 		startTime = Date.now();
 		elapsedSeconds = 0;
 
+		// Build overrides object
+		const overrides: Record<number, number> = {};
+		for (const [agentId, promptId] of agentOverrides) {
+			overrides[agentId] = promptId;
+		}
+
 		// Create SSE connection
 		connection = source(`/api/council/review`, {
 			options: {
 				method: 'POST',
-				body: JSON.stringify({ promptId, userPrompt })
+				body: JSON.stringify({ promptId, userPrompt, agentOverrides: overrides })
 			},
 
 			open({ status }) {
@@ -573,15 +673,32 @@
 				{#if agentList.length > 0}
 					<p class="flex flex-wrap justify-center gap-2">
 						{#each agentList as agent, i (agent.id)}
-							{#if i === 0}
-								<span class="rounded bg-blue-100 px-2 py-0.5 dark:bg-blue-900">{agent.name}</span>
-							{:else if i === 1}
-								<span class="rounded bg-amber-100 px-2 py-0.5 dark:bg-amber-900">{agent.name}</span>
-							{:else}
-								<span class="rounded bg-green-100 px-2 py-0.5 dark:bg-green-900">{agent.name}</span>
-							{/if}
+							{@const hasOverrideForAgent = hasOverride(agent.id)}
+							<button
+								type="button"
+								class="group relative cursor-pointer rounded px-2 py-0.5 transition-colors hover:ring-2 hover:ring-primary/50"
+								class:bg-blue-100={i === 0}
+								class:dark:bg-blue-900={i === 0}
+								class:bg-amber-100={i === 1}
+								class:dark:bg-amber-900={i === 1}
+								class:bg-green-100={i === 2}
+								class:dark:bg-green-900={i === 2}
+								class:ring-2={hasOverrideForAgent}
+								class:ring-amber-500={hasOverrideForAgent}
+								onclick={() => openOverrideModal(agent.id, agent.name)}
+								title="Click to override prompt"
+							>
+								{agent.name}
+								{#if hasOverrideForAgent}
+									<span class="ml-1 text-amber-600 dark:text-amber-400">*</span>
+								{/if}
+								<Edit
+									class="ml-1 inline-block h-3 w-3 opacity-0 transition-opacity group-hover:opacity-50"
+								/>
+							</button>
 						{/each}
 					</p>
+					<p class="mt-1 text-[10px] opacity-70">Click agent name to override prompt</p>
 				{:else}
 					<p class="flex flex-wrap justify-center gap-2">
 						<span class="rounded bg-blue-100 px-2 py-0.5 dark:bg-blue-900">Code Quality</span>
@@ -598,5 +715,98 @@
 			<RotateCcw class="mr-2 h-4 w-4" />
 			Reset
 		</Button>
+	{/if}
+
+	<!-- Override Modal -->
+	{#if showOverrideModal}
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="override-modal-title"
+		>
+			<div class="w-full max-w-md rounded-lg border bg-background p-4 shadow-lg">
+				<!-- Modal header -->
+				<div class="mb-4 flex items-center justify-between">
+					<h3 id="override-modal-title" class="font-semibold">
+						Override Prompt for {overrideAgentName}
+					</h3>
+					<button
+						type="button"
+						class="rounded p-1 hover:bg-muted"
+						onclick={closeOverrideModal}
+						aria-label="Close"
+					>
+						<X class="h-4 w-4" />
+					</button>
+				</div>
+
+				<!-- Search -->
+				<div class="relative mb-3">
+					<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+					<input
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Search prompts..."
+						class="w-full rounded-md border bg-background py-2 pr-3 pl-9 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+					/>
+				</div>
+
+				<!-- Prompts list -->
+				<div class="max-h-64 overflow-y-auto rounded border">
+					{#if promptsLoading}
+						<div class="flex items-center justify-center p-4 text-muted-foreground">
+							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+							Loading prompts...
+						</div>
+					{:else if filteredPrompts.length === 0}
+						<div class="p-4 text-center text-muted-foreground">
+							{#if searchQuery}
+								No prompts match "{searchQuery}"
+							{:else}
+								No prompts available
+							{/if}
+						</div>
+					{:else}
+						{#each filteredPrompts as prompt (prompt.id)}
+							{@const isSelected = selectedOverridePrompt === prompt.id}
+							<button
+								type="button"
+								class="w-full border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted {isSelected
+									? 'bg-primary/10 font-medium'
+									: ''}"
+								onclick={() => {
+									if (selectedOverridePrompt === prompt.id) {
+										selectedOverridePrompt = null;
+									} else {
+										selectedOverridePrompt = prompt.id;
+									}
+								}}
+							>
+								<span class="flex items-center justify-between">
+									{prompt.title}
+									{#if isSelected}
+										<CheckCircle class="h-4 w-4 text-primary" />
+									{/if}
+								</span>
+							</button>
+						{/each}
+					{/if}
+				</div>
+
+				<!-- Actions -->
+				<div class="mt-4 flex justify-end gap-2">
+					<Button variant="outline" size="sm" onclick={closeOverrideModal}>Cancel</Button>
+					<Button size="sm" onclick={applyOverride}>
+						{selectedOverridePrompt ? 'Apply Override' : 'Use Default'}
+					</Button>
+				</div>
+
+				<!-- Info -->
+				<p class="mt-2 text-center text-[10px] text-muted-foreground">
+					Override applies only to this review session
+				</p>
+			</div>
+		</div>
 	{/if}
 </div>

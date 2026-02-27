@@ -10,6 +10,8 @@
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import AlertCircle from 'lucide-svelte/icons/alert-circle';
 	import CheckCircle from 'lucide-svelte/icons/check-circle';
+	import Maximize2 from 'lucide-svelte/icons/maximize-2';
+	import X from 'lucide-svelte/icons/x';
 	import {
 		extractVariables,
 		resolveVariables,
@@ -113,6 +115,12 @@
 	let result = $state<ExecutionResultData | null>(null);
 	let errorInfo = $state<ErrorInfo | null>(null);
 
+	// Fullscreen editor modal state
+	let showFullscreenEditor = $state(false);
+	let fullscreenVarName = $state('');
+	let fullscreenVarValue = $state('');
+	let fullscreenTempValue = $state('');
+
 	// Derived: is anything currently executing?
 	let isAnyExecuting = $derived(executionState === 'loading' || councilState === 'running');
 
@@ -181,6 +189,31 @@
 		result = null;
 		errorInfo = null;
 	}
+
+	/**
+	 * Open fullscreen editor for a variable
+	 */
+	function openFullscreenEditor(varName: string) {
+		fullscreenVarName = varName;
+		fullscreenVarValue = values[varName] ?? '';
+		fullscreenTempValue = fullscreenVarValue;
+		showFullscreenEditor = true;
+	}
+
+	/**
+	 * Save fullscreen editor changes
+	 */
+	function saveFullscreenEditor() {
+		values[fullscreenVarName] = fullscreenTempValue;
+		showFullscreenEditor = false;
+	}
+
+	/**
+	 * Cancel fullscreen editor changes
+	 */
+	function cancelFullscreenEditor() {
+		showFullscreenEditor = false;
+	}
 </script>
 
 <div class={className}>
@@ -200,15 +233,26 @@
 								<span class="text-red-500">*</span>
 							{/if}
 						</label>
-						<Input
-							id={inputId}
-							value={currentValue}
-							oninput={(e: Event) => {
-								values[varName] = (e.target as HTMLInputElement).value;
-							}}
-							placeholder={definition?.description || `Enter ${varName}`}
-							disabled={isExecuting}
-						/>
+						<div class="relative">
+							<Input
+								id={inputId}
+								value={currentValue}
+								oninput={(e: Event) => {
+									values[varName] = (e.target as HTMLInputElement).value;
+								}}
+								placeholder={definition?.description || `Enter ${varName}`}
+								disabled={isExecuting}
+								class="pr-10"
+							/>
+							<button
+								type="button"
+								class="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+								onclick={() => openFullscreenEditor(varName)}
+								title="Expand editor"
+							>
+								<Maximize2 class="h-4 w-4" />
+							</button>
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -361,5 +405,57 @@
 			onstatechange={handleCouncilStateChange}
 			disabled={allMissing.length > 0}
 		/>
+	{/if}
+
+	<!-- Fullscreen Editor Modal -->
+	{#if showFullscreenEditor}
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="fullscreen-editor-title"
+		>
+			<div
+				class="flex h-[80vh] w-full max-w-4xl flex-col rounded-lg border bg-background shadow-xl"
+			>
+				<!-- Modal header -->
+				<div class="flex items-center justify-between border-b px-4 py-3">
+					<div>
+						<h3 id="fullscreen-editor-title" class="font-semibold">
+							Edit Variable: {fullscreenVarName}
+						</h3>
+						<p class="text-sm text-muted-foreground">Use this editor for longer content</p>
+					</div>
+					<button
+						type="button"
+						class="rounded p-1 hover:bg-muted"
+						onclick={cancelFullscreenEditor}
+						aria-label="Close"
+					>
+						<X class="h-5 w-5" />
+					</button>
+				</div>
+
+				<!-- Editor area -->
+				<div class="flex-1 overflow-hidden p-4">
+					<textarea
+						bind:value={fullscreenTempValue}
+						class="h-full w-full resize-none rounded-md border bg-muted/30 p-3 font-mono text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+						placeholder="Enter your content here..."
+					></textarea>
+				</div>
+
+				<!-- Footer with actions -->
+				<div class="flex items-center justify-between border-t px-4 py-3">
+					<span class="text-xs text-muted-foreground">
+						{fullscreenTempValue.length} characters
+					</span>
+					<div class="flex gap-2">
+						<Button variant="outline" onclick={cancelFullscreenEditor}>Cancel</Button>
+						<Button onclick={saveFullscreenEditor}>Save Changes</Button>
+					</div>
+				</div>
+			</div>
+		</div>
 	{/if}
 </div>

@@ -192,7 +192,9 @@
 				const response = await fetch('/api/prompts?limit=100');
 				if (response.ok) {
 					const data = await response.json();
-					promptsList = (data.data || []).map((p: { id: number; title: string }) => ({
+					// API returns { data: { prompts: [...], totalCount } }
+					const promptArray = data.data?.prompts || data.data || [];
+					promptsList = (promptArray || []).map((p: { id: number; title: string }) => ({
 						id: p.id,
 						title: p.title
 					}));

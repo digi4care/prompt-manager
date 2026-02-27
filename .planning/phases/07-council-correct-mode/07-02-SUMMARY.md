@@ -47,6 +47,8 @@ key-decisions:
   - 'Each agent has unique system prompt defining review perspective'
   - 'Default agents: Code Quality Reviewer, Security Reviewer, Best Practices Reviewer'
   - 'Agent names come from linked prompt titles in council_agents configuration'
+  - 'Agent overrides apply only to current session, not saved permanently'
+  - 'Fullscreen editor for longer variable values with character count'
 
 patterns-established:
   - 'Parallel council review with 3 independent agents'
@@ -56,6 +58,8 @@ patterns-established:
   - 'Mode toggle pattern for execution mode selection'
   - 'Elapsed time indicator during long-running operations'
   - 'Abort functionality with partial results preservation'
+  - 'Agent override modal with searchable prompt list'
+  - 'Fullscreen code editor modal with save/cancel actions'
 
 duration: 90min
 completed: 2026-02-27
@@ -80,7 +84,9 @@ completed: 2026-02-27
 - **Real-time Parallel Streaming** - All agents stream results independently
 - **Test Runner Mode Toggle** - Single Execution / Council Review options
 - **Test Runner in Main Content** - Between Prompt Content and Version Information
-- **Fixed Svelte 5 Issues** - Binding errors, Map state updates
+- **Fixed Svelte 5 Issues** - Binding errors, Map state updates, class directive syntax
+- **Agent Override Modal** - Click agent name to select different prompt for that session
+- **Fullscreen Code Editor** - Expand button on variable inputs for longer content
 
 ## Task Commits
 
@@ -97,6 +103,7 @@ Each task was committed atomically:
 9. **Fix: Validate all unresolved variables** - `f4111db` (fix)
 10. **Fix: Validate all template variables** - `132c5f2` (fix)
 11. **Feature: Display linked prompt titles as agent names** - `c2dd04d` (feat)
+12. **Feature: Agent override modal and fullscreen editor** - `4ec5fef` (feat)
 
 ## Files Created/Modified
 
@@ -160,9 +167,17 @@ Each task was committed atomically:
 - **Files created:** council-review.service.ts, council-review-panel.svelte, /api/council/review endpoint
 - **Committed in:** c8c5214
 
+**6. [Rule 1 - Bug] Svelte 5 class directive with Tailwind opacity modifier**
+
+- **Found during:** Implementation of override modal
+- **Issue:** `class:bg-primary/10={condition}` not supported - `/` breaks class directive syntax
+- **Fix:** Used template literal with ternary instead: `class="... {isSelected ? 'bg-primary/10 font-medium' : ''}"`
+- **Files modified:** src/lib/components/council/council-review-panel.svelte
+- **Committed in:** 4ec5fef
+
 ---
 
-**Total deviations:** 5 auto-fixed (1 bug, 2 blocking, 1 enhancement, 1 architectural)
+**Total deviations:** 6 auto-fixed (2 bug, 2 blocking, 1 enhancement, 1 architectural)
 **Impact on plan:** Major improvement - parallel council review aligns with user's vision of multi-perspective prompt evaluation.
 
 ## Issues Encountered

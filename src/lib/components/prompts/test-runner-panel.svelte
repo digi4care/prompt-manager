@@ -160,6 +160,7 @@
 				{#each allVarNames() as varName (varName)}
 					{@const definition = variables.find((v) => v.name === varName)}
 					{@const inputId = `test-var-${varName}`}
+					{@const currentValue = values[varName] ?? ''}
 					<div>
 						<label for={inputId} class="mb-1 block text-xs text-muted-foreground">
 							{varName}
@@ -169,7 +170,10 @@
 						</label>
 						<Input
 							id={inputId}
-							bind:value={values[varName]}
+							value={currentValue}
+							oninput={(e: Event) => {
+								values[varName] = (e.target as HTMLInputElement).value;
+							}}
 							placeholder={definition?.description || `Enter ${varName}`}
 							disabled={isExecuting}
 						/>

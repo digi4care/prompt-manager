@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Settings-first execution — Every prompt execution resolves model/temperature/parameters through a deterministic precedence chain.
-**Current focus:** Phase 6 - Streaming Execution (in progress)
+**Current focus:** Phase 7 - Council Correct (next)
 
 ## Current Position
 
-Phase: 6 of 11 (Streaming Execution) - IN PROGRESS
-Plan: 1 of 2 in current phase
-Status: 06-01 complete - SSE streaming backend implemented
-Last activity: 2026-02-27 — Phase 6 plan 01 complete, SSE streaming backend ready
+Phase: 7 of 11 (Council Correct) - READY
+Plan: 0 of 2 in current phase
+Status: Phase 6 complete - SSE streaming fully implemented (backend + client)
+Last activity: 2026-02-27 — Phase 6 streaming execution complete
 
 Progress: [███████████] 100%
 
@@ -20,9 +20,9 @@ Progress: [███████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 11
+- Total plans completed: 13
 - Average duration: 11min
-- Total execution time: 2.0 hours
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
@@ -33,12 +33,12 @@ Progress: [███████████] 100%
 | 03-execution-logging   | 2     | 28min  | 14min    |
 | 04-snippet-variables   | 3     | ~25min | 8min     |
 | 05-test-runner-ui      | 2     | 20min  | 10min    |
+| 06-streaming-execution | 2     | 27min  | 13.5min  |
 
 **Recent Trend:**
 
-- Last 5 plans: 13min, 11min, 15min, 15min, 5min
+- Last 5 plans: 15min, 5min, 12min, 15min, 15min
 - Trend: Consistent execution with established patterns
-  | Phase 06-01 P01 | 28min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -74,6 +74,9 @@ Recent decisions affecting current work:
 - [Phase 06-01]: Subscribe to OpenCode events BEFORE session creation to prevent race conditions
 - [Phase 06-01]: Filter events by sessionID since OpenCode event.subscribe() is global
 - [Phase 06-01]: Use 15 second heartbeat interval for interactive AI streaming
+- [Phase 06-02]: Default to streaming mode (useStreaming = true) for best real-time UX
+- [Phase 06-02]: Max 3 reconnection attempts with exponential backoff (1s, 2s, 3s)
+- [Phase 06-02]: State machine extended with 'streaming' state distinct from 'loading'
 
 ### Pending Todos
 
@@ -85,7 +88,7 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None - Phase 5 complete and verified!
+None - Phase 6 complete and verified!
 
 ### Research Flags
 
@@ -97,7 +100,7 @@ Phases likely needing deeper research during planning:
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 06-01-PLAN.md - SSE streaming backend
+Stopped at: Phase 6 complete - Streaming execution fully implemented
 Resume file: None
 
 ## Phase 6 Implementation Details
@@ -119,6 +122,24 @@ Resume file: None
 - Filter events by sessionID (global event stream)
 - 15 second heartbeat for interactive AI execution
 - Async generator returns cleanup function
+
+### Plan 06-02: Client-Side Streaming Component
+
+**Files Created:**
+
+- `src/lib/components/prompts/execution-stream.svelte` - SSE client with source(), abort, reconnection
+
+**Files Modified:**
+
+- `src/lib/components/prompts/execution-panel.svelte` - Streaming toggle, 'streaming' state, conditional rendering
+- `src/lib/components/prompts/index.ts` - Export ExecutionStream
+
+**Key Patterns:**
+
+- sveltekit-sse source() with open/close/error callbacks
+- $effect for reactive subscription to select() stores
+- Exponential backoff reconnection (1s, 2s, 3s)
+- State machine with 'streaming' state
 
 ## Phase 5 Implementation Details
 

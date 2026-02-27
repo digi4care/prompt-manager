@@ -487,11 +487,18 @@
 					const newStates = new Map(agentStates);
 					const state = newStates.get(event.agentId);
 					if (state && event.data) {
-						state.output = event.data.accumulated || state.output + (event.data.delta || '');
+						const newOutput = event.data.accumulated || state.output + (event.data.delta || '');
+						state.output = newOutput;
+						console.log(
+							'[CouncilReviewPanel] agent_delta for',
+							event.agentId,
+							'- output length:',
+							newOutput.length
+						);
 					}
 					agentStates = newStates;
-				} catch {
-					console.warn('[CouncilReviewPanel] Failed to parse agent_delta');
+				} catch (err) {
+					console.warn('[CouncilReviewPanel] Failed to parse agent_delta:', err);
 				}
 			}
 		});
@@ -509,16 +516,27 @@
 						agentId: number;
 						data?: AgentResult;
 					};
+					console.log(
+						'[CouncilReviewPanel] agent_complete for',
+						event.agentId,
+						'- has output:',
+						!!event.data?.output,
+						'length:',
+						event.data?.output?.length || 0
+					);
 					const newStates = new Map(agentStates);
 					const state = newStates.get(event.agentId);
 					if (state && event.data) {
 						state.status = event.data.status;
-						state.output = event.data.output || state.output;
+						// Always prefer the final output from agent_complete
+						if (event.data.output) {
+							state.output = event.data.output;
+						}
 						state.error = event.data.error;
 					}
 					agentStates = newStates;
-				} catch {
-					console.warn('[CouncilReviewPanel] Failed to parse agent_complete');
+				} catch (err) {
+					console.warn('[CouncilReviewPanel] Failed to parse agent_complete:', err);
 				}
 			}
 		});
@@ -535,15 +553,53 @@
 						type: 'review_complete';
 						data: { results: AgentResult[]; summary: string };
 					};
+					console.log('[CouncilReviewPanel] review_complete received:', event);
+
+					// Update agent states with final results from all agents
+					// This ensures outputs are displayed even if individual events were missed
+					const newStates = new Map(agentStates);
+					for (const result of event.data.results) {
+						const state = newStates.get(result.agentId);
+						if (state) {
+							// Always use the final output from the result if available
+							if (result.output) {
+								state.output = result.output;
+							}
+							state.status = result.status;
+							if (result.error) {
+								state.error = result.error;
+							}
+						} else {
+							// Agent wasn't in the initial list, add it
+							newStates.set(result.agentId, {
+								id: result.agentId,
+								name: result.agentName,
+								status: result.status,
+								output: result.output || '',
+								error: result.error
+							});
+						}
+					}
+					agentStates = newStates;
+					console.log('[CouncilReviewPanel] Updated agentStates:', agentStates);
+
 					reviewSummary = event.data.summary;
 					uiState = 'complete';
+
+					// Notify parent with final results
+					if (oncomplete) {
+						oncomplete({
+							agentStates: agentStates,
+							summary: reviewSummary
+						});
+					}
 
 					if (connection) {
 						connection.close();
 						connection = null;
 					}
-				} catch {
-					console.warn('[CouncilReviewPanel] Failed to parse review_complete');
+				} catch (err) {
+					console.warn('[CouncilReviewPanel] Failed to parse review_complete:', err);
 				}
 			}
 		});

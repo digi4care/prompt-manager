@@ -417,99 +417,117 @@
 		});
 	}
 
-	// Subscribe to review_start
+	// Internal mutable state for SSE event processing (avoids $effect race conditions)
+	let internalAgentStates = new Map<number, AgentState>();
+
+	// Single SSE subscription effect - processes all events in one place
+	// This avoids race conditions where updating agentStates in one effect
+	// triggers other effects to re-subscribe and miss events
 	$effect(() => {
-		if (!connection) return;
-		const unsub = connection.select('review_start').subscribe((data) => {
-			if (data) {
+		if (!connection) {
+			// Reset internal state when connection is null
+			internalAgentStates = new Map();
+			return;
+		}
+
+		console.log('[CouncilReviewPanel] Setting up SSE event subscriptions');
+
+		const unsubs: (() => void)[] = [];
+
+		// Helper to update a single agent state
+		function updateAgentState(
+			agentId: number,
+			updates: Partial<AgentState> & { name?: string }
+		): void {
+			const existing = internalAgentStates.get(agentId);
+			if (existing) {
+				Object.assign(existing, updates);
+			} else if (updates.name) {
+				// Create new state if name is provided
+				internalAgentStates.set(agentId, {
+					id: agentId,
+					name: updates.name,
+					status: updates.status || 'pending',
+					output: updates.output || '',
+					error: updates.error
+				});
+			}
+			// Trigger reactivity by creating new Map
+			agentStates = new Map(internalAgentStates);
+		}
+
+		// Subscribe to review_start
+		unsubs.push(
+			connection.select('review_start').subscribe((data) => {
+				if (!data) return;
 				try {
 					const event = JSON.parse(data) as {
 						type: 'review_start';
 						data: { agentCount: number; agents: { id: number; name: string }[] };
 					};
-					// Store agent list for display
+					console.log('[CouncilReviewPanel] review_start:', event);
 					agentList = event.data.agents;
 					// Initialize agent states
-					const newStates = new Map<number, AgentState>();
+					internalAgentStates = new Map();
 					for (const agent of event.data.agents) {
-						newStates.set(agent.id, {
+						internalAgentStates.set(agent.id, {
 							id: agent.id,
 							name: agent.name,
 							status: 'pending',
 							output: ''
 						});
 					}
-					agentStates = newStates;
-				} catch {
-					console.warn('[CouncilReviewPanel] Failed to parse review_start');
+					agentStates = new Map(internalAgentStates);
+				} catch (err) {
+					console.error('[CouncilReviewPanel] Failed to parse review_start:', err);
 				}
-			}
-		});
-		return unsub;
-	});
+			})
+		);
 
-	// Subscribe to agent_start
-	$effect(() => {
-		if (!connection) return;
-		const unsub = connection.select('agent_start').subscribe((data) => {
-			if (data) {
+		// Subscribe to agent_start
+		unsubs.push(
+			connection.select('agent_start').subscribe((data) => {
+				if (!data) return;
 				try {
 					const event = JSON.parse(data) as {
 						type: 'agent_start';
 						agentId: number;
 						agentName: string;
 					};
-					const newStates = new Map(agentStates);
-					const state = newStates.get(event.agentId);
-					if (state) {
-						state.status = 'streaming';
-					}
-					agentStates = newStates;
-				} catch {
-					console.warn('[CouncilReviewPanel] Failed to parse agent_start');
+					console.log('[CouncilReviewPanel] agent_start:', event.agentId, event.agentName);
+					updateAgentState(event.agentId, { status: 'streaming', name: event.agentName });
+				} catch (err) {
+					console.error('[CouncilReviewPanel] Failed to parse agent_start:', err);
 				}
-			}
-		});
-		return unsub;
-	});
+			})
+		);
 
-	// Subscribe to agent_delta
-	$effect(() => {
-		if (!connection) return;
-		const unsub = connection.select('agent_delta').subscribe((data) => {
-			if (data) {
+		// Subscribe to agent_delta
+		unsubs.push(
+			connection.select('agent_delta').subscribe((data) => {
+				if (!data) return;
 				try {
 					const event = JSON.parse(data) as {
 						type: 'agent_delta';
 						agentId: number;
 						data?: { delta?: string; accumulated?: string };
 					};
-					const newStates = new Map(agentStates);
-					const state = newStates.get(event.agentId);
+					const state = internalAgentStates.get(event.agentId);
 					if (state && event.data) {
 						const newOutput = event.data.accumulated || state.output + (event.data.delta || '');
 						state.output = newOutput;
-						console.log(
-							'[CouncilReviewPanel] agent_delta for',
-							event.agentId,
-							'- output length:',
-							newOutput.length
-						);
+						agentStates = new Map(internalAgentStates);
 					}
-					agentStates = newStates;
 				} catch (err) {
-					console.warn('[CouncilReviewPanel] Failed to parse agent_delta:', err);
+					console.error('[CouncilReviewPanel] Failed to parse agent_delta:', err);
 				}
-			}
-		});
-		return unsub;
-	});
+			})
+		);
 
-	// Subscribe to agent_complete
-	$effect(() => {
-		if (!connection) return;
-		const unsub = connection.select('agent_complete').subscribe((data) => {
-			if (data) {
+		// Subscribe to agent_complete
+		unsubs.push(
+			connection.select('agent_complete').subscribe((data) => {
+				if (!data) return;
 				try {
 					const event = JSON.parse(data) as {
 						type: 'agent_complete';
@@ -517,71 +535,55 @@
 						data?: AgentResult;
 					};
 					console.log(
-						'[CouncilReviewPanel] agent_complete for',
+						'[CouncilReviewPanel] agent_complete:',
 						event.agentId,
-						'- has output:',
-						!!event.data?.output,
-						'length:',
+						'output length:',
 						event.data?.output?.length || 0
 					);
-					const newStates = new Map(agentStates);
-					const state = newStates.get(event.agentId);
-					if (state && event.data) {
-						state.status = event.data.status;
-						// Always prefer the final output from agent_complete
-						if (event.data.output) {
-							state.output = event.data.output;
-						}
-						state.error = event.data.error;
+					if (event.data) {
+						updateAgentState(event.agentId, {
+							status: event.data.status,
+							output: event.data.output || undefined,
+							error: event.data.error
+						});
 					}
-					agentStates = newStates;
 				} catch (err) {
-					console.warn('[CouncilReviewPanel] Failed to parse agent_complete:', err);
+					console.error('[CouncilReviewPanel] Failed to parse agent_complete:', err);
 				}
-			}
-		});
-		return unsub;
-	});
+			})
+		);
 
-	// Subscribe to review_complete
-	$effect(() => {
-		if (!connection) return;
-		const unsub = connection.select('review_complete').subscribe((data) => {
-			if (data) {
+		// Subscribe to review_complete - IMPORTANT: This is the fallback that ensures outputs are displayed
+		unsubs.push(
+			connection.select('review_complete').subscribe((data) => {
+				console.log('[CouncilReviewPanel] review_complete raw data:', data);
+				if (!data) {
+					console.warn('[CouncilReviewPanel] review_complete received with no data');
+					return;
+				}
 				try {
 					const event = JSON.parse(data) as {
 						type: 'review_complete';
 						data: { results: AgentResult[]; summary: string };
 					};
-					console.log('[CouncilReviewPanel] review_complete received:', event);
+					console.log('[CouncilReviewPanel] review_complete parsed:', event);
+					console.log('[CouncilReviewPanel] results count:', event.data?.results?.length);
 
-					// Update agent states with final results from all agents
-					// This ensures outputs are displayed even if individual events were missed
-					const newStates = new Map(agentStates);
-					for (const result of event.data.results) {
-						const state = newStates.get(result.agentId);
-						if (state) {
-							// Always use the final output from the result if available
-							if (result.output) {
-								state.output = result.output;
-							}
-							state.status = result.status;
-							if (result.error) {
-								state.error = result.error;
-							}
-						} else {
-							// Agent wasn't in the initial list, add it
-							newStates.set(result.agentId, {
-								id: result.agentId,
-								name: result.agentName,
-								status: result.status,
-								output: result.output || '',
-								error: result.error
-							});
-						}
+					// Update agent states with final results - this is the authoritative source
+					for (const result of event.data.results || []) {
+						console.log(
+							'[CouncilReviewPanel] Processing result for agent',
+							result.agentId,
+							'- output length:',
+							result.output?.length || 0
+						);
+						updateAgentState(result.agentId, {
+							name: result.agentName,
+							status: result.status,
+							output: result.output || '',
+							error: result.error
+						});
 					}
-					agentStates = newStates;
-					console.log('[CouncilReviewPanel] Updated agentStates:', agentStates);
 
 					reviewSummary = event.data.summary;
 					uiState = 'complete';
@@ -589,56 +591,60 @@
 					// Notify parent with final results
 					if (oncomplete) {
 						oncomplete({
-							agentStates: agentStates,
+							agentStates: new Map(internalAgentStates),
 							summary: reviewSummary
 						});
 					}
 
+					// Close connection
 					if (connection) {
 						connection.close();
 						connection = null;
 					}
 				} catch (err) {
-					console.warn('[CouncilReviewPanel] Failed to parse review_complete:', err);
+					console.error('[CouncilReviewPanel] Failed to parse review_complete:', err);
+					console.error('[CouncilReviewPanel] Raw data:', data);
 				}
-			}
-		});
-		return unsub;
-	});
+			})
+		);
 
-	// Subscribe to error
-	$effect(() => {
-		if (!connection) return;
-		const unsub = connection.select('error').subscribe((data) => {
-			if (data) {
+		// Subscribe to error
+		unsubs.push(
+			connection.select('error').subscribe((data) => {
+				if (!data) return;
 				try {
 					const event = JSON.parse(data) as {
 						type: 'error';
 						agentId?: number;
 						data?: { message?: string };
 					};
+					console.log('[CouncilReviewPanel] error event:', event);
 					if (event.agentId !== undefined) {
 						// Agent-level error
-						const newStates = new Map(agentStates);
-						const state = newStates.get(event.agentId!);
-						if (state) {
-							state.status = 'error';
-							state.error = event.data?.message || 'Unknown error';
-						}
-						agentStates = newStates;
+						updateAgentState(event.agentId, {
+							status: 'error',
+							error: event.data?.message || 'Unknown error'
+						});
 					} else {
 						// Global error
 						errorMessage = event.data?.message || 'Unknown error';
 						uiState = 'error';
 					}
-				} catch {
-					console.warn('[CouncilReviewPanel] Failed to parse error');
+				} catch (err) {
+					console.error('[CouncilReviewPanel] Failed to parse error:', err);
 					errorMessage = 'Unknown error occurred';
 					uiState = 'error';
 				}
+			})
+		);
+
+		// Cleanup function
+		return () => {
+			console.log('[CouncilReviewPanel] Cleaning up all SSE subscriptions');
+			for (const unsub of unsubs) {
+				unsub();
 			}
-		});
-		return unsub;
+		};
 	});
 
 	function handleReset() {

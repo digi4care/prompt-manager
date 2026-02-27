@@ -104,6 +104,7 @@ Each task was committed atomically:
 10. **Fix: Validate all template variables** - `132c5f2` (fix)
 11. **Feature: Display linked prompt titles as agent names** - `c2dd04d` (feat)
 12. **Feature: Agent override modal and fullscreen editor** - `4ec5fef` (feat)
+13. **Fix: Correct prompt list parsing in override modal** - `8ee108e` (fix)
 
 ## Files Created/Modified
 
@@ -175,9 +176,17 @@ Each task was committed atomically:
 - **Files modified:** src/lib/components/council/council-review-panel.svelte
 - **Committed in:** 4ec5fef
 
+**7. [Rule 1 - Bug] Override modal not showing prompts list**
+
+- **Found during:** User checkpoint verification
+- **Issue:** API returns `{ data: { prompts: [...] } }` but component expected `{ data: [...] }`
+- **Fix:** Corrected to access `data.data.prompts` with fallback for different formats
+- **Files modified:** src/lib/components/council/council-review-panel.svelte
+- **Committed in:** 8ee108e
+
 ---
 
-**Total deviations:** 6 auto-fixed (2 bug, 2 blocking, 1 enhancement, 1 architectural)
+**Total deviations:** 7 auto-fixed (3 bug, 2 blocking, 1 enhancement, 1 architectural)
 **Impact on plan:** Major improvement - parallel council review aligns with user's vision of multi-perspective prompt evaluation.
 
 ## Issues Encountered

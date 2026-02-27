@@ -2,6 +2,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import ExecutionOverrides from './execution-overrides.svelte';
 	import ExecutionResult from './execution-result.svelte';
+	import ExecutionStream from './execution-stream.svelte';
 	import { cn } from '$lib/utils';
 	import Play from '@lucide/svelte/icons/play';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
@@ -17,6 +18,14 @@
 		usage: { inputTokens: number; outputTokens: number; totalTokens: number };
 		duration: { ms: number; seconds: number };
 		source: 'run' | 'prompt' | 'default';
+	}
+
+	// Streaming result from ExecutionStream
+	interface StreamResult {
+		content: string;
+		usage?: { inputTokens: number; outputTokens: number; totalTokens: number };
+		duration?: { ms: number; seconds: number };
+		model?: { providerId: string; modelId: string; displayName: string };
 	}
 
 	interface ErrorInfo {
@@ -56,8 +65,8 @@
 
 	let { promptId, content, functionType = 'executor', class: className = '' }: Props = $props();
 
-	// State machine
-	type ExecutionState = 'idle' | 'loading' | 'success' | 'error';
+	// State machine - now includes 'streaming' state
+	type ExecutionState = 'idle' | 'loading' | 'streaming' | 'success' | 'error';
 
 	let executionState = $state('idle') as ExecutionState;
 	let result = $state(null) as ExecutionResultData | null;
@@ -65,6 +74,9 @@
 	let overrides = $state({}) as RunOverrides;
 	let isLoadingDefaults = $state(true);
 	let defaultsLoadError = $state<string | null>(null);
+
+	// Streaming mode toggle - default to streaming
+	let useStreaming = $state(true);
 
 	// Model catalog
 	let allGroupedModels = $state<ProviderGroup[]>([]); // All available models
@@ -79,8 +91,8 @@
 	});
 
 	// Derived states
-	let isExecuting = $derived(executionState === 'loading');
-	let canExecute = $derived(executionState !== 'loading' && content.trim().length > 0);
+	let isExecuting = $derived(executionState === 'loading' || executionState === 'streaming');
+	let canExecute = $derived(!isExecuting && content.trim().length > 0);
 	let hasResult = $derived(executionState === 'success' && result !== null);
 	let hasError = $derived(executionState === 'error' && errorInfo !== null);
 
@@ -270,6 +282,9 @@
 		}
 	});
 
+	/**
+	 * Non-streaming execution via fetch
+	 */
 	async function handleExecute() {
 		if (!canExecute) return;
 
@@ -305,8 +320,57 @@
 		}
 	}
 
+	/**
+	 * Handle streaming start - sets state to streaming
+	 */
+	function handleStreamStart() {
+		executionState = 'streaming';
+		errorInfo = null;
+		result = null;
+	}
+
+	/**
+	 * Handle streaming completion - converts stream result to execution result
+	 */
+	function handleStreamComplete(streamResult: StreamResult) {
+		// Convert streaming result to ExecutionResultData format
+		result = {
+			content: streamResult.content,
+			model: streamResult.model || {
+				displayName: defaults.modelId,
+				providerId: defaults.modelId.split('/')[0],
+				modelId: defaults.modelId.split('/')[1]
+			},
+			usage: streamResult.usage || {
+				inputTokens: 0,
+				outputTokens: 0,
+				totalTokens: 0
+			},
+			duration: streamResult.duration || { ms: 0, seconds: 0 },
+			source: 'run' as const
+		};
+		executionState = 'success';
+	}
+
+	/**
+	 * Handle streaming error
+	 */
+	function handleStreamError(error: { message: string; code?: string }) {
+		errorInfo = {
+			message: error.message,
+			code: error.code
+		};
+		executionState = 'error';
+	}
+
 	function handleRetry() {
-		handleExecute();
+		if (useStreaming) {
+			// For streaming mode, retry is handled by ExecutionStream component
+			executionState = 'idle';
+			errorInfo = null;
+		} else {
+			handleExecute();
+		}
 	}
 
 	function handleReset() {
@@ -317,6 +381,14 @@
 
 	function handleOverridesChange(newOverrides: RunOverrides) {
 		overrides = newOverrides;
+	}
+
+	function toggleStreamingMode() {
+		useStreaming = !useStreaming;
+		// Reset state when switching modes
+		executionState = 'idle';
+		result = null;
+		errorInfo = null;
 	}
 </script>
 
@@ -364,49 +436,111 @@
 			</p>
 		{/if}
 
-		<!-- Execute button -->
-		<Button onclick={handleExecute} disabled={!canExecute} class="w-full">
-			{#if isExecuting}
-				<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-				Executing...
-			{:else}
-				<Play class="mr-2 h-4 w-4" />
-				Execute
-			{/if}
-		</Button>
+		<!-- Streaming mode toggle -->
+		<div class="flex items-center justify-between">
+			<label class="flex cursor-pointer items-center gap-2 text-sm">
+				<input
+					type="checkbox"
+					checked={useStreaming}
+					onchange={toggleStreamingMode}
+					class="h-4 w-4 rounded border-input"
+					disabled={isExecuting}
+				/>
+				<span class="text-muted-foreground">Stream output in real-time</span>
+			</label>
+		</div>
 
-		<!-- Error display -->
-		{#if hasError}
-			<div
-				class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950"
-			>
-				<div class="flex items-start gap-3">
-					<AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-					<div class="flex-1">
-						<p class="font-medium text-red-800 dark:text-red-200">{errorInfo?.message}</p>
-						{#if errorInfo?.recovery}
-							<p class="mt-1 text-sm text-red-600 dark:text-red-300">{errorInfo.recovery}</p>
-						{/if}
-						{#if errorInfo?.code}
-							<p class="mt-1 text-xs text-red-500 dark:text-red-400">
-								Error code: {errorInfo.code}
-							</p>
-						{/if}
+		<!-- Conditional rendering based on streaming mode -->
+		{#if useStreaming}
+			<!-- Streaming mode: ExecutionStream handles execution -->
+			{#if executionState === 'streaming'}
+				<!-- Streaming in progress - ExecutionStream shows its own UI -->
+				<ExecutionStream
+					{promptId}
+					{content}
+					{overrides}
+					oncomplete={handleStreamComplete}
+					onerror={handleStreamError}
+				/>
+			{:else if hasResult && result}
+				<!-- Streaming complete - show result -->
+				<ExecutionResult {result} />
+				<div class="flex justify-end">
+					<Button variant="outline" size="sm" onclick={handleReset}>Clear Result</Button>
+				</div>
+			{:else if hasError}
+				<!-- Streaming error -->
+				<div
+					class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950"
+				>
+					<div class="flex items-start gap-3">
+						<AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+						<div class="flex-1">
+							<p class="font-medium text-red-800 dark:text-red-200">{errorInfo?.message}</p>
+							{#if errorInfo?.code}
+								<p class="mt-1 text-xs text-red-500 dark:text-red-400">
+									Error code: {errorInfo.code}
+								</p>
+							{/if}
+						</div>
+					</div>
+					<div class="mt-3 flex gap-2">
+						<Button variant="outline" size="sm" onclick={handleRetry}>Retry</Button>
+						<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
 					</div>
 				</div>
-				<div class="mt-3 flex gap-2">
-					<Button variant="outline" size="sm" onclick={handleRetry}>Retry</Button>
-					<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
-				</div>
-			</div>
-		{/if}
+			{:else}
+				<!-- Idle state - show execute button that triggers streaming -->
+				<Button onclick={handleStreamStart} disabled={!canExecute} class="w-full">
+					<Play class="mr-2 h-4 w-4" />
+					Execute
+				</Button>
+			{/if}
+		{:else}
+			<!-- Non-streaming mode: original execution behavior -->
+			<Button onclick={handleExecute} disabled={!canExecute} class="w-full">
+				{#if isExecuting}
+					<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+					Executing...
+				{:else}
+					<Play class="mr-2 h-4 w-4" />
+					Execute
+				{/if}
+			</Button>
 
-		<!-- Success result -->
-		{#if hasResult && result}
-			<ExecutionResult {result} />
-			<div class="flex justify-end">
-				<Button variant="outline" size="sm" onclick={handleReset}>Clear Result</Button>
-			</div>
+			<!-- Error display -->
+			{#if hasError}
+				<div
+					class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950"
+				>
+					<div class="flex items-start gap-3">
+						<AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+						<div class="flex-1">
+							<p class="font-medium text-red-800 dark:text-red-200">{errorInfo?.message}</p>
+							{#if errorInfo?.recovery}
+								<p class="mt-1 text-sm text-red-600 dark:text-red-300">{errorInfo.recovery}</p>
+							{/if}
+							{#if errorInfo?.code}
+								<p class="mt-1 text-xs text-red-500 dark:text-red-400">
+									Error code: {errorInfo.code}
+								</p>
+							{/if}
+						</div>
+					</div>
+					<div class="mt-3 flex gap-2">
+						<Button variant="outline" size="sm" onclick={handleRetry}>Retry</Button>
+						<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Success result -->
+			{#if hasResult && result}
+				<ExecutionResult {result} />
+				<div class="flex justify-end">
+					<Button variant="outline" size="sm" onclick={handleReset}>Clear Result</Button>
+				</div>
+			{/if}
 		{/if}
 	{/if}
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
-	import { PromptEditor, PromptMetadata } from '$lib/components/prompts';
+	import { PromptEditor, PromptMetadata, TestRunnerPanel } from '$lib/components/prompts';
 	import PromptFrontmatterEditor from '$lib/components/prompts/prompt-frontmatter-editor.svelte';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
@@ -16,9 +16,11 @@
 		Keyboard,
 		CheckCircle2,
 		Loader2,
-		AlertCircle
+		AlertCircle,
+		FlaskConical
 	} from 'lucide-svelte';
 	import { cn } from '$lib/utils';
+	import { parseSnippetFrontmatter } from '$lib/opencode/frontmatter';
 	import { setupUnsavedChangesWarning } from '$lib/utils/unsaved-changes';
 	import { onMount } from 'svelte';
 
@@ -36,6 +38,7 @@
 	let llmProviders = $state<string[]>([]);
 	let content = $state('');
 	let frontmatterYaml = $state('');
+	let showTestRunner = $state(false);
 
 	onMount(() => {
 		title = data.prompt.title || '';
@@ -93,6 +96,10 @@
 
 		return 'significant';
 	});
+
+	// Extract variables from frontmatter for test runner
+	let parsedFrontmatter = $derived(parseSnippetFrontmatter(frontmatterYaml));
+	let snippetVariables = $derived(parsedFrontmatter.variables);
 
 	// Validation
 	function validateForm(): boolean {
@@ -619,6 +626,36 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 			</div>
 
 			<PromptFrontmatterEditor bind:frontmatterYaml />
+
+			<!-- Test Runner Section -->
+			<div class="rounded-lg border bg-card p-4">
+				<button
+					type="button"
+					onclick={() => (showTestRunner = !showTestRunner)}
+					class="flex w-full items-center justify-between text-left"
+				>
+					<div class="flex items-center gap-2">
+						<FlaskConical class="h-4 w-4 text-muted-foreground" />
+						<h3 class="text-sm font-semibold">Test Runner</h3>
+					</div>
+					{#if showTestRunner}
+						<ChevronUp class="h-4 w-4 text-muted-foreground" />
+					{:else}
+						<ChevronDown class="h-4 w-4 text-muted-foreground" />
+					{/if}
+				</button>
+
+				{#if showTestRunner}
+					<div class="mt-4">
+						<TestRunnerPanel
+							promptId={data.prompt.id}
+							template={content}
+							variables={snippetVariables}
+							functionType="executor"
+						/>
+					</div>
+				{/if}
+			</div>
 
 			<!-- Current Version Info -->
 			<div id="current-version-section" class="rounded-lg border bg-muted/50 p-4">

@@ -80,18 +80,21 @@
 		new Set(variables.filter((v) => v.required !== false).map((v) => v.name))
 	);
 
-	// Missing required variables for error display
+	// All variable names in template (extracted)
+	let templateVarNames = $derived(new Set(templateVars));
+
+	// Missing required variables from definitions
 	let missingRequired = $derived(
 		preview.missingVariables.filter((name) => requiredVarNames.has(name))
 	);
 
-	// Also include any unresolved template variables as missing if no definitions provided
-	let unresolvedVars = $derived(
-		preview.missingVariables.filter((name) => !variables.some((v) => v.name === name))
+	// Variables in template that have no value (regardless of definitions)
+	let emptyTemplateVars = $derived(
+		Array.from(templateVarNames).filter((name) => !values[name] || values[name].trim() === '')
 	);
 
 	// Combined missing variables for validation
-	let allMissing = $derived([...new Set([...missingRequired, ...unresolvedVars])]);
+	let allMissing = $derived([...new Set([...missingRequired, ...emptyTemplateVars])]);
 
 	// Has any variables to show
 	let hasVariables = $derived(allVarNames().length > 0);

@@ -153,7 +153,7 @@
 				.map((provider) => ({
 					...provider,
 					models: provider.models
-						.filter((model) => isModelAllowedByPolicy(model.id, scope))
+						.filter((model) => isModelAllowedByPolicy(model.id, scope, provider.providerId))
 						.map((model) => ({
 							...model,
 							variantOptions: filterAllowedVariants(model.id, model.variantOptions)
@@ -238,22 +238,52 @@
 		}
 	}
 
-	function isModelAllowedByPolicy(modelId: string, scope: PolicyScope): boolean {
+	/**
+	 * Check if a model is allowed by AI Policy
+	 * Supports both formats: 'modelId' and 'providerId/modelId'
+	 */
+	function isModelAllowedByPolicy(
+		modelId: string,
+		scope: PolicyScope,
+		providerId?: string
+	): boolean {
 		if (!hasAllowlist && !hasPolicyMatrix) {
 			return true;
 		}
 
-		if (hasAllowlist && !allowedModelSet.has(modelId)) {
-			return false;
+		// Build full model ID for comparison (provider/model format)
+		const fullModelId = providerId ? `${providerId}/${modelId}` : modelId;
+
+		// Check against allowlist - try both formats
+		if (hasAllowlist) {
+			const isInAllowlist =
+				allowedModelSet.has(modelId) ||
+				allowedModelSet.has(fullModelId) ||
+				// Also check if any allowlist entry ends with /modelId (partial match)
+				Array.from(allowedModelSet).some(
+					(allowed) => allowed.endsWith(`/${modelId}`) || allowed === modelId
+				);
+
+			if (!isInAllowlist) {
+				return false;
+			}
 		}
 
 		if (!hasPolicyMatrix) {
 			return true;
 		}
 
-		const scopeMatrix = allowedModelMatrix[modelId];
+		// Check scope matrix - try both formats
+		const scopeMatrix = allowedModelMatrix[modelId] || allowedModelMatrix[fullModelId];
 		if (!scopeMatrix) {
-			return false;
+			// Also try partial match in matrix keys
+			const matchingKey = Object.keys(allowedModelMatrix).find(
+				(key) => key.endsWith(`/${modelId}`) || key === modelId
+			);
+			if (!matchingKey) {
+				return false;
+			}
+			return Boolean(allowedModelMatrix[matchingKey]?.[scope]);
 		}
 
 		return Boolean(scopeMatrix[scope]);
@@ -343,7 +373,12 @@
 				return requiredError;
 			}
 
-			if (!isModelAllowedByPolicy(modelId, scope)) {
+			// Extract provider and model from full ID (format: provider/model)
+			const slashIndex = modelId.indexOf('/');
+			const providerId = slashIndex !== -1 ? modelId.substring(0, slashIndex) : undefined;
+			const modelOnly = slashIndex !== -1 ? modelId.substring(slashIndex + 1) : modelId;
+
+			if (!isModelAllowedByPolicy(modelOnly, scope, providerId)) {
 				return `Model is not allowed by AI Policy for ${getScopeLabel(scope)}`;
 			}
 

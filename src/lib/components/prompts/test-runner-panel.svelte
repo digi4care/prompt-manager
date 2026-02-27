@@ -4,6 +4,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
 	import ExecutionResult from './execution-result.svelte';
+	import { CouncilCorrectPanel } from '$lib/components/council';
 	import Play from 'lucide-svelte/icons/play';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import AlertCircle from 'lucide-svelte/icons/alert-circle';
@@ -85,6 +86,10 @@
 
 	// Has any variables to show
 	let hasVariables = $derived(allVarNames().length > 0);
+
+	// Execution mode toggle - single or council
+	type ExecutionMode = 'single' | 'council';
+	let executionMode = $state<ExecutionMode>('single');
 
 	// State machine for execution
 	type ExecutionState = 'idle' | 'loading' | 'success' | 'error';
@@ -174,6 +179,36 @@
 		</div>
 	{/if}
 
+	<!-- Execution Mode Toggle -->
+	<div class="mb-4 flex items-center gap-4">
+		<label class="flex cursor-pointer items-center gap-2 text-sm">
+			<input
+				type="radio"
+				name="mode-{promptId}"
+				value="single"
+				bind:group={executionMode}
+				class="h-4 w-4"
+			/>
+			<span>Single Execution</span>
+		</label>
+		<label class="flex cursor-pointer items-center gap-2 text-sm">
+			<input
+				type="radio"
+				name="mode-{promptId}"
+				value="council"
+				bind:group={executionMode}
+				class="h-4 w-4"
+			/>
+			<span>Council Correct</span>
+		</label>
+	</div>
+
+	{#if executionMode === 'council'}
+		<p class="mb-2 text-xs text-muted-foreground">
+			Council mode runs producer → reviewer → fixer workflow up to 3 rounds
+		</p>
+	{/if}
+
 	<!-- Preview Output -->
 	<Card class="mb-4 p-4">
 		<div class="mb-2 flex items-center justify-between">
@@ -201,50 +236,56 @@
 			class="max-h-48 overflow-auto rounded bg-muted/50 p-3 font-mono text-sm whitespace-pre-wrap">{preview.content}</pre>
 	</Card>
 
-	<!-- Execute button -->
-	<Button onclick={handleExecute} disabled={!canExecute} class="w-full">
-		{#if isExecuting}
-			<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-			Executing...
-		{:else}
-			<Play class="mr-2 h-4 w-4" />
-			Execute
-		{/if}
-	</Button>
+	<!-- Conditional execution based on mode -->
+	{#if executionMode === 'single'}
+		<!-- Execute button -->
+		<Button onclick={handleExecute} disabled={!canExecute} class="w-full">
+			{#if isExecuting}
+				<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+				Executing...
+			{:else}
+				<Play class="mr-2 h-4 w-4" />
+				Execute
+			{/if}
+		</Button>
 
-	<!-- Error display -->
-	{#if hasError}
-		<div
-			class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950"
-		>
-			<div class="flex items-start gap-3">
-				<AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-				<div class="flex-1">
-					<p class="font-medium text-red-800 dark:text-red-200">{errorInfo?.message}</p>
-					{#if errorInfo?.recovery}
-						<p class="mt-1 text-sm text-red-600 dark:text-red-300">{errorInfo.recovery}</p>
-					{/if}
-					{#if errorInfo?.code}
-						<p class="mt-1 text-xs text-red-500 dark:text-red-400">
-							Error code: {errorInfo.code}
-						</p>
-					{/if}
+		<!-- Error display -->
+		{#if hasError}
+			<div
+				class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950"
+			>
+				<div class="flex items-start gap-3">
+					<AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+					<div class="flex-1">
+						<p class="font-medium text-red-800 dark:text-red-200">{errorInfo?.message}</p>
+						{#if errorInfo?.recovery}
+							<p class="mt-1 text-sm text-red-600 dark:text-red-300">{errorInfo.recovery}</p>
+						{/if}
+						{#if errorInfo?.code}
+							<p class="mt-1 text-xs text-red-500 dark:text-red-400">
+								Error code: {errorInfo.code}
+							</p>
+						{/if}
+					</div>
+				</div>
+				<div class="mt-3 flex gap-2">
+					<Button variant="outline" size="sm" onclick={handleRetry}>Retry</Button>
+					<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
 				</div>
 			</div>
-			<div class="mt-3 flex gap-2">
-				<Button variant="outline" size="sm" onclick={handleRetry}>Retry</Button>
-				<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
-			</div>
-		</div>
-	{/if}
+		{/if}
 
-	<!-- Success result -->
-	{#if hasResult && result}
-		<div class="mt-4">
-			<ExecutionResult {result} />
-			<div class="mt-3 flex justify-end">
-				<Button variant="outline" size="sm" onclick={handleReset}>Clear Result</Button>
+		<!-- Success result -->
+		{#if hasResult && result}
+			<div class="mt-4">
+				<ExecutionResult {result} />
+				<div class="mt-3 flex justify-end">
+					<Button variant="outline" size="sm" onclick={handleReset}>Clear Result</Button>
+				</div>
 			</div>
-		</div>
+		{/if}
+	{:else}
+		<!-- Council Correct Mode -->
+		<CouncilCorrectPanel {promptId} content={preview.content} />
 	{/if}
 </div>

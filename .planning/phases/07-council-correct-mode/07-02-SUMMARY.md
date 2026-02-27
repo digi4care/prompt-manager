@@ -77,6 +77,7 @@ Each task was committed atomically:
 2. **Task 2: Integrate council panel into test runner** - `e29006e` (feat)
 3. **Fix: Svelte 5 bind:value error** - `ee8619f` (fix)
 4. **Refactor: Move test runner to main content** - `8834955` (refactor)
+5. **Feature: Add elapsed time indicator** - `d2b9a23` (feat)
 
 ## Files Created/Modified
 
@@ -123,10 +124,19 @@ Each task was committed atomically:
 - **Verification:** Test runner now displays full-width in main content area
 - **Committed in:** 8834955
 
+**4. [Rule 2 - Missing Critical] No feedback during long-running steps**
+
+- **Found during:** User checkpoint feedback - reviewer step takes long
+- **Issue:** No indication of elapsed time or progress during long AI calls
+- **Fix:** Added elapsed time counter and contextual messages (Connecting, Waiting, Processing, Still working) to council panel
+- **Files modified:** src/lib/components/council/council-correct-panel.svelte
+- **Verification:** Council panel now shows elapsed time and contextual status during execution
+- **Committed in:** d2b9a23
+
 ---
 
-**Total deviations:** 3 auto-fixed (1 bug, 2 blocking)
-**Impact on plan:** All auto-fixes improved UX and fixed blocking issues. Layout change was user-requested enhancement.
+**Total deviations:** 4 auto-fixed (1 bug, 2 blocking, 1 enhancement)
+**Impact on plan:** All auto-fixes improved UX and fixed blocking issues. Layout change was user-requested enhancement. Elapsed time indicator improves feedback during long-running steps.
 
 ## Issues Encountered
 

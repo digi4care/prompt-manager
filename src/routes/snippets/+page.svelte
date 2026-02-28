@@ -251,17 +251,6 @@
 
 	<!-- Sidebar -->
 	<div class="w-64 shrink-0 space-y-6">
-		<!-- Quick Actions -->
-		<div class="space-y-3">
-			<h3 class="font-medium">Quick Actions</h3>
-			<div class="space-y-2">
-				<Button variant="outline" class="w-full justify-start" onclick={handleCreate}>
-					<Plus class="mr-2 h-4 w-4" />
-					New Snippet
-				</Button>
-			</div>
-		</div>
-
 		<!-- Stats -->
 		<div class="space-y-3 border-t pt-6">
 			<h3 class="font-medium">Statistics</h3>

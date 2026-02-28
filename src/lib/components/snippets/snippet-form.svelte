@@ -47,15 +47,28 @@
 		oncancel
 	}: Props = $props();
 
-	// Form state
-	let title = $state(initialData?.title || '');
-	let description = $state(initialData?.description || '');
-	let content = $state(initialData?.content || '');
-	let categoryId = $state(initialData?.categoryId?.toString() || '');
-	let selectedTagIds = $state<number[]>(initialData?.tagIds || []);
+	// Form state - initialized from initialData
+	let title = $state('');
+	let description = $state('');
+	let content = $state('');
+	let categoryId = $state('');
+	let selectedTagIds = $state<number[]>([]);
 	let isSaving = $state(false);
 	let titleError = $state<string | null>(null);
 	let formError = $state<string | null>(null);
+	let isInitialized = $state(false);
+
+	// Sync form state when initialData changes (handles SSR and async loading)
+	$effect(() => {
+		if (initialData && !isInitialized) {
+			title = initialData.title || '';
+			description = initialData.description || '';
+			content = initialData.content || '';
+			categoryId = initialData.categoryId?.toString() || '';
+			selectedTagIds = initialData.tagIds || [];
+			isInitialized = true;
+		}
+	});
 
 	// Change detection - compare current form state to initial
 	let hasChanges = $derived(() => {
@@ -207,7 +220,7 @@
 		>
 			<option value="">Select a category</option>
 			{#each categories as category}
-				<option value={category.id}>{category.name}</option>
+				<option value={String(category.id)}>{category.name}</option>
 			{/each}
 		</select>
 	</div>

@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Settings-first execution — Every prompt execution resolves model/temperature/parameters through a deterministic precedence chain.
-**Current focus:** Phase 8 - Snippet Library (in progress)
+**Current focus:** Phase 9 - Council Debate Mode (in progress)
 
 ## Current Position
 
-Phase: 8 of 11 (Snippet Library) - COMPLETE
-Plan: 6 of 6 in current phase
-Status: Plan 08-06 complete - Dropdown styling fix, admin taxonomy management UI
-Last activity: 2026-02-28 — Plan 08-06: Gap closure fixes for snippet library
+Phase: 9 of 11 (Council Debate Mode) - In Progress
+Plan: 1 of 2 in current phase
+Status: Plan 09-01 complete - Council Debate backend with parallel agent execution
+Last activity: 2026-02-28 — Plan 09-01: Council Debate backend infrastructure
 
-Progress: [███████████] 100%
+Progress: [████████████] ~85%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 19
+- Total plans completed: 20
 - Average duration: 12min
-- Total execution time: 3.7 hours
+- Total execution time: 3.8 hours
 
 **By Phase:**
 
@@ -36,10 +36,11 @@ Progress: [███████████] 100%
 | 06-streaming-execution | 2     | 27min  | 13.5min  |
 | 07-council-correct     | 2     | 32min  | 16min    |
 | 08-snippet-library     | 6     | 75min  | 12.5min  |
+| 09-council-debate-mode | 1     | 7min   | 7min     |
 
 **Recent Trend:**
 
-- Last 5 plans: 15min, 15min, 9min, 8min, 5min
+- Last 5 plans: 9min, 8min, 5min, 5min, 7min
 - Trend: Consistent execution with established patterns
   | Phase 07-council-correct-mode P02 | 43 | 3 tasks | 4 files |
   | Phase 08 P01 | 8 | 3 tasks | 4 files |
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 08-06]: Single page with tabs for Categories and Tags (simpler than separate pages) — Admin taxonomy management
 - [Phase 08-06]: Inline editing for categories without modal — Faster UX for simple name/description edits
 - [Phase 08-06]: Native select with pr-8 padding for dropdown caret — Prevents text overlap with native arrow
+- [Phase 09-01]: Reuse councilRuns table for debate persistence — No new table needed, rounds stored as JSON in steps column
+- [Phase 09-01]: 3 locked debate archetypes — Proponent, Skeptic, Pragmatist with predefined prompts per user decision
+- [Phase 09-01]: Synthesizer uses 'judge' function type — Consistent with review/evaluation patterns
 
 ### Pending Todos
 
@@ -126,8 +130,25 @@ Phases likely needing deeper research during planning:
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped At: Phase 8 Plan 06 complete - Gap closure fixes, admin taxonomy UI
+Stopped At: Phase 9 Plan 01 complete - Council Debate backend infrastructure
 Resume file: None
+
+## Phase 9 Implementation Details
+
+### Plan 09-01: Council Debate Backend
+
+**Files Created:**
+
+- `src/lib/server/services/council-debate.service.ts` - Debate orchestrator with 3-round parallel execution
+- `src/routes/api/council/debate/+server.ts` - SSE streaming endpoint
+
+**Key Patterns:**
+
+- Async generator pattern for parallel agent execution
+- Round-robin event processing for simultaneous streams
+- Cumulative context building across rounds (buildDebateContextForRound)
+- JSON parsing with fallback for LLM synthesis output (parseSynthesisJson)
+- Reuse councilRuns table for state persistence
 
 ## Phase 8 Implementation Details
 

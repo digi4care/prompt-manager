@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { ActionData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import { showSuccess, showError } from '$lib/stores/toast';
 	import { Plus, Pencil, Trash2, Loader2, X, Check } from 'lucide-svelte';
+	import { enhance } from '$app/forms';
 
 	interface Category {
 		id: number;
@@ -18,7 +20,7 @@
 		name: string;
 	}
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	// State
 	let activeTab = $state<'categories' | 'tags'>('categories');
@@ -45,41 +47,49 @@
 	let deleteTarget = $state<{ type: 'category' | 'tag'; id: number; name: string } | null>(null);
 	let isDeleting = $state(false);
 
-	// Category CRUD
-	async function addCategory() {
-		if (!newCategoryName.trim()) return;
-
-		isAddingCategory = true;
-		try {
-			const response = await fetch('/api/admin/snippet-categories', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					name: newCategoryName.trim(),
-					description: newCategoryDescription.trim() || null,
-					sortOrder: newCategorySortOrder
-				})
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to create category');
+	// Handle form action responses
+	$effect(() => {
+		if (form?.success && form.action) {
+			if (form.action === 'createCategory' && form.category) {
+				categories = [...categories, form.category as Category].sort(
+					(a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)
+				);
+				newCategoryName = '';
+				newCategoryDescription = '';
+				newCategorySortOrder = 0;
+				showSuccess('Category created!');
+			} else if (form.action === 'updateCategory' && form.category) {
+				categories = categories
+					.map((c) => (c.id === form.category!.id ? (form.category as Category) : c))
+					.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+				editingCategoryId = null;
+				showSuccess('Category updated!');
+			} else if (form.action === 'deleteCategory' && form.deletedId !== undefined) {
+				categories = categories.filter((c) => c.id !== form.deletedId);
+				showSuccess('Category deleted!');
+			} else if (form.action === 'createTag' && form.tag) {
+				tags = [...tags, form.tag as Tag].sort((a, b) => a.name.localeCompare(b.name));
+				newTagName = '';
+				showSuccess('Tag created!');
+			} else if (form.action === 'deleteTag' && form.deletedId !== undefined) {
+				tags = tags.filter((t) => t.id !== form.deletedId);
+				showSuccess('Tag deleted!');
 			}
-
-			const newCategory = await response.json();
-			categories = [...categories, newCategory].sort(
-				(a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)
-			);
-			newCategoryName = '';
-			newCategoryDescription = '';
-			newCategorySortOrder = 0;
-			showSuccess('Category created!');
-		} catch (err) {
-			showError(err instanceof Error ? err.message : 'Failed to create category');
-		} finally {
-			isAddingCategory = false;
 		}
-	}
+		if (form?.error && !form.errors) {
+			showError(form.error);
+		}
+		if (form?.errors) {
+			const firstError = Object.values(form.errors.fieldErrors || {}).flat()[0];
+			if (firstError) showError(firstError);
+		}
+	});
+
+	// Update local data when server data changes
+	$effect(() => {
+		categories = data.categories;
+		tags = data.tags;
+	});
 
 	function startEditCategory(category: Category) {
 		editingCategoryId = category.id;
@@ -95,94 +105,45 @@
 		editCategorySortOrder = 0;
 	}
 
-	async function saveCategory(id: number) {
-		if (!editCategoryName.trim()) return;
-
-		savingCategoryId = id;
-		try {
-			const response = await fetch(`/api/admin/snippet-categories/${id}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					name: editCategoryName.trim(),
-					description: editCategoryDescription.trim() || null,
-					sortOrder: editCategorySortOrder
-				})
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to update category');
-			}
-
-			const result = await response.json();
-			categories = categories
-				.map((c) => (c.id === id ? { ...c, ...result.data } : c))
-				.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
-			editingCategoryId = null;
-			showSuccess('Category updated!');
-		} catch (err) {
-			showError(err instanceof Error ? err.message : 'Failed to update category');
-		} finally {
-			savingCategoryId = null;
-		}
-	}
-
 	async function confirmDelete() {
 		if (!deleteTarget) return;
 
 		isDeleting = true;
+
+		const formData = new FormData();
+		formData.append('id', String(deleteTarget.id));
+
 		try {
-			const response = await fetch(`/api/admin/snippet-${deleteTarget.type}s/${deleteTarget.id}`, {
-				method: 'DELETE'
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.message || `Failed to delete ${deleteTarget.type}`);
-			}
-
-			if (deleteTarget.type === 'category') {
-				categories = categories.filter((c) => c.id !== deleteTarget.id);
-			} else {
-				tags = tags.filter((t) => t.id !== deleteTarget.id);
-			}
-			showSuccess(
-				`${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)} deleted!`
+			const response = await fetch(
+				`/admin/snippets?/delete${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)}`,
+				{
+					method: 'POST',
+					body: formData
+				}
 			);
+
+			if (response.ok) {
+				const result = await response.json();
+				if (result.type === 'success') {
+					if (deleteTarget.type === 'category') {
+						categories = categories.filter((c) => c.id !== deleteTarget.id);
+					} else {
+						tags = tags.filter((t) => t.id !== deleteTarget.id);
+					}
+					showSuccess(
+						`${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)} deleted!`
+					);
+				} else if (result.type === 'failure') {
+					showError(result.data?.error || `Failed to delete ${deleteTarget.type}`);
+				}
+			} else {
+				showError(`Failed to delete ${deleteTarget.type}`);
+			}
 		} catch (err) {
 			showError(err instanceof Error ? err.message : `Failed to delete ${deleteTarget?.type}`);
 		} finally {
 			isDeleting = false;
 			deleteTarget = null;
-		}
-	}
-
-	// Tag CRUD
-	async function addTag() {
-		if (!newTagName.trim()) return;
-
-		isAddingTag = true;
-		try {
-			const response = await fetch('/api/admin/snippet-tags', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: newTagName.trim() })
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to create tag');
-			}
-
-			const newTag = await response.json();
-			tags = [...tags, newTag].sort((a, b) => a.name.localeCompare(b.name));
-			newTagName = '';
-			showSuccess('Tag created!');
-		} catch (err) {
-			showError(err instanceof Error ? err.message : 'Failed to create tag');
-		} finally {
-			isAddingTag = false;
 		}
 	}
 </script>
@@ -225,24 +186,28 @@
 			<!-- Add Category Form -->
 			<div class="rounded-lg border bg-card p-4">
 				<h3 class="mb-3 text-sm font-semibold">Add New Category</h3>
-				<div class="grid gap-3 md:grid-cols-4">
+				<form method="POST" action="?/createCategory" use:enhance class="grid gap-3 md:grid-cols-4">
 					<Input
+						name="name"
 						placeholder="Category name"
 						bind:value={newCategoryName}
 						disabled={isAddingCategory}
+						required
 					/>
 					<Input
+						name="description"
 						placeholder="Description (optional)"
 						bind:value={newCategoryDescription}
 						disabled={isAddingCategory}
 					/>
 					<Input
+						name="sortOrder"
 						type="number"
 						placeholder="Sort order"
-						bind:value={newCategorySortOrder}
+						value={newCategorySortOrder}
 						disabled={isAddingCategory}
 					/>
-					<Button onclick={addCategory} disabled={isAddingCategory || !newCategoryName.trim()}>
+					<Button type="submit" disabled={isAddingCategory || !newCategoryName.trim()}>
 						{#if isAddingCategory}
 							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
 						{:else}
@@ -250,7 +215,7 @@
 						{/if}
 						Add
 					</Button>
-				</div>
+				</form>
 			</div>
 
 			<!-- Categories List -->
@@ -270,19 +235,28 @@
 								{#if editingCategoryId === category.id}
 									<!-- Edit Mode -->
 									<td class="px-4 py-3">
-										<Input
-											bind:value={editCategoryName}
-											disabled={savingCategoryId === category.id}
-										/>
+										<form method="POST" action="?/updateCategory" use:enhance class="contents">
+											<input type="hidden" name="id" value={category.id} />
+											<Input
+												name="name"
+												bind:value={editCategoryName}
+												disabled={savingCategoryId === category.id}
+												required
+											/>
+										</form>
 									</td>
 									<td class="px-4 py-3">
 										<Input
+											form="edit-form-{category.id}"
+											name="description"
 											bind:value={editCategoryDescription}
 											disabled={savingCategoryId === category.id}
 										/>
 									</td>
 									<td class="px-4 py-3 text-center">
 										<Input
+											form="edit-form-{category.id}"
+											name="sortOrder"
 											type="number"
 											bind:value={editCategorySortOrder}
 											disabled={savingCategoryId === category.id}
@@ -291,18 +265,30 @@
 									</td>
 									<td class="px-4 py-3">
 										<div class="flex justify-end gap-2">
-											<Button
-												size="sm"
-												variant="default"
-												onclick={() => saveCategory(category.id)}
-												disabled={savingCategoryId === category.id}
+											<form
+												id="edit-form-{category.id}"
+												method="POST"
+												action="?/updateCategory"
+												use:enhance
+												class="contents"
 											>
-												{#if savingCategoryId === category.id}
-													<Loader2 class="h-4 w-4 animate-spin" />
-												{:else}
-													<Check class="h-4 w-4" />
-												{/if}
-											</Button>
+												<input type="hidden" name="id" value={category.id} />
+												<input type="hidden" name="name" value={editCategoryName} />
+												<input type="hidden" name="description" value={editCategoryDescription} />
+												<input type="hidden" name="sortOrder" value={editCategorySortOrder} />
+												<Button
+													type="submit"
+													size="sm"
+													variant="default"
+													disabled={savingCategoryId === category.id}
+												>
+													{#if savingCategoryId === category.id}
+														<Loader2 class="h-4 w-4 animate-spin" />
+													{:else}
+														<Check class="h-4 w-4" />
+													{/if}
+												</Button>
+											</form>
 											<Button
 												size="sm"
 												variant="outline"
@@ -363,14 +349,16 @@
 			<!-- Add Tag Form -->
 			<div class="rounded-lg border bg-card p-4">
 				<h3 class="mb-3 text-sm font-semibold">Add New Tag</h3>
-				<div class="flex gap-3">
+				<form method="POST" action="?/createTag" use:enhance class="flex gap-3">
 					<Input
+						name="name"
 						placeholder="Tag name"
 						bind:value={newTagName}
 						disabled={isAddingTag}
 						class="max-w-sm flex-1"
+						required
 					/>
-					<Button onclick={addTag} disabled={isAddingTag || !newTagName.trim()}>
+					<Button type="submit" disabled={isAddingTag || !newTagName.trim()}>
 						{#if isAddingTag}
 							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
 						{:else}
@@ -378,7 +366,7 @@
 						{/if}
 						Add
 					</Button>
-				</div>
+				</form>
 			</div>
 
 			<!-- Tags List -->

@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 ## Current Position
 
 Phase: 8 of 11 (Snippet Library) - IN PROGRESS (Gap Closure)
-Plan: 4 of 6 in current phase
-Status: Plan 08-04 complete - Admin-controlled categories/tags with taxonomy validation
-Last activity: 2026-02-28 — Plan 08-04: Snippet taxonomy with admin APIs, validation, unique titles
+Plan: 5 of 6 in current phase
+Status: Plan 08-05 complete - Form validation, loading states, toast notifications
+Last activity: 2026-02-28 — Plan 08-05: Toast system, SnippetForm component, ConfirmDialog
 
 Progress: [███████████] 100%
 
@@ -20,9 +20,9 @@ Progress: [███████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 12min
-- Total execution time: 3.4 hours
+- Total execution time: 3.6 hours
 
 **By Phase:**
 
@@ -35,7 +35,7 @@ Progress: [███████████] 100%
 | 05-test-runner-ui      | 2     | 20min  | 10min    |
 | 06-streaming-execution | 2     | 27min  | 13.5min  |
 | 07-council-correct     | 2     | 32min  | 16min    |
-| 08-snippet-library     | 1     | 8min   | 8min     |
+| 08-snippet-library     | 5     | 70min  | 14min    |
 
 **Recent Trend:**
 
@@ -97,6 +97,9 @@ Recent decisions affecting current work:
 - [Phase 08-02]: Tags input as comma-separated string in forms — Simpler UX than tag input component for v1
 - [Phase 08-04]: Integrated taxonomy methods into snippets.service.ts instead of separate service — Cleaner organization since methods are closely related
 - [Phase 08-04]: SnippetWithTags type includes categoryName and tagsList for UI convenience — Avoids joins in components
+- [Phase 08-05]: Used existing shadcn-svelte toast instead of new system — Wrapper provides simpler API
+- [Phase 08-05]: JSON.stringify change detection for hasChanges — Simple approach, works for forms
+- [Phase 08-05]: Stay on edit page after save (no redirect) — Allows multiple saves in one session
 
 ### Pending Todos
 
@@ -120,7 +123,7 @@ Phases likely needing deeper research during planning:
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped At: Phase 8 Plan 04 complete - Snippet taxonomy
+Stopped At: Phase 8 Plan 05 complete - Form validation and UX feedback
 Resume file: None
 
 ## Phase 8 Implementation Details
@@ -149,6 +152,29 @@ Resume file: None
 - API validation against admin-defined lists
 - Unique title constraint with 409 Conflict response
 - Dropdowns in forms instead of freeform text
+
+### Plan 08-05: Form Validation and UX Feedback (Gap Closure)
+
+**Files Created:**
+
+- `src/lib/stores/toast.ts` - Convenience wrapper for shadcn-svelte toast
+- `src/lib/components/snippets/snippet-form.svelte` - Reusable form with validation states
+- `src/lib/components/ConfirmDialog.svelte` - Reusable confirmation dialog
+
+**Files Modified:**
+
+- `src/lib/components/snippets/index.ts` - Export SnippetForm component
+- `src/routes/snippets/new/+page.svelte` - Use SnippetForm with toast on create
+- `src/routes/snippets/[id]/edit/+page.svelte` - Use SnippetForm with toast on update
+- `src/routes/snippets/[id]/+page.svelte` - Use ConfirmDialog with toast on delete
+
+**Key Patterns:**
+
+- Toast notifications for all user actions (success/error)
+- Change detection via JSON.stringify comparison
+- Save button disabled when no changes or while saving
+- Loading states during save/delete operations
+- Confirmation dialog for destructive actions
 
 ### Plan 08-02: Snippet Library UI
 

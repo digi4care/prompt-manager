@@ -8,7 +8,7 @@ import {
 	getAllTags
 } from '$lib/server/services/snippets.service';
 import { z } from 'zod';
-import { optionalAuthenticateRequest, authenticateRequest } from '$lib/server/auth/jwt';
+import { optionalAuthenticateRequest, authenticateWithBetterAuth } from '$lib/server/auth/jwt';
 
 const createSnippetSchema = z.object({
 	title: z.string().min(1).max(200),
@@ -60,7 +60,7 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	// Require authentication for creating snippets
-	const user = authenticateRequest(event);
+	const user = authenticateWithBetterAuth(event);
 
 	const parsed = createSnippetSchema.safeParse(data);
 	if (!parsed.success) {

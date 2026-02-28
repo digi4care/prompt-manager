@@ -8,7 +8,7 @@ import {
 	snippetTagAssignments
 } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
 import { z } from 'zod';
 
 export const load: PageServerLoad = async () => {
@@ -46,7 +46,7 @@ const createTagSchema = z.object({
 export const actions: Actions = {
 	// Create a new category
 	createCategory: async (event) => {
-		const user = authenticateRequest(event);
+		const user = authenticateWithBetterAuth(event);
 		const formData = await event.request.formData();
 
 		const parsed = createCategorySchema.safeParse(Object.fromEntries(formData));
@@ -98,7 +98,7 @@ export const actions: Actions = {
 
 	// Update a category
 	updateCategory: async (event) => {
-		const user = authenticateRequest(event);
+		const user = authenticateWithBetterAuth(event);
 		const formData = await event.request.formData();
 
 		const parsed = updateCategorySchema.safeParse(Object.fromEntries(formData));
@@ -167,7 +167,7 @@ export const actions: Actions = {
 
 	// Delete a category
 	deleteCategory: async (event) => {
-		const user = authenticateRequest(event);
+		const user = authenticateWithBetterAuth(event);
 		const formData = await event.request.formData();
 		const id = parseInt(formData.get('id') as string);
 
@@ -213,7 +213,7 @@ export const actions: Actions = {
 
 	// Create a new tag
 	createTag: async (event) => {
-		const user = authenticateRequest(event);
+		const user = authenticateWithBetterAuth(event);
 		const formData = await event.request.formData();
 
 		const parsed = createTagSchema.safeParse(Object.fromEntries(formData));
@@ -258,7 +258,7 @@ export const actions: Actions = {
 
 	// Delete a tag
 	deleteTag: async (event) => {
-		const user = authenticateRequest(event);
+		const user = authenticateWithBetterAuth(event);
 		const formData = await event.request.formData();
 		const id = parseInt(formData.get('id') as string);
 

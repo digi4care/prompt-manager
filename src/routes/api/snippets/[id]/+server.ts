@@ -8,6 +8,7 @@ import {
 	getAllCategories,
 	getAllTags
 } from '$lib/server/services/snippets.service';
+import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
 import { z } from 'zod';
 
 const updateSnippetSchema = z.object({
@@ -41,7 +42,11 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 };
 
-export const PATCH: RequestHandler = async ({ params, request }) => {
+export const PATCH: RequestHandler = async (event) => {
+	const { params, request } = event;
+
+	// Require authentication for updating snippets
+	authenticateWithBetterAuth(event);
 	const id = parseInt(params.id);
 	if (isNaN(id)) {
 		throw error(400, JSON.stringify({ message: 'Invalid snippet ID', errors: null }));
@@ -117,7 +122,11 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 	}
 };
 
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async (event) => {
+	const { params } = event;
+
+	// Require authentication for deleting snippets
+	authenticateWithBetterAuth(event);
 	const id = parseInt(params.id);
 	if (isNaN(id)) {
 		throw error(400, JSON.stringify({ message: 'Invalid snippet ID', errors: null }));

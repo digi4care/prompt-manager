@@ -8,6 +8,116 @@ import {
 	validateSettings
 } from './validate-settings';
 
+// ============================================================================
+// AUTO-DISCOVERY PATTERN
+// ============================================================================
+// Discovers existing OpenCode servers instead of always spawning new ones.
+// This ensures all AI features (execution, council, debate) use the same
+// connection with configured providers.
+
+/** Discovery probe result */
+interface DiscoveryResult {
+	found: boolean;
+	baseUrl?: string;
+	port?: number;
+}
+
+/** Default ports to scan for existing OpenCode servers */
+const DISCOVERY_PORTS = [
+	// Common explicit ports
+	4096,
+	4097,
+	4098,
+	4099,
+	4100,
+	// opencode serve defaults
+	10000,
+	10001,
+	10002,
+	10003,
+	10004,
+	10005,
+	// Extended range
+	...Array.from({ length: 10 }, (_, i) => 4101 + i)
+];
+
+/** Timeout for discovery probes (ms) */
+const DISCOVERY_TIMEOUT_MS = 2000;
+
+/**
+ * Probe a single port to check if an OpenCode API server is running.
+ * Returns true if the server responds with valid JSON to /providers.
+ */
+async function probePort(hostname: string, port: number): Promise<boolean> {
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), DISCOVERY_TIMEOUT_MS);
+
+	try {
+		const response = await fetch(`http://${hostname}:${port}/providers`, {
+			method: 'GET',
+			signal: controller.signal,
+			headers: {
+				Accept: 'application/json'
+			}
+		});
+
+		clearTimeout(timeoutId);
+
+		if (!response.ok) {
+			return false;
+		}
+
+		// Verify it's actually an OpenCode API (returns JSON with providers)
+		const contentType = response.headers.get('content-type');
+		if (!contentType?.includes('application/json')) {
+			return false;
+		}
+
+		const data = await response.json();
+		// OpenCode /providers returns { providers: [...] } or similar
+		return typeof data === 'object' && data !== null;
+	} catch {
+		clearTimeout(timeoutId);
+		return false;
+	}
+}
+
+/**
+ * Discover existing OpenCode servers by probing known ports.
+ * Returns the first responding server, or null if none found.
+ */
+async function discoverOpenCodeServer(
+	hostname: string = DEFAULT_LOCAL_HOSTNAME,
+	additionalPorts?: number[]
+): Promise<DiscoveryResult> {
+	const portsToScan = [...DISCOVERY_PORTS, ...(additionalPorts ?? [])];
+
+	// Scan ports in parallel (batches of 5 to avoid overwhelming network)
+	const batchSize = 5;
+	for (let i = 0; i < portsToScan.length; i += batchSize) {
+		const batch = portsToScan.slice(i, i + batchSize);
+		const results = await Promise.all(
+			batch.map(async (port) => ({
+				port,
+				found: await probePort(hostname, port)
+			}))
+		);
+
+		const found = results.find((r) => r.found);
+		if (found) {
+			console.log(`[OpenCode Discovery] Found existing server at ${hostname}:${found.port}`);
+			return {
+				found: true,
+				baseUrl: `http://${hostname}:${found.port}`,
+				port: found.port
+			};
+		}
+	}
+
+	console.log('[OpenCode Discovery] No existing server found, will spawn new one');
+	return { found: false };
+}
+
 function parsePortFromBaseUrl(baseUrl: string): number {
 	const parsed = new URL(baseUrl);
 	if (parsed.port) {
@@ -44,6 +154,40 @@ export async function createOpenCodeConnection(
 		const hostname = settings.local?.hostname ?? DEFAULT_LOCAL_HOSTNAME;
 		const portRange = settings.local?.portRange ?? DEFAULT_LOCAL_PORT_RANGE;
 
+		// AUTO-DISCOVERY: First try to find an existing OpenCode server
+		const discovery = await discoverOpenCodeServer(hostname, [
+			// Also check the configured port range
+			...Array.from({ length: portRange.max - portRange.min + 1 }, (_, i) => portRange.min + i)
+		]);
+
+		if (discovery.found && discovery.baseUrl && discovery.port) {
+			// Use existing server - create client only
+			console.log(`[OpenCode] Connecting to existing server at ${discovery.baseUrl}`);
+			const client = createOpencodeClient({ baseUrl: discovery.baseUrl });
+
+			return {
+				client,
+				close: async () => {
+					// Don't close server we didn't start
+				},
+				meta: {
+					mode: 'local',
+					baseUrl: discovery.baseUrl,
+					port: discovery.port,
+					startedLocalServer: false // Using discovered server
+				},
+				rawRequest: async (path, init) => {
+					const url =
+						path.startsWith('http://') || path.startsWith('https://')
+							? path
+							: `${discovery.baseUrl}${path}`;
+					return fetch(url, init);
+				}
+			};
+		}
+
+		// No existing server found - spawn new one (fallback)
+		console.log('[OpenCode] Spawning new server...');
 		const port = await getPort({
 			host: hostname,
 			port: portNumbers(portRange.min, portRange.max)

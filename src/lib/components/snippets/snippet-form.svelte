@@ -2,6 +2,7 @@
 	import type { SnippetCategory, SnippetTag } from '$lib/server/db/schema';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import SnippetContentEditor from './snippet-content-editor.svelte';
 	import { showSuccess, showError } from '$lib/stores/toast';
 	import { Save, Loader2 } from 'lucide-svelte';
 
@@ -187,19 +188,11 @@
 		<label for="content" class="text-sm font-medium">
 			Content <span class="text-destructive">*</span>
 		</label>
-		<p class="text-xs text-muted-foreground">
-			Use {'{{'}VARIABLE_NAME{'}}'} for placeholders that will be replaced at runtime
-		</p>
-		<textarea
-			id="content"
-			name="content"
+		<SnippetContentEditor
 			bind:value={content}
-			placeholder="Enter snippet content with {'{{'}VARIABLES{'}}'}..."
-			rows="12"
-			class="flex min-h-[200px] w-full max-w-2xl rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			placeholder="Enter snippet content with variable placeholders..."
 			disabled={isSaving}
-			required
-		></textarea>
+		/>
 	</div>
 
 	<!-- Category -->

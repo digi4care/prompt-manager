@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Settings-first execution — Every prompt execution resolves model/temperature/parameters through a deterministic precedence chain.
-**Current focus:** Phase 7 - Council Correct (next)
+**Current focus:** Phase 8 - Snippet Library (in progress)
 
 ## Current Position
 
-Phase: 7 of 11 (Council Correct) - COMPLETE
-Plan: 2 of 2 in current phase
-Status: Plan 07-02 complete - Council Review UI with parallel agents, version selection, simplified editing
-Last activity: 2026-02-27 — Plan 07-02: Council Review UI, prompt version selection, UI cleanup
+Phase: 8 of 11 (Snippet Library) - IN PROGRESS
+Plan: 1 of 3 in current phase
+Status: Plan 08-01 complete - Snippets table, service layer, and REST API endpoints
+Last activity: 2026-02-28 — Plan 08-01: Snippet library backend with CRUD operations
 
 Progress: [███████████] 100%
 
@@ -20,9 +20,9 @@ Progress: [███████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 11min
-- Total execution time: 2.8 hours
+- Total execution time: 3.0 hours
 
 **By Phase:**
 
@@ -35,12 +35,14 @@ Progress: [███████████] 100%
 | 05-test-runner-ui      | 2     | 20min  | 10min    |
 | 06-streaming-execution | 2     | 27min  | 13.5min  |
 | 07-council-correct     | 2     | 32min  | 16min    |
+| 08-snippet-library     | 1     | 8min   | 8min     |
 
 **Recent Trend:**
 
-- Last 5 plans: 5min, 12min, 15min, 15min, 9min
+- Last 5 plans: 12min, 15min, 15min, 9min, 8min
 - Trend: Consistent execution with established patterns
   | Phase 07-council-correct-mode P02 | 43 | 3 tasks | 4 files |
+  | Phase 08 P01 | 8 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -86,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 07-council-correct-mode]: Use oninput instead of bind:value to avoid Svelte 5 binding errors
 - [Phase 07-council-correct-mode]: Prompt version selection in override modal - users can select specific version or use latest
 - [Phase 07-council-correct-mode]: Simplified prompt editing - removed LLM providers and frontmatter editor from sidebar
+- [Phase 08-01]: Snippets use category field instead of purpose for simpler classification
+- [Phase 08-01]: No llm_providers or versioning for snippets - they are simpler template fragments
+- [Phase 08-01]: Search covers title, description, AND content fields for better discoverability
 
 ### Pending Todos
 
@@ -108,9 +113,31 @@ Phases likely needing deeper research during planning:
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped At: Phase 7 complete - Council Review UI with parallel agents and version selection
+Last session: 2026-02-28
+Stopped At: Phase 8 Plan 01 complete - Snippet library backend
 Resume file: None
+
+## Phase 8 Implementation Details
+
+### Plan 08-01: Snippet Library Backend
+
+**Files Created:**
+
+- `src/lib/server/services/snippets.service.ts` - CRUD operations with soft delete, search, category filter
+- `src/routes/api/snippets/+server.ts` - GET and POST endpoints
+- `src/routes/api/snippets/[id]/+server.ts` - GET, PATCH, DELETE endpoints
+
+**Files Modified:**
+
+- `src/lib/server/db/schema.ts` - Added snippets table definition
+
+**Key Patterns:**
+
+- Service layer pattern following prompts.service.ts exactly
+- Soft delete with deletedAt timestamp
+- Search across title, description, AND content fields
+- Category field for simpler classification (no purpose)
+- No llm_providers or versioning (simpler than prompts)
 
 ## Phase 6 Implementation Details
 

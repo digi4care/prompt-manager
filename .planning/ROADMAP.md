@@ -204,13 +204,13 @@ Plans:
 1. User can trigger debate mode with multiple agent perspectives
 2. System synthesizes conclusion from agent arguments
 3. User sees full debate history with each agent's position
-   **Plans**: TBD
+
+**Plans**: 2 plans
 
 Plans:
 
-- [ ] 09-01: Parallel agent execution
-- [ ] 09-02: Argument synthesis service
-- [ ] 09-03: Debate history display
+- [ ] 09-01-PLAN.md — Backend: council-debate.service.ts orchestrator with 3-round parallel execution + synthesis, SSE streaming API endpoint
+- [ ] 09-02-PLAN.md — Frontend: timeline UI with collapsible rounds, agent cards, synthesis card, test runner integration with mode toggle
 
 ---
 
@@ -266,12 +266,12 @@ Phases execute in numeric order. Decimal phases (if inserted) execute between th
 | 5. Test Runner UI          | v1.0      | 4            | 2/2            | Complete    | 2026-02-27 |
 | 6. Streaming Execution     | v2.0      | 3            | 2/2            | Complete    | 2026-02-27 |
 | 7. Council Correct Mode    | v2.0      | 6            | 2/2            | Complete    | 2026-02-27 |
-| 8. Snippet Library         | v2.0      | 3            | 0/3            | Not started | -          |
-| 9. Council Debate Mode     | v3.0      | 3            | 0/3            | Not started | -          |
+| 8. Snippet Library         | v2.0      | 3            | 6/6            | Complete    | 2026-02-28 |
+| 9. Council Debate Mode     | v3.0      | 3            | 0/2            | Planned     | -          |
 | 10. Council Consensus Mode | v3.0      | 3            | 0/3            | Not started | -          |
 | 11. JavaScript Snippets    | v3.0      | 2            | 0/2            | Not started | -          |
 
-**Total: 11 phases, 43 requirements, 30 plans**
+**Total: 11 phases, 43 requirements, 29 plans**
 
 ---
 

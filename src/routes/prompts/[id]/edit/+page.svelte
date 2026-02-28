@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { PromptEditor, PromptMetadata, TestRunnerPanel } from '$lib/components/prompts';
+	import { SnippetPicker } from '$lib/components/snippets';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import { goto } from '$app/navigation';
@@ -16,7 +17,8 @@
 		CheckCircle2,
 		Loader2,
 		AlertCircle,
-		FlaskConical
+		FlaskConical,
+		ClipboardPaste
 	} from 'lucide-svelte';
 	import { cn } from '$lib/utils';
 	import { parseSnippetFrontmatter } from '$lib/opencode/frontmatter';
@@ -37,6 +39,10 @@
 	let content = $state('');
 	let frontmatterYaml = $state('');
 	let showTestRunner = $state(false);
+
+	// Snippet picker state
+	let showSnippetPicker = $state(false);
+	let snippetInsertText = $state('');
 
 	onMount(() => {
 		title = data.prompt.title || '';
@@ -164,6 +170,19 @@
 			newSet.add(idx);
 		}
 		expandedVariants = newSet;
+	}
+
+	// Snippet picker handlers
+	function handleSnippetSelect(snippet: { content: string }) {
+		// Set the text to insert - the PromptEditor will handle insertion at cursor
+		snippetInsertText = snippet.content;
+		// Mark as unsaved
+		saveStatus = 'unsaved';
+	}
+
+	function handleSnippetInsertComplete() {
+		// Clear the insert text signal after insertion
+		snippetInsertText = '';
 	}
 
 	// Generate AI Description
@@ -459,16 +478,27 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 						<h2 class="font-semibold">Prompt Content</h2>
 						<p class="text-xs text-muted-foreground">Edit directly or use AI to improve</p>
 					</div>
-					<Button
-						variant="outline"
-						size="sm"
-						onclick={handleImprove}
-						disabled={isImproving}
-						class="gap-1.5"
-					>
-						<Sparkles size={14} />
-						{isImproving ? 'Improving...' : 'Improve'}
-					</Button>
+					<div class="flex items-center gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onclick={() => (showSnippetPicker = true)}
+							class="gap-1.5"
+						>
+							<ClipboardPaste size={14} />
+							Insert Snippet
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onclick={handleImprove}
+							disabled={isImproving}
+							class="gap-1.5"
+						>
+							<Sparkles size={14} />
+							{isImproving ? 'Improving...' : 'Improve'}
+						</Button>
+					</div>
 				</div>
 
 				{#if improvementError}
@@ -479,7 +509,13 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 					</div>
 				{/if}
 
-				<PromptEditor bind:value={content} placeholder="Enter your prompt here..." class="w-full" />
+				<PromptEditor
+					bind:value={content}
+					placeholder="Enter your prompt here..."
+					class="w-full"
+					insertText={snippetInsertText}
+					onInsertComplete={handleSnippetInsertComplete}
+				/>
 				{#if contentError}
 					<p class="mt-2 text-xs text-destructive">{contentError}</p>
 				{/if}
@@ -791,3 +827,10 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 		</div>
 	</div>
 {/if}
+
+<!-- Snippet Picker -->
+<SnippetPicker
+	open={showSnippetPicker}
+	onclose={() => (showSnippetPicker = false)}
+	onselect={handleSnippetSelect}
+/>

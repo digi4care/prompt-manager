@@ -23,6 +23,10 @@
 		onchange?: (value: string) => void;
 		class?: string;
 		autosaveKey?: string; // Key for localStorage auto-save
+		/** When set, inserts this text at cursor position and resets to empty */
+		insertText?: string;
+		/** Callback after text insertion completes */
+		onInsertComplete?: () => void;
 	}
 
 	let {
@@ -33,7 +37,9 @@
 		readonly = false,
 		onchange,
 		class: className = '',
-		autosaveKey = 'prompt-editor-draft'
+		autosaveKey = 'prompt-editor-draft',
+		insertText = '',
+		onInsertComplete
 	}: Props = $props();
 
 	let editorContainer: HTMLDivElement;
@@ -181,6 +187,52 @@
 			editor.updateOptions({ readOnly: readonly });
 		}
 	});
+
+	// Watch for external text insertion requests
+	$effect(() => {
+		if (editor && insertText && mounted) {
+			insertAtCursor(insertText);
+			onInsertComplete?.();
+		}
+	});
+
+	/**
+	 * Insert text at current cursor position
+	 */
+	function insertAtCursor(text: string) {
+		if (!editor) return;
+
+		const position = editor.getPosition();
+		if (position) {
+			editor.executeEdits('', [
+				{
+					range: {
+						startLineNumber: position.lineNumber,
+						startColumn: position.column,
+						endLineNumber: position.lineNumber,
+						endColumn: position.column
+					},
+					text: text,
+					forceMoveMarkers: true
+				}
+			]);
+			editor.focus();
+			// Move cursor to end of inserted text
+			const lines = text.split('\n');
+			const lastLineLength = lines[lines.length - 1].length;
+			if (lines.length === 1) {
+				editor.setPosition({
+					lineNumber: position.lineNumber,
+					column: position.column + text.length
+				});
+			} else {
+				editor.setPosition({
+					lineNumber: position.lineNumber + lines.length - 1,
+					column: lastLineLength + 1
+				});
+			}
+		}
+	}
 
 	function scheduleAutoSave() {
 		if (autosaveTimeout) {

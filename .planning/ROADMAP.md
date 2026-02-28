@@ -183,13 +183,14 @@ Plans:
 1. User can create standalone snippet templates (separate from prompts)
 2. User can browse and search snippet library
 3. User can insert snippets into prompts
-   **Plans**: TBD
+
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 08-01: Snippet library CRUD and schema
-- [ ] 08-02: Snippet browser UI with search
-- [ ] 08-03: Snippet insertion into prompts
+- [ ] 08-01-PLAN.md — Snippet library CRUD: schema, service, REST API endpoints
+- [ ] 08-02-PLAN.md — Snippet browser UI: list page with search/filter, create/edit forms, detail view
+- [ ] 08-03-PLAN.md — Snippet picker: dialog component with search, category filter, cursor-position insertion
 
 ---
 

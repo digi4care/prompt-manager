@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 
 ## Current Position
 
-Phase: 8 of 11 (Snippet Library) - IN PROGRESS
-Plan: 2 of 3 in current phase
-Status: Plan 08-02 complete - Snippet library UI with CRUD pages
-Last activity: 2026-02-28 — Plan 08-02: Snippet browser UI with list, create, edit, detail pages
+Phase: 8 of 11 (Snippet Library) - IN PROGRESS (Gap Closure)
+Plan: 4 of 6 in current phase
+Status: Plan 08-04 complete - Admin-controlled categories/tags with taxonomy validation
+Last activity: 2026-02-28 — Plan 08-04: Snippet taxonomy with admin APIs, validation, unique titles
 
 Progress: [███████████] 100%
 
@@ -20,9 +20,9 @@ Progress: [███████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 16
-- Average duration: 11min
-- Total execution time: 3.0 hours
+- Total plans completed: 17
+- Average duration: 12min
+- Total execution time: 3.4 hours
 
 **By Phase:**
 
@@ -95,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 08-02]: Snippet UI uses grid-only layout (no table view) for simplicity — Snippets are simpler than prompts, no bulk actions needed
 - [Phase 08-02]: Category filter as horizontal buttons instead of sidebar — Better UX for small number of categories
 - [Phase 08-02]: Tags input as comma-separated string in forms — Simpler UX than tag input component for v1
+- [Phase 08-04]: Integrated taxonomy methods into snippets.service.ts instead of separate service — Cleaner organization since methods are closely related
+- [Phase 08-04]: SnippetWithTags type includes categoryName and tagsList for UI convenience — Avoids joins in components
 
 ### Pending Todos
 
@@ -118,10 +120,35 @@ Phases likely needing deeper research during planning:
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped At: Phase 8 Plan 02 complete - Snippet library UI
+Stopped At: Phase 8 Plan 04 complete - Snippet taxonomy
 Resume file: None
 
 ## Phase 8 Implementation Details
+
+### Plan 08-04: Snippet Taxonomy (Gap Closure)
+
+**Files Created:**
+
+- `src/routes/api/admin/snippet-categories/+server.ts` - Category list and create API
+- `src/routes/api/admin/snippet-categories/[id]/+server.ts` - Category CRUD API
+- `src/routes/api/admin/snippet-tags/+server.ts` - Tag list and create API
+- `src/routes/api/admin/snippet-tags/[id]/+server.ts` - Tag CRUD API
+
+**Files Modified:**
+
+- `src/lib/server/db/schema.ts` - Added snippet_categories, snippet_tags, snippet_tag_assignments tables
+- `src/lib/server/services/snippets.service.ts` - Added SnippetWithTags type, taxonomy methods, validation
+- `src/routes/api/snippets/+server.ts` - Updated to use categoryId/tagIds
+- `src/routes/api/snippets/[id]/+server.ts` - Updated to use categoryId/tagIds
+- All snippet page server files and svelte files - Updated for dropdown selection
+
+**Key Patterns:**
+
+- Admin taxonomy APIs for category/tag CRUD
+- Junction table for many-to-many snippet-tag relationship
+- API validation against admin-defined lists
+- Unique title constraint with 409 Conflict response
+- Dropdowns in forms instead of freeform text
 
 ### Plan 08-02: Snippet Library UI
 

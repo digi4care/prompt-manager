@@ -221,7 +221,8 @@
 					/>
 				{/each}
 			</div>
-		{:else if data.totalCount === 0}
+		{:else if !searchQuery && !selectedCategoryId}
+			<!-- No snippets at all - truly empty library -->
 			<div class="flex flex-1 flex-col items-center justify-center py-16 text-center">
 				<div class="mb-6 rounded-full bg-muted p-6">
 					<Code class="h-12 w-12 text-muted-foreground" />
@@ -236,15 +237,23 @@
 				</Button>
 			</div>
 		{:else}
+			<!-- No results from filtering - show clear filters option -->
 			<div class="flex flex-1 flex-col items-center justify-center py-16 text-center">
 				<div class="mb-6 rounded-full bg-muted p-6">
 					<Search class="h-12 w-12 text-muted-foreground" />
 				</div>
-				<h3 class="mb-2 text-xl font-semibold">No snippets found</h3>
+				<h3 class="mb-2 text-xl font-semibold">No snippets match your filter</h3>
 				<p class="mb-6 max-w-sm text-muted-foreground">
-					No snippets match your search criteria. Try adjusting your filters.
+					No snippets match your search criteria. Try adjusting your filters or create a new
+					snippet.
 				</p>
-				<Button variant="outline" onclick={clearFilters}>Clear Filters</Button>
+				<div class="flex gap-3">
+					<Button variant="outline" onclick={clearFilters}>Clear Filters</Button>
+					<Button onclick={handleCreate}>
+						<Plus class="mr-2 h-4 w-4" />
+						Create Snippet
+					</Button>
+				</div>
 			</div>
 		{/if}
 	</div>

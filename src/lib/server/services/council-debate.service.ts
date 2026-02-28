@@ -426,17 +426,73 @@ async function* runDebateAgent(
 	try {
 		const client = await getOpencodeClient();
 
-		// Subscribe to events FIRST
-		const eventSubscription = await client.event.subscribe();
+		// Subscribe to events FIRST (with timeout protection)
+		let eventSubscription: Awaited<ReturnType<typeof client.event.subscribe>>;
+		try {
+			eventSubscription = await Promise.race([
+				client.event.subscribe(),
+				new Promise<never>((_, reject) =>
+					setTimeout(() => reject(new Error('Event subscription timeout')), 10000)
+				)
+			]);
+		} catch (subError) {
+			console.error(`[${agent.archetype}] Event subscription failed:`, subError);
+			yield {
+				type: 'error',
+				round,
+				archetype: agent.archetype,
+				data: {
+					archetype: agent.archetype,
+					agentName: agent.name,
+					error: subError instanceof Error ? subError.message : 'Event subscription failed'
+				}
+			};
+			return {
+				archetype: agent.archetype,
+				agentName: agent.name,
+				output: '',
+				model: { providerId: '', modelId: '' },
+				usage: { promptTokens: 0, completionTokens: 0 }
+			};
+		}
+
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const eventStream = eventSubscription.stream as AsyncIterable<{
 			type: string;
 			properties?: Record<string, unknown>;
 		}>;
 
-		// Create session
-		const createResult = await client.session.create();
-		if (createResult.error) {
+		// Create session (with timeout protection)
+		let createResult: Awaited<ReturnType<typeof client.session.create>>;
+		try {
+			createResult = await Promise.race([
+				client.session.create(),
+				new Promise<never>((_, reject) =>
+					setTimeout(() => reject(new Error('Session creation timeout')), 10000)
+				)
+			]);
+		} catch (sessionError) {
+			console.error(`[${agent.archetype}] Session creation failed:`, sessionError);
+			yield {
+				type: 'error',
+				round,
+				archetype: agent.archetype,
+				data: {
+					archetype: agent.archetype,
+					agentName: agent.name,
+					error: sessionError instanceof Error ? sessionError.message : 'Session creation failed'
+				}
+			};
+			return {
+				archetype: agent.archetype,
+				agentName: agent.name,
+				output: '',
+				model: { providerId: '', modelId: '' },
+				usage: { promptTokens: 0, completionTokens: 0 }
+			};
+		}
+
+		if ('error' in createResult && createResult.error) {
 			throw new Error('Failed to create session');
 		}
 		const session = createResult.data as Session;

@@ -31,6 +31,25 @@ export const prompts = sqliteTable('prompts', {
 	deletedAt: integer('deleted_at', { mode: 'timestamp' })
 });
 
+export const snippets = sqliteTable('snippets', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	title: text('title').notNull(),
+	description: text('description'),
+	content: text('content').notNull(),
+	category: text('category'),
+	tags: text('tags'), // JSON array
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	deletedAt: integer('deleted_at', { mode: 'timestamp' })
+});
+
+export type Snippet = typeof snippets.$inferSelect;
+export type NewSnippet = typeof snippets.$inferInsert;
+
 export const promptVersions = sqliteTable('prompt_versions', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	promptId: integer('prompt_id')

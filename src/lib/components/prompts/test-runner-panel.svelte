@@ -4,7 +4,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
 	import ExecutionResult from './execution-result.svelte';
-	import { CouncilReviewPanel } from '$lib/components/council';
+	import { CouncilReviewPanel, CouncilDebatePanel } from '$lib/components/council';
 	import { cn } from '$lib/utils';
 	import Play from 'lucide-svelte/icons/play';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
@@ -101,13 +101,17 @@
 	// Has any variables to show
 	let hasVariables = $derived(allVarNames().length > 0);
 
-	// Execution mode toggle - single or council
-	type ExecutionMode = 'single' | 'council';
+	// Execution mode toggle - single, council review, or debate
+	type ExecutionMode = 'single' | 'review' | 'debate';
 	let executionMode = $state<ExecutionMode>('single');
 
 	// Track council review state (received from CouncilReviewPanel)
 	type CouncilState = 'idle' | 'running' | 'complete' | 'error';
 	let councilState = $state<CouncilState>('idle');
+
+	// Track debate state (received from CouncilDebatePanel)
+	type DebateState = 'idle' | 'debating' | 'complete' | 'error';
+	let debateState = $state<DebateState>('idle');
 
 	// State machine for execution
 	type ExecutionState = 'idle' | 'loading' | 'success' | 'error';
@@ -122,7 +126,9 @@
 	let fullscreenTempValue = $state('');
 
 	// Derived: is anything currently executing?
-	let isAnyExecuting = $derived(executionState === 'loading' || councilState === 'running');
+	let isAnyExecuting = $derived(
+		executionState === 'loading' || councilState === 'running' || debateState === 'debating'
+	);
 
 	// Derived states
 	let isExecuting = $derived(executionState === 'loading');
@@ -140,9 +146,19 @@
 		councilState !== 'running' && preview.content.trim().length > 0 && allMissing.length === 0
 	);
 
+	// Can run debate?
+	let canRunDebate = $derived(
+		debateState !== 'debating' && preview.content.trim().length > 0 && allMissing.length === 0
+	);
+
 	// Handler for council state changes
 	function handleCouncilStateChange(state: CouncilState) {
 		councilState = state;
+	}
+
+	// Handler for debate state changes
+	function handleDebateStateChange(state: DebateState) {
+		debateState = state;
 	}
 
 	async function handleExecute() {
@@ -272,27 +288,42 @@
 				disabled={isAnyExecuting}
 				class="h-4 w-4"
 			/>
-			<span>Single Execution</span>
+			<span>Single</span>
 		</label>
 		<label class="flex cursor-pointer items-center gap-2 text-sm">
 			<input
 				type="radio"
 				name="mode-{promptId}"
-				value="council"
+				value="review"
 				bind:group={executionMode}
 				disabled={isAnyExecuting}
 				class="h-4 w-4"
 			/>
-			<span>Council Review</span>
+			<span>Review</span>
+		</label>
+		<label class="flex cursor-pointer items-center gap-2 text-sm">
+			<input
+				type="radio"
+				name="mode-{promptId}"
+				value="debate"
+				bind:group={executionMode}
+				disabled={isAnyExecuting}
+				class="h-4 w-4"
+			/>
+			<span>Debate</span>
 		</label>
 		{#if isAnyExecuting}
 			<span class="ml-auto text-xs text-muted-foreground">Running...</span>
 		{/if}
 	</div>
 
-	{#if executionMode === 'council'}
+	{#if executionMode === 'review'}
 		<p class="mb-2 text-xs text-muted-foreground">
 			3 AI agents review your prompt in parallel from different perspectives
+		</p>
+	{:else if executionMode === 'debate'}
+		<p class="mb-2 text-xs text-muted-foreground">
+			3 AI agents debate your topic across 3 rounds: Proponent vs Skeptic vs Pragmatist
 		</p>
 	{/if}
 
@@ -385,7 +416,7 @@
 				</div>
 			</div>
 		{/if}
-	{:else}
+	{:else if executionMode === 'review'}
 		<!-- Council Review Mode -->
 		{#if allMissing.length > 0}
 			<div
@@ -403,6 +434,27 @@
 			{promptId}
 			userPrompt={preview.content}
 			onstatechange={handleCouncilStateChange}
+			disabled={allMissing.length > 0}
+		/>
+	{:else}
+		<!-- Debate Mode -->
+		{#if allMissing.length > 0}
+			<div
+				class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950"
+			>
+				<div class="flex items-center gap-2">
+					<AlertCircle class="h-4 w-4 text-red-500" />
+					<p class="text-sm text-red-700 dark:text-red-300">
+						Please fill in all required variables: {allMissing.join(', ')}
+					</p>
+				</div>
+			</div>
+		{/if}
+		<CouncilDebatePanel
+			{promptId}
+			topic={preview.content}
+			resolvedInput={preview.content}
+			onstatechange={handleDebateStateChange}
 			disabled={allMissing.length > 0}
 		/>
 	{/if}

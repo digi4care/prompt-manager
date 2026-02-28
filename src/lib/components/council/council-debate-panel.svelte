@@ -80,6 +80,10 @@
 		topic: string;
 		resolvedInput: string;
 		agentOverrides?: Map<DebateArchetype, AgentOverride>;
+		/** Called when the debate state changes */
+		onstatechange?: (state: DebateUIState) => void;
+		/** Disable execution (e.g., when required variables are missing) */
+		disabled?: boolean;
 		class?: string;
 	}
 
@@ -88,6 +92,8 @@
 		topic,
 		resolvedInput,
 		agentOverrides = new Map(),
+		onstatechange,
+		disabled = false,
 		class: className = ''
 	}: Props = $props();
 
@@ -143,7 +149,12 @@
 	};
 
 	// Derived: can execute
-	let canExecute = $derived(uiState === 'idle' && resolvedInput.trim().length > 0);
+	let canExecute = $derived(uiState === 'idle' && resolvedInput.trim().length > 0 && !disabled);
+
+	// Notify parent of state changes
+	$effect(() => {
+		onstatechange?.(uiState);
+	});
 
 	// Derived: is debating
 	let isDebating = $derived(uiState === 'debating');

@@ -3,10 +3,12 @@
 	import type { SnippetWithTags } from '$lib/server/services/snippets.service';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import { extractVariables } from '$lib/utils/snippet-variables';
 	import { dateFormatStore } from '$lib/stores/date-format.svelte';
 	import { formatDateString } from '$lib/utils/date';
-	import { ArrowLeft, Pencil, Trash2, Copy, Check, Code, Tag, Clock, X } from 'lucide-svelte';
+	import { showSuccess, showError } from '$lib/stores/toast';
+	import { ArrowLeft, Pencil, Trash2, Copy, Check, Code, Tag, Clock } from 'lucide-svelte';
 
 	interface Props {
 		data: PageData;
@@ -48,19 +50,21 @@
 		try {
 			await navigator.clipboard.writeText(snippet.content);
 			copySuccess = true;
+			showSuccess('Content copied to clipboard');
 			setTimeout(() => {
 				copySuccess = false;
 			}, 2000);
 		} catch (err) {
 			console.error('Failed to copy:', err);
+			showError('Failed to copy to clipboard');
 		}
 	}
 
-	function handleDelete() {
+	function openDeleteConfirm() {
 		showDeleteConfirm = true;
 	}
 
-	function cancelDelete() {
+	function closeDeleteConfirm() {
 		showDeleteConfirm = false;
 	}
 
@@ -73,14 +77,15 @@
 			});
 
 			if (response.ok) {
+				showSuccess('Snippet deleted successfully');
 				goto('/snippets');
 			} else {
-				console.error('Failed to delete snippet:', await response.text());
-				alert('Failed to delete snippet');
+				const error = await response.text();
+				showError(error || 'Failed to delete snippet');
 			}
 		} catch (error) {
 			console.error('Error deleting snippet:', error);
-			alert('Error deleting snippet');
+			showError('Error deleting snippet');
 		} finally {
 			isDeleting = false;
 			showDeleteConfirm = false;
@@ -120,7 +125,7 @@
 				<Pencil class="mr-2 h-4 w-4" />
 				Edit
 			</Button>
-			<Button variant="destructive" onclick={handleDelete}>
+			<Button variant="destructive" onclick={openDeleteConfirm}>
 				<Trash2 class="mr-2 h-4 w-4" />
 				Delete
 			</Button>
@@ -225,25 +230,13 @@
 	</div>
 </div>
 
-<!-- Delete Confirmation -->
-{#if showDeleteConfirm}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
-		<div class="w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
-			<div class="mb-4 flex items-center justify-between">
-				<h3 class="text-lg font-semibold">Delete Snippet</h3>
-				<button onclick={cancelDelete} class="rounded p-1 hover:bg-muted">
-					<X class="h-4 w-4" />
-				</button>
-			</div>
-			<p class="mb-6 text-sm text-muted-foreground">
-				Are you sure you want to delete "{snippet.title}"? This action cannot be undone.
-			</p>
-			<div class="flex justify-end gap-2">
-				<Button variant="outline" onclick={cancelDelete} disabled={isDeleting}>Cancel</Button>
-				<Button variant="destructive" onclick={confirmDelete} disabled={isDeleting}>
-					{isDeleting ? 'Deleting...' : 'Delete'}
-				</Button>
-			</div>
-		</div>
-	</div>
-{/if}
+<!-- Delete Confirmation Dialog -->
+<ConfirmDialog
+	title="Delete Snippet"
+	message="Are you sure you want to delete '{snippet.title}'? This action cannot be undone."
+	open={showDeleteConfirm}
+	confirmText={isDeleting ? 'Deleting...' : 'Delete'}
+	loading={isDeleting}
+	onconfirm={confirmDelete}
+	oncancel={closeDeleteConfirm}
+/>

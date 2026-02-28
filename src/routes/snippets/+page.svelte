@@ -5,7 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { SnippetCard } from '$lib/components/snippets';
-	import { Search, Plus, X, Code } from 'lucide-svelte';
+	import { Search, Plus, X, Code, Info, ChevronDown, ChevronUp } from 'lucide-svelte';
 
 	interface Props {
 		data: PageData;
@@ -22,6 +22,7 @@
 	// Confirmation state
 	let showDeleteConfirm: boolean = $state(false);
 	let snippetToDelete: SnippetWithTags | null = $state(null);
+	let showInfoBox: boolean = $state(true);
 
 	// Derived values
 	let categories = $derived(data.categories || []);
@@ -120,6 +121,47 @@
 					</Button>
 				</div>
 			</div>
+
+			<!-- Info Box - What are Snippets? -->
+			{#if showInfoBox}
+				<div
+					class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950"
+				>
+					<div class="flex items-start gap-3">
+						<Info class="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+						<div class="flex-1">
+							<div class="flex items-center justify-between">
+								<h3 class="font-medium text-blue-900 dark:text-blue-100">What are Snippets?</h3>
+								<button
+									type="button"
+									onclick={() => (showInfoBox = false)}
+									class="rounded p-1 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900"
+									aria-label="Dismiss"
+								>
+									<X class="h-4 w-4" />
+								</button>
+							</div>
+							<p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
+								Snippets are reusable text templates with optional <code
+									class="rounded bg-blue-100 px-1 font-mono text-xs dark:bg-blue-900"
+									>{'{{'}VARIABLE{'}}'}</code
+								>
+								placeholders. Use them to quickly insert common prompts, greetings, or formatted text
+								into your prompts.
+							</p>
+						</div>
+					</div>
+				</div>
+			{:else}
+				<button
+					type="button"
+					onclick={() => (showInfoBox = true)}
+					class="flex items-center gap-1 self-start text-sm text-muted-foreground hover:text-foreground"
+				>
+					<ChevronDown class="h-4 w-4" />
+					Show info
+				</button>
+			{/if}
 
 			<!-- Search and Category Filter -->
 			<div class="flex flex-wrap items-center gap-3">

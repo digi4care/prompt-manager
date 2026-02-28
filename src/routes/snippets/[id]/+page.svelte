@@ -8,7 +8,18 @@
 	import { dateFormatStore } from '$lib/stores/date-format.svelte';
 	import { formatDateString } from '$lib/utils/date';
 	import { showSuccess, showError } from '$lib/stores/toast';
-	import { ArrowLeft, Pencil, Trash2, Copy, Check, Code, Tag, Clock } from 'lucide-svelte';
+	import {
+		ArrowLeft,
+		Pencil,
+		Trash2,
+		Copy,
+		Check,
+		Code,
+		Tag,
+		Clock,
+		Info,
+		ListOrdered
+	} from 'lucide-svelte';
 
 	interface Props {
 		data: PageData;
@@ -173,6 +184,40 @@
 
 		<!-- Sidebar -->
 		<div class="space-y-6">
+			<!-- How to use this snippet -->
+			<div
+				class="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950"
+			>
+				<div class="border-b border-blue-200 px-4 py-3 dark:border-blue-800">
+					<div class="flex items-center gap-2">
+						<Info class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+						<h2 class="font-medium text-blue-900 dark:text-blue-100">How to use</h2>
+					</div>
+				</div>
+				<div class="p-4">
+					<ol class="list-inside list-decimal space-y-2 text-sm text-blue-700 dark:text-blue-300">
+						<li>Click <strong>Copy</strong> to copy the content</li>
+						<li>Paste it into any prompt</li>
+						<li>
+							Replace <code class="rounded bg-blue-100 px-1 font-mono text-xs dark:bg-blue-900"
+								>{'{{'}VARIABLE{'}}'}</code
+							>
+							with your values
+						</li>
+					</ol>
+					{#if variableCount > 0}
+						<p class="mt-3 text-xs text-blue-600 dark:text-blue-400">
+							This snippet has {variableCount} variable{variableCount > 1 ? 's' : ''}:
+							{#each variables as variable, i}
+								<code class="rounded bg-blue-100 px-1 font-mono dark:bg-blue-900"
+									>{'{{'}{variable.name}{'}}'}</code
+								>{i < variables.length - 1 ? ', ' : ''}
+							{/each}
+						</p>
+					{/if}
+				</div>
+			</div>
+
 			<!-- Metadata -->
 			<div class="rounded-lg border bg-card">
 				<div class="border-b px-4 py-3">

@@ -17,7 +17,7 @@ const DebateRequestSchema = z.object({
 	topic: z.string().min(1, 'Topic is required').max(50000, 'Topic too long'),
 	agentOverrides: z
 		.record(
-			z.enum(['proponent', 'skeptic', 'pragmatist']),
+			z.string(), // Accept any string key, validate archetype in service
 			z.object({
 				promptId: z.number().int().positive(),
 				versionId: z.number().int().positive().optional()

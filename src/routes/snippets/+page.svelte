@@ -59,13 +59,19 @@
 	// Derived values
 	let categories = $derived(data.categories || []);
 	let snippets: SnippetWithTags[] = $derived(data.snippets || []);
+	let currentPage = $derived(data.page || 1);
+	let totalPages = $derived(data.totalPages || 1);
+	let hasMore = $derived(data.hasMore || false);
 
-	function updateUrl() {
+	function updateUrl(resetPage = true) {
 		const url = new URL(window.location.href);
 		if (searchQuery) url.searchParams.set('search', searchQuery);
 		else url.searchParams.delete('search');
 		if (selectedCategoryId) url.searchParams.set('categoryId', String(selectedCategoryId));
 		else url.searchParams.delete('categoryId');
+		// Reset to page 1 when changing filters
+		if (resetPage) url.searchParams.delete('page');
+		else if (currentPage > 1) url.searchParams.set('page', String(currentPage));
 		isLoading = true;
 		goto(url.toString(), { replaceState: true, invalidateAll: true }).finally(() => {
 			isLoading = false;
@@ -89,7 +95,20 @@
 		const url = new URL(window.location.href);
 		url.searchParams.delete('search');
 		url.searchParams.delete('categoryId');
+		url.searchParams.delete('page');
 		goto(url.toString(), { replaceState: true, invalidateAll: true });
+	}
+
+	// Pagination
+	function goToPage(page: number) {
+		if (page < 1 || page > totalPages) return;
+		const url = new URL(window.location.href);
+		if (page === 1) url.searchParams.delete('page');
+		else url.searchParams.set('page', String(page));
+		isLoading = true;
+		goto(url.toString(), { replaceState: true, invalidateAll: true }).finally(() => {
+			isLoading = false;
+		});
 	}
 
 	// CRUD handlers
@@ -404,6 +423,57 @@
 					</table>
 				</div>
 			{/if}
+
+			<!-- Pagination Controls -->
+			{#if totalPages > 1}
+				<div class="mt-6 flex items-center justify-center gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={currentPage === 1}
+						onclick={() => goToPage(currentPage - 1)}
+					>
+						Previous
+					</Button>
+					<div class="flex items-center gap-1">
+						{#each Array(Math.min(5, totalPages)) as _, i}
+							{@const pageNum = currentPage <= 3 ? i + 1 : currentPage - 2 + i}
+							{@const showPage = pageNum <= totalPages}
+							{#if showPage}
+								<button
+									class="min-w-[2rem] rounded px-2 py-1 text-sm transition-colors {currentPage ===
+									pageNum
+										? 'bg-primary text-primary-foreground'
+										: 'hover:bg-muted'}"
+									onclick={() => goToPage(pageNum)}
+								>
+									{pageNum}
+								</button>
+							{/if}
+						{/each}
+						{#if totalPages > 5 && currentPage < totalPages - 2}
+							<span class="px-1 text-muted-foreground">...</span>
+							<button
+								class="min-w-[2rem] rounded px-2 py-1 text-sm transition-colors hover:bg-muted"
+								onclick={() => goToPage(totalPages)}
+							>
+								{totalPages}
+							</button>
+						{/if}
+					</div>
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={!hasMore}
+						onclick={() => goToPage(currentPage + 1)}
+					>
+						Next
+					</Button>
+					<span class="ml-2 text-sm text-muted-foreground">
+						Page {currentPage} of {totalPages}
+					</span>
+				</div>
+			{/if}
 		{:else if !searchQuery && !selectedCategoryId}
 			<!-- No snippets at all - truly empty library -->
 			<div class="flex flex-1 flex-col items-center justify-center py-16 text-center">
@@ -455,6 +525,17 @@
 					<span class="text-muted-foreground">Categories</span>
 					<span class="font-medium">{categories.length}</span>
 				</div>
+				{#if totalPages > 1}
+					<div class="flex justify-between">
+						<span class="text-muted-foreground">Showing</span>
+						<span class="font-medium"
+							>{(currentPage - 1) * data.perPage + 1}-{Math.min(
+								currentPage * data.perPage,
+								data.totalCount
+							)}</span
+						>
+					</div>
+				{/if}
 			</div>
 		</div>
 

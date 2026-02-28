@@ -126,8 +126,8 @@ export const POST: RequestHandler = async (event) => {
 						data: debateEvent.data
 					};
 
-					// Emit the event
-					const emitResult = emit('message', JSON.stringify(eventData));
+					// Emit the event with type as event name (so frontend can select() by type)
+					const emitResult = emit(debateEvent.type, JSON.stringify(eventData));
 
 					// Check for emit errors (client disconnected)
 					if (emitResult.error) {

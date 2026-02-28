@@ -509,57 +509,83 @@ ${context}
 
 ## Your Response:`;
 
-		// Send prompt
-		const promptPromise = client.session.prompt({
-			path: { id: sessionID },
-			body: {
-				parts: [{ type: 'text', text: fullPrompt }],
-				model: {
-					providerID: agent.providerId,
-					modelID: agent.modelId
-				}
-			}
-		});
-
-		// Process events
-		for await (const event of eventStream) {
-			if (event.type === 'message.part.delta') {
-				const props = event.properties as { sessionID?: string; delta?: string } | undefined;
-				if (props?.sessionID === sessionID && props?.delta) {
-					accumulatedOutput += props.delta;
-					yield {
-						type: 'agent_delta',
-						round,
-						archetype: agent.archetype,
-						data: { delta: props.delta, accumulated: accumulatedOutput }
-					};
-				}
-			}
-
-			if (event.type === 'session.idle') {
-				const props = event.properties as { sessionID?: string } | undefined;
-				if (props?.sessionID === sessionID) {
-					try {
-						const promptResult = await promptPromise;
-						if (promptResult.data?.info?.tokens) {
-							promptTokens = promptResult.data.info.tokens.input ?? 0;
-							completionTokens = promptResult.data.info.tokens.output ?? 0;
-						}
-					} catch {
-						// Continue without usage info
+		// Send prompt with timeout protection
+		const promptPromise = Promise.race([
+			client.session.prompt({
+				path: { id: sessionID },
+				body: {
+					parts: [{ type: 'text', text: fullPrompt }],
+					model: {
+						providerID: agent.providerId,
+						modelID: agent.modelId
 					}
-					break;
 				}
-			}
+			}),
+			new Promise<never>((_, reject) =>
+				setTimeout(() => reject(new Error('Prompt request timeout after 60s')), 60000)
+			)
+		]);
 
-			if (event.type === 'session.error') {
-				const props = event.properties as
-					| { sessionID?: string; error?: { message?: string } }
-					| undefined;
-				if (props?.sessionID === sessionID) {
-					throw new Error(props.error?.message || 'Agent execution failed');
+		// Process events (with 120s max implicit timeout from HeadersTimeoutError)
+		try {
+			for await (const event of eventStream) {
+				if (event.type === 'message.part.delta') {
+					const props = event.properties as { sessionID?: string; delta?: string } | undefined;
+					if (props?.sessionID === sessionID && props?.delta) {
+						accumulatedOutput += props.delta;
+						yield {
+							type: 'agent_delta',
+							round,
+							archetype: agent.archetype,
+							data: { delta: props.delta, accumulated: accumulatedOutput }
+						};
+					}
+				}
+
+				if (event.type === 'session.idle') {
+					const props = event.properties as { sessionID?: string } | undefined;
+					if (props?.sessionID === sessionID) {
+						try {
+							const promptResult = await promptPromise;
+							if (promptResult.data?.info?.tokens) {
+								promptTokens = promptResult.data.info.tokens.input ?? 0;
+								completionTokens = promptResult.data.info.tokens.output ?? 0;
+							}
+						} catch {
+							// Continue without usage info
+						}
+						break;
+					}
+				}
+
+				if (event.type === 'session.error') {
+					const props = event.properties as
+						| { sessionID?: string; error?: { message?: string } }
+						| undefined;
+					if (props?.sessionID === sessionID) {
+						throw new Error(props.error?.message || 'Agent execution failed');
+					}
 				}
 			}
+		} catch (eventError) {
+			console.error(`[${agent.archetype}] Event stream error:`, eventError);
+			yield {
+				type: 'error',
+				round,
+				archetype: agent.archetype,
+				data: {
+					archetype: agent.archetype,
+					agentName: agent.name,
+					error: eventError instanceof Error ? eventError.message : 'Event stream failed'
+				}
+			};
+			return {
+				archetype: agent.archetype,
+				agentName: agent.name,
+				output: accumulatedOutput || 'Agent failed to respond',
+				model: { providerId: agent.providerId, modelId: agent.modelId },
+				usage: { promptTokens, completionTokens }
+			};
 		}
 
 		// Cleanup session

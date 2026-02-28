@@ -5,13 +5,45 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { SnippetCard } from '$lib/components/snippets';
-	import { Search, Plus, X, Code, Info, ChevronDown, ChevronUp } from 'lucide-svelte';
+	import {
+		Search,
+		Plus,
+		X,
+		Code,
+		Info,
+		ChevronDown,
+		ChevronUp,
+		LayoutGrid,
+		List
+	} from 'lucide-svelte';
+	import { browser } from '$app/environment';
 
 	interface Props {
 		data: PageData;
 	}
 
 	let { data }: Props = $props();
+
+	// View mode state with localStorage persistence
+	let viewMode = $state<'cards' | 'list'>('cards');
+
+	// Restore view preference from localStorage on mount
+	$effect(() => {
+		if (browser) {
+			const saved = localStorage.getItem('snippets-view-mode');
+			if (saved === 'cards' || saved === 'list') {
+				viewMode = saved;
+			}
+		}
+	});
+
+	// Persist view preference to localStorage
+	function setViewMode(mode: 'cards' | 'list') {
+		viewMode = mode;
+		if (browser) {
+			localStorage.setItem('snippets-view-mode', mode);
+		}
+	}
 
 	// View state
 	let searchQuery: string = $state(data.search || '');
@@ -114,7 +146,32 @@
 		<div class="mb-6 flex flex-col gap-4">
 			<div class="flex items-center justify-between">
 				<h1 class="text-2xl font-semibold">Snippets</h1>
-				<div class="flex gap-2">
+				<div class="flex items-center gap-3">
+					<!-- View Toggle -->
+					<div class="flex gap-1 rounded-lg border p-1">
+						<button
+							class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors {viewMode ===
+							'cards'
+								? 'bg-primary text-primary-foreground'
+								: 'hover:bg-muted'}"
+							onclick={() => setViewMode('cards')}
+							aria-label="Cards view"
+						>
+							<LayoutGrid class="h-4 w-4" />
+							Cards
+						</button>
+						<button
+							class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors {viewMode ===
+							'list'
+								? 'bg-primary text-primary-foreground'
+								: 'hover:bg-muted'}"
+							onclick={() => setViewMode('list')}
+							aria-label="List view"
+						>
+							<List class="h-4 w-4" />
+							List
+						</button>
+					</div>
 					<Button onclick={handleCreate}>
 						<Plus class="mr-2 h-4 w-4" />
 						Create Snippet
@@ -211,16 +268,142 @@
 				{/each}
 			</div>
 		{:else if snippets.length > 0}
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{#each snippets as snippet (snippet.id)}
-					<SnippetCard
-						{snippet}
-						onclick={() => goto(`/snippets/${snippet.id}`)}
-						onedit={handleEdit}
-						ondelete={handleDelete}
-					/>
-				{/each}
-			</div>
+			{#if viewMode === 'cards'}
+				<!-- Cards View -->
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					{#each snippets as snippet (snippet.id)}
+						<SnippetCard
+							{snippet}
+							onclick={() => goto(`/snippets/${snippet.id}`)}
+							onedit={handleEdit}
+							ondelete={handleDelete}
+						/>
+					{/each}
+				</div>
+			{:else}
+				<!-- List View -->
+				<div class="overflow-hidden rounded-lg border">
+					<table class="w-full text-sm">
+						<thead class="border-b bg-muted/50">
+							<tr>
+								<th class="px-4 py-3 text-left font-medium">Title</th>
+								<th class="px-4 py-3 text-left font-medium">Category</th>
+								<th class="px-4 py-3 text-left font-medium">Variables</th>
+								<th class="px-4 py-3 text-left font-medium">Tags</th>
+								<th class="px-4 py-3 text-right font-medium">Actions</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y">
+							{#each snippets as snippet (snippet.id)}
+								<tr
+									class="cursor-pointer transition-colors hover:bg-muted/50"
+									onclick={() => goto(`/snippets/${snippet.id}`)}
+									onkeydown={(e) => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.preventDefault();
+											goto(`/snippets/${snippet.id}`);
+										}
+									}}
+									role="button"
+									tabindex="0"
+								>
+									<td class="px-4 py-3">
+										<div class="font-medium">{snippet.title}</div>
+										{#if snippet.description}
+											<div class="mt-0.5 truncate text-xs text-muted-foreground">
+												{snippet.description}
+											</div>
+										{/if}
+									</td>
+									<td class="px-4 py-3">
+										{#if snippet.categoryName}
+											<span class="rounded-full bg-secondary px-2 py-0.5 text-xs capitalize">
+												{snippet.categoryName}
+											</span>
+										{:else}
+											<span class="text-muted-foreground">—</span>
+										{/if}
+									</td>
+									<td class="px-4 py-3">
+										{#if snippet.variables && Object.keys(snippet.variables).length > 0}
+											<span
+												class="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+											>
+												{Object.keys(snippet.variables).length} vars
+											</span>
+										{:else}
+											<span class="text-muted-foreground">—</span>
+										{/if}
+									</td>
+									<td class="px-4 py-3">
+										{#if snippet.tagsList && snippet.tagsList.length > 0}
+											<div class="flex flex-wrap gap-1">
+												{#each snippet.tagsList.slice(0, 3) as tag}
+													<span class="rounded bg-muted px-1.5 py-0.5 text-xs">
+														{tag}
+													</span>
+												{/each}
+												{#if snippet.tagsList.length > 3}
+													<span class="text-xs text-muted-foreground">
+														+{snippet.tagsList.length - 3}
+													</span>
+												{/if}
+											</div>
+										{:else}
+											<span class="text-muted-foreground">—</span>
+										{/if}
+									</td>
+									<td class="px-4 py-3 text-right">
+										<div class="flex justify-end gap-1" onclick={(e) => e.stopPropagation()}>
+											<button
+												class="rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+												onclick={() => handleEdit(snippet)}
+												aria-label="Edit snippet"
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													width="16"
+													height="16"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="2"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+												>
+													<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+													<path d="m15 5 4 4" />
+												</svg>
+											</button>
+											<button
+												class="rounded p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+												onclick={() => handleDelete(snippet)}
+												aria-label="Delete snippet"
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													width="16"
+													height="16"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="2"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+												>
+													<path d="M3 6h18" />
+													<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+													<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+												</svg>
+											</button>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
 		{:else if !searchQuery && !selectedCategoryId}
 			<!-- No snippets at all - truly empty library -->
 			<div class="flex flex-1 flex-col items-center justify-center py-16 text-center">

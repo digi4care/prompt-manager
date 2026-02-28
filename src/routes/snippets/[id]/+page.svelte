@@ -1,16 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { goto, invalidate } from '$app/navigation';
+	import type { SnippetWithTags } from '$lib/server/services/snippets.service';
+	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { extractVariables } from '$lib/utils/snippet-variables';
 	import { dateFormatStore } from '$lib/stores/date-format.svelte';
 	import { formatDateString } from '$lib/utils/date';
 	import { ArrowLeft, Pencil, Trash2, Copy, Check, Code, Tag, Clock, X } from 'lucide-svelte';
-	import type { Snippet } from '$lib/server/db/schema';
-
-	interface SnippetWithTags extends Omit<Snippet, 'tags'> {
-		tags: string[];
-	}
 
 	interface Props {
 		data: PageData;
@@ -178,10 +174,10 @@
 					<h2 class="font-medium">Details</h2>
 				</div>
 				<div class="space-y-4 p-4">
-					{#if snippet.category}
+					{#if snippet.categoryName}
 						<div>
 							<label class="text-xs text-muted-foreground">Category</label>
-							<p class="font-medium capitalize">{snippet.category}</p>
+							<p class="font-medium capitalize">{snippet.categoryName}</p>
 						</div>
 					{/if}
 
@@ -204,7 +200,7 @@
 			</div>
 
 			<!-- Tags -->
-			{#if snippet.tags && snippet.tags.length > 0}
+			{#if snippet.tagsList && snippet.tagsList.length > 0}
 				<div class="rounded-lg border bg-card">
 					<div class="border-b px-4 py-3">
 						<div class="flex items-center gap-2">
@@ -214,7 +210,7 @@
 					</div>
 					<div class="p-4">
 						<div class="flex flex-wrap gap-2">
-							{#each snippet.tags as tag}
+							{#each snippet.tagsList as tag}
 								<span
 									class="inline-flex items-center rounded bg-secondary px-2 py-1 text-xs text-secondary-foreground"
 								>

@@ -33,11 +33,10 @@ export const prompts = sqliteTable('prompts', {
 
 export const snippets = sqliteTable('snippets', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
-	title: text('title').notNull(),
+	title: text('title').notNull().unique(),
 	description: text('description'),
 	content: text('content').notNull(),
-	category: text('category'),
-	tags: text('tags'), // JSON array
+	categoryId: integer('category_id').references(() => snippetCategories.id),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date()),
@@ -47,8 +46,59 @@ export const snippets = sqliteTable('snippets', {
 	deletedAt: integer('deleted_at', { mode: 'timestamp' })
 });
 
+// Admin-defined snippet categories
+export const snippetCategories = sqliteTable('snippet_categories', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	name: text('name').notNull().unique(),
+	description: text('description'),
+	sortOrder: integer('sort_order').notNull().default(0),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
+// Admin-defined snippet tags
+export const snippetTags = sqliteTable('snippet_tags', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	name: text('name').notNull().unique(),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
+// Many-to-many junction table for snippet-tag assignments
+export const snippetTagAssignments = sqliteTable(
+	'snippet_tag_assignments',
+	{
+		snippetId: integer('snippet_id')
+			.notNull()
+			.references(() => snippets.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => snippetTags.id, { onDelete: 'cascade' }),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => ({
+		pk: uniqueIndex('snippet_tag_pk').on(table.snippetId, table.tagId)
+	})
+);
+
 export type Snippet = typeof snippets.$inferSelect;
 export type NewSnippet = typeof snippets.$inferInsert;
+export type SnippetCategory = typeof snippetCategories.$inferSelect;
+export type NewSnippetCategory = typeof snippetCategories.$inferInsert;
+export type SnippetTag = typeof snippetTags.$inferSelect;
+export type NewSnippetTag = typeof snippetTags.$inferInsert;
+export type SnippetTagAssignment = typeof snippetTagAssignments.$inferSelect;
+export type NewSnippetTagAssignment = typeof snippetTagAssignments.$inferInsert;
 
 export const promptVersions = sqliteTable('prompt_versions', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -540,6 +590,34 @@ export const councilRunsRelations = relations(councilRuns, ({ one }) => ({
 	prompt: one(prompts, {
 		fields: [councilRuns.promptId],
 		references: [prompts.id]
+	})
+}));
+
+// Snippet relations
+export const snippetsRelations = relations(snippets, ({ one, many }) => ({
+	category: one(snippetCategories, {
+		fields: [snippets.categoryId],
+		references: [snippetCategories.id]
+	}),
+	tagAssignments: many(snippetTagAssignments)
+}));
+
+export const snippetCategoriesRelations = relations(snippetCategories, ({ many }) => ({
+	snippets: many(snippets)
+}));
+
+export const snippetTagsRelations = relations(snippetTags, ({ many }) => ({
+	tagAssignments: many(snippetTagAssignments)
+}));
+
+export const snippetTagAssignmentsRelations = relations(snippetTagAssignments, ({ one }) => ({
+	snippet: one(snippets, {
+		fields: [snippetTagAssignments.snippetId],
+		references: [snippets.id]
+	}),
+	tag: one(snippetTags, {
+		fields: [snippetTagAssignments.tagId],
+		references: [snippetTags.id]
 	})
 }));
 

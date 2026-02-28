@@ -1,23 +1,23 @@
 import type { PageServerLoad } from './$types';
-import { listSnippets } from '$lib/server/services/snippets.service';
+import { listSnippets, getAllCategories, getAllTags } from '$lib/server/services/snippets.service';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const search = url.searchParams.get('search') || undefined;
-	const category = url.searchParams.get('category') || undefined;
+	const categoryIdParam = url.searchParams.get('categoryId');
+	const categoryId = categoryIdParam ? parseInt(categoryIdParam) : undefined;
 
-	const { snippets, totalCount } = await listSnippets(500, 0, search, category);
-
-	// Extract unique categories for filter
-	const categories = [...new Set(snippets.map((s) => s.category).filter(Boolean))] as string[];
+	const [{ snippets, totalCount }, categories, tags] = await Promise.all([
+		listSnippets(500, 0, search, categoryId),
+		getAllCategories(),
+		getAllTags()
+	]);
 
 	return {
-		snippets: snippets.map((s) => ({
-			...s,
-			tags: s.tags ? JSON.parse(s.tags) : []
-		})),
+		snippets,
 		totalCount,
 		categories,
+		tags,
 		search: search || '',
-		category: category || ''
+		categoryId: categoryId || null
 	};
 };

@@ -1,14 +1,21 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getSnippet, updateSnippet, deleteSnippet } from '$lib/server/services/snippets.service';
+import {
+	getSnippet,
+	updateSnippet,
+	deleteSnippet,
+	snippetTitleExists,
+	getAllCategories,
+	getAllTags
+} from '$lib/server/services/snippets.service';
 import { z } from 'zod';
 
 const updateSnippetSchema = z.object({
 	title: z.string().min(1).max(200).optional(),
 	description: z.string().optional(),
 	content: z.string().min(1).max(50000).optional(),
-	category: z.string().optional(),
-	tags: z.array(z.string()).optional()
+	categoryId: z.number().int().positive().optional().nullable(),
+	tagIds: z.array(z.number().int().positive()).optional()
 });
 
 export const GET: RequestHandler = async ({ params }) => {
@@ -24,10 +31,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		}
 
 		return json({
-			data: {
-				...snippet,
-				tags: snippet.tags ? JSON.parse(snippet.tags) : []
-			}
+			data: snippet
 		});
 	} catch (err: unknown) {
 		const e = err as { status?: number };
@@ -64,10 +68,44 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 			throw error(404, JSON.stringify({ message: 'Snippet not found', errors: null }));
 		}
 
-		const { tags, ...rest } = parsed.data;
+		const { tagIds, ...rest } = parsed.data;
+
+		// Validate categoryId if provided
+		if (rest.categoryId !== undefined && rest.categoryId !== null) {
+			const categories = await getAllCategories();
+			if (!categories.find((c) => c.id === rest.categoryId)) {
+				throw error(400, JSON.stringify({ message: 'Invalid category ID', errors: null }));
+			}
+		}
+
+		// Validate tagIds if provided
+		if (tagIds && tagIds.length > 0) {
+			const tags = await getAllTags();
+			const validTagIds = new Set(tags.map((t) => t.id));
+			for (const tagId of tagIds) {
+				if (!validTagIds.has(tagId)) {
+					throw error(400, JSON.stringify({ message: `Invalid tag ID: ${tagId}`, errors: null }));
+				}
+			}
+		}
+
+		// Check for duplicate title if title is being updated
+		if (rest.title && rest.title !== existing.title) {
+			const titleExists = await snippetTitleExists(rest.title, id);
+			if (titleExists) {
+				throw error(
+					409,
+					JSON.stringify({
+						message: 'A snippet with this title already exists',
+						errors: null
+					})
+				);
+			}
+		}
+
 		const updated = await updateSnippet(id, {
 			...rest,
-			tags: tags ? JSON.stringify(tags) : undefined
+			tagIds
 		});
 
 		return json({ data: updated });

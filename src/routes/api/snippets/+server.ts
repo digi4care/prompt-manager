@@ -1,6 +1,12 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { listSnippets, createSnippet } from '$lib/server/services/snippets.service';
+import {
+	listSnippets,
+	createSnippet,
+	snippetTitleExists,
+	getAllCategories,
+	getAllTags
+} from '$lib/server/services/snippets.service';
 import { z } from 'zod';
 import { optionalAuthenticateRequest, authenticateRequest } from '$lib/server/auth/jwt';
 
@@ -8,8 +14,8 @@ const createSnippetSchema = z.object({
 	title: z.string().min(1).max(200),
 	description: z.string().optional(),
 	content: z.string().min(1).max(50000),
-	category: z.string().optional(),
-	tags: z.array(z.string()).optional()
+	categoryId: z.number().int().positive().optional().nullable(),
+	tagIds: z.array(z.number().int().positive()).optional()
 });
 
 export const GET: RequestHandler = async (event) => {
@@ -17,7 +23,11 @@ export const GET: RequestHandler = async (event) => {
 	const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
 	const offset = parseInt(url.searchParams.get('offset') || '0');
 	const search = url.searchParams.get('search') || undefined;
-	const category = url.searchParams.get('category') || undefined;
+	const categoryIdParam = url.searchParams.get('categoryId');
+	const tagIdParam = url.searchParams.get('tagId');
+
+	const categoryId = categoryIdParam ? parseInt(categoryIdParam) : undefined;
+	const tagId = tagIdParam ? parseInt(tagIdParam) : undefined;
 
 	// Optional authentication - public snippets accessible without auth
 	optionalAuthenticateRequest(event);
@@ -27,7 +37,8 @@ export const GET: RequestHandler = async (event) => {
 			limit,
 			offset,
 			search,
-			category
+			categoryId,
+			tagId
 		);
 		return json({
 			data: { snippets: snippetsList, totalCount },
@@ -59,7 +70,38 @@ export const POST: RequestHandler = async (event) => {
 		);
 	}
 
-	const { tags, ...snippetData } = parsed.data;
+	const { tagIds, ...snippetData } = parsed.data;
+
+	// Validate categoryId if provided
+	if (snippetData.categoryId) {
+		const categories = await getAllCategories();
+		if (!categories.find((c) => c.id === snippetData.categoryId)) {
+			throw error(400, JSON.stringify({ message: 'Invalid category ID', errors: null }));
+		}
+	}
+
+	// Validate tagIds if provided
+	if (tagIds && tagIds.length > 0) {
+		const tags = await getAllTags();
+		const validTagIds = new Set(tags.map((t) => t.id));
+		for (const tagId of tagIds) {
+			if (!validTagIds.has(tagId)) {
+				throw error(400, JSON.stringify({ message: `Invalid tag ID: ${tagId}`, errors: null }));
+			}
+		}
+	}
+
+	// Check for duplicate title
+	const titleExists = await snippetTitleExists(snippetData.title);
+	if (titleExists) {
+		throw error(
+			409,
+			JSON.stringify({
+				message: 'A snippet with this title already exists',
+				errors: null
+			})
+		);
+	}
 
 	try {
 		// Log the authenticated user for audit purposes
@@ -69,7 +111,7 @@ export const POST: RequestHandler = async (event) => {
 
 		const snippet = await createSnippet({
 			...snippetData,
-			tags: tags ? JSON.stringify(tags) : null
+			tagIds
 		});
 
 		return json(snippet, { status: 201 });

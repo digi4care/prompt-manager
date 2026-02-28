@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from '$lib/server/db/schema';
+	import type { SnippetWithTags } from '$lib/server/services/snippets.service';
 	import { dateFormatStore } from '$lib/stores/date-format.svelte';
 	import { formatDateString } from '$lib/utils/date';
 	import { extractVariables } from '$lib/utils/snippet-variables';
@@ -11,11 +11,7 @@
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
 	import { cn } from '$lib/utils';
-	import { MoreHorizontal, Pencil, Trash2, Clock, Code, Tag } from 'lucide-svelte';
-
-	export interface SnippetWithTags extends Omit<Snippet, 'tags'> {
-		tags: string[];
-	}
+	import { MoreHorizontal, Pencil, Trash2, Clock, Code } from 'lucide-svelte';
 
 	interface Props {
 		snippet: SnippetWithTags;
@@ -65,13 +61,13 @@
 	function getCategoryColor(category: string | null): string {
 		if (!category) return 'bg-muted text-muted-foreground';
 		const colors: Record<string, string> = {
-			greeting: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-			signature: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-			code: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-			template: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-			general: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+			greetings: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+			formatting: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+			prompts: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+			templates: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+			code: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
 		};
-		return colors[category.toLowerCase()] || colors.general;
+		return colors[category.toLowerCase()] || 'bg-muted text-muted-foreground';
 	}
 
 	function handleEdit(e: Event) {
@@ -120,14 +116,14 @@
 				{snippet.title}
 			</CardTitle>
 			<div class="flex items-center gap-2">
-				{#if snippet.category}
+				{#if snippet.categoryName}
 					<span
 						class={cn(
 							'inline-flex shrink-0 items-center rounded px-2 py-0.5 text-xs font-medium capitalize',
-							getCategoryColor(snippet.category)
+							getCategoryColor(snippet.categoryName)
 						)}
 					>
-						{snippet.category}
+						{snippet.categoryName}
 					</span>
 				{/if}
 
@@ -179,20 +175,20 @@
 		<pre
 			class="mb-3 max-h-20 overflow-hidden rounded bg-muted p-2 text-xs whitespace-pre-wrap text-muted-foreground">{contentPreview()}</pre>
 
-		{#if snippet.tags && snippet.tags.length > 0}
+		{#if snippet.tagsList && snippet.tagsList.length > 0}
 			<div class="mb-3 flex flex-wrap gap-1.5">
-				{#each snippet.tags.slice(0, 4) as tag}
+				{#each snippet.tagsList.slice(0, 4) as tag}
 					<span
 						class="inline-flex items-center rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
 					>
 						{tag}
 					</span>
 				{/each}
-				{#if snippet.tags.length > 4}
+				{#if snippet.tagsList.length > 4}
 					<span
 						class="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground"
 					>
-						+{snippet.tags.length - 4}
+						+{snippet.tagsList.length - 4}
 					</span>
 				{/if}
 			</div>

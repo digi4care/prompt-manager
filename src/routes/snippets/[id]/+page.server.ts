@@ -10,9 +10,6 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (!snippet) throw error(404, 'Snippet not found');
 
 	return {
-		snippet: {
-			...snippet,
-			tags: snippet.tags ? JSON.parse(snippet.tags) : []
-		}
+		snippet
 	};
 };

@@ -1,17 +1,11 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Snippet } from '$lib/server/db/schema';
+	import type { SnippetWithTags } from '$lib/server/services/snippets.service';
 	import { goto, invalidate } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { SnippetCard } from '$lib/components/snippets';
-	import { Search, Plus, Trash2, X, Code, FolderOpen } from 'lucide-svelte';
-
-	// Extended snippet type with parsed tags array
-	export interface SnippetWithTags extends Omit<Snippet, 'tags'> {
-		tags: string[];
-	}
+	import { Search, Plus, X, Code } from 'lucide-svelte';
 
 	interface Props {
 		data: PageData;
@@ -23,22 +17,22 @@
 	let searchQuery: string = $state(data.search || '');
 	let isLoading: boolean = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-	let selectedCategory: string = $state(data.category || '');
+	let selectedCategoryId: number | null = $state(data.categoryId || null);
 
 	// Confirmation state
 	let showDeleteConfirm: boolean = $state(false);
 	let snippetToDelete: SnippetWithTags | null = $state(null);
 
 	// Derived values
-	let categories: string[] = $derived(data.categories || []);
+	let categories = $derived(data.categories || []);
 	let snippets: SnippetWithTags[] = $derived(data.snippets || []);
 
 	function updateUrl() {
 		const url = new URL(window.location.href);
 		if (searchQuery) url.searchParams.set('search', searchQuery);
 		else url.searchParams.delete('search');
-		if (selectedCategory) url.searchParams.set('category', selectedCategory);
-		else url.searchParams.delete('category');
+		if (selectedCategoryId) url.searchParams.set('categoryId', String(selectedCategoryId));
+		else url.searchParams.delete('categoryId');
 		isLoading = true;
 		goto(url.toString(), { replaceState: true, invalidateAll: true }).finally(() => {
 			isLoading = false;
@@ -50,18 +44,18 @@
 		searchTimeout = setTimeout(updateUrl, 300);
 	}
 
-	function selectCategory(category: string) {
-		selectedCategory = selectedCategory === category ? '' : category;
+	function selectCategory(categoryId: number | null) {
+		selectedCategoryId = selectedCategoryId === categoryId ? null : categoryId;
 		updateUrl();
 	}
 
 	// Clear all filters
 	function clearFilters() {
 		searchQuery = '';
-		selectedCategory = '';
+		selectedCategoryId = null;
 		const url = new URL(window.location.href);
 		url.searchParams.delete('search');
-		url.searchParams.delete('category');
+		url.searchParams.delete('categoryId');
 		goto(url.toString(), { replaceState: true, invalidateAll: true });
 	}
 
@@ -145,22 +139,22 @@
 				<div class="flex flex-wrap items-center gap-2">
 					<span class="text-sm text-muted-foreground">Filter:</span>
 					<button
-						class="rounded-full px-3 py-1 text-xs transition-colors {!selectedCategory
+						class="rounded-full px-3 py-1 text-xs transition-colors {!selectedCategoryId
 							? 'bg-primary text-primary-foreground'
 							: 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}"
-						onclick={() => selectCategory('')}
+						onclick={() => selectCategory(null)}
 					>
 						All
 					</button>
 					{#each categories as category}
 						<button
-							class="rounded-full px-3 py-1 text-xs capitalize transition-colors {selectedCategory ===
-							category
+							class="rounded-full px-3 py-1 text-xs capitalize transition-colors {selectedCategoryId ===
+							category.id
 								? 'bg-primary text-primary-foreground'
 								: 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}"
-							onclick={() => selectCategory(category)}
+							onclick={() => selectCategory(category.id)}
 						>
-							{category}
+							{category.name}
 						</button>
 					{/each}
 				</div>
@@ -242,7 +236,7 @@
 		</div>
 
 		<!-- Clear Filters -->
-		{#if searchQuery || selectedCategory}
+		{#if searchQuery || selectedCategoryId}
 			<Button variant="outline" class="w-full" onclick={clearFilters}>Clear Filters</Button>
 		{/if}
 	</div>

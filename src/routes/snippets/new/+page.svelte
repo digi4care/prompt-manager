@@ -6,11 +6,14 @@
 	import { ArrowLeft, Save } from 'lucide-svelte';
 
 	interface FormErrors {
-		title?: { _errors?: string[] };
-		description?: { _errors?: string[] };
-		content?: { _errors?: string[] };
-		category?: { _errors?: string[] };
-		tags?: { _errors?: string[] };
+		formErrors?: string[];
+		fieldErrors: {
+			title?: string[];
+			description?: string[];
+			content?: string[];
+			categoryId?: string[];
+			tagIds?: string[];
+		};
 	}
 
 	interface Props {
@@ -23,8 +26,8 @@
 	let title = $state('');
 	let description = $state('');
 	let content = $state('');
-	let category = $state('');
-	let tags = $state('');
+	let categoryId = $state('');
+	let tagIds = $state('');
 	let isSubmitting = $state(false);
 	let errors = $state<FormErrors | null>(null);
 
@@ -37,8 +40,8 @@
 			title = (data.values.title as string) || '';
 			description = (data.values.description as string) || '';
 			content = (data.values.content as string) || '';
-			category = (data.values.category as string) || '';
-			tags = (data.values.tags as string) || '';
+			categoryId = (data.values.categoryId as string) || '';
+			tagIds = (data.values.tagIds as string) || '';
 		}
 	});
 
@@ -109,8 +112,8 @@
 					class="max-w-xl"
 					required
 				/>
-				{#if errors?.title?._errors}
-					<p class="text-sm text-destructive">{errors.title._errors?.join(', ')}</p>
+				{#if errors?.fieldErrors?.title}
+					<p class="text-sm text-destructive">{errors.fieldErrors.title?.join(', ')}</p>
 				{/if}
 			</div>
 
@@ -124,8 +127,8 @@
 					placeholder="Brief description of this snippet"
 					class="max-w-xl"
 				/>
-				{#if errors?.description?._errors}
-					<p class="text-sm text-destructive">{errors.description._errors?.join(', ')}</p>
+				{#if errors?.fieldErrors?.description}
+					<p class="text-sm text-destructive">{errors.fieldErrors.description?.join(', ')}</p>
 				{/if}
 			</div>
 
@@ -135,52 +138,66 @@
 					Content <span class="text-destructive">*</span>
 				</label>
 				<p class="text-xs text-muted-foreground">
-					Use {{ VARIABLE_NAME }} for placeholders that will be replaced at runtime
+					Use {'{{'}VARIABLE_NAME{'}'} } for placeholders that will be replaced at runtime
 				</p>
 				<textarea
 					id="content"
 					name="content"
 					bind:value={content}
-					placeholder="Enter snippet content with {{ VARIABLES }}..."
+					placeholder="Enter snippet content with {'{{'}VARIABLES{'}}'}..."
 					rows="12"
 					class="flex min-h-[200px] w-full max-w-2xl rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					required
 				></textarea>
-				{#if errors?.content?._errors}
-					<p class="text-sm text-destructive">{errors.content._errors?.join(', ')}</p>
+				{#if errors?.fieldErrors?.content}
+					<p class="text-sm text-destructive">{errors.fieldErrors.content?.join(', ')}</p>
 				{/if}
 			</div>
 
 			<!-- Category -->
 			<div class="space-y-2">
-				<label for="category" class="text-sm font-medium">Category</label>
-				<Input
-					id="category"
-					name="category"
-					bind:value={category}
-					placeholder="e.g., greeting, signature, code"
-					class="max-w-xs"
-				/>
-				{#if errors?.category?._errors}
-					<p class="text-sm text-destructive">{errors.category._errors?.join(', ')}</p>
+				<label for="categoryId" class="text-sm font-medium">Category</label>
+				<select
+					id="categoryId"
+					name="categoryId"
+					bind:value={categoryId}
+					class="flex h-10 max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					<option value="">Select a category</option>
+					{#each data.categories as category}
+						<option value={category.id}>{category.name}</option>
+					{/each}
+				</select>
+				{#if errors?.fieldErrors?.categoryId}
+					<p class="text-sm text-destructive">{errors.fieldErrors.categoryId?.join(', ')}</p>
 				{/if}
 			</div>
 
 			<!-- Tags -->
 			<div class="space-y-2">
-				<label for="tags" class="text-sm font-medium">Tags</label>
-				<Input
-					id="tags"
-					name="tags"
-					bind:value={tags}
-					placeholder="Comma-separated tags (e.g., email, business)"
-					class="max-w-md"
-				/>
-				<p class="text-xs text-muted-foreground">Separate multiple tags with commas</p>
-				{#if errors?.tags?._errors}
-					<p class="text-sm text-destructive">{errors.tags._errors?.join(', ')}</p>
+				<label class="text-sm font-medium">Tags</label>
+				<div class="flex flex-wrap gap-2">
+					{#each data.tags as tag}
+						<label class="inline-flex items-center gap-1.5">
+							<input type="checkbox" name="tagIds" value={tag.id} class="rounded border-input" />
+							<span class="text-sm">{tag.name}</span>
+						</label>
+					{/each}
+				</div>
+				<p class="text-xs text-muted-foreground">Select one or more tags</p>
+				{#if errors?.fieldErrors?.tagIds}
+					<p class="text-sm text-destructive">{errors.fieldErrors.tagIds?.join(', ')}</p>
 				{/if}
 			</div>
+
+			<!-- Form-level errors -->
+			{#if errors?.formErrors && errors.formErrors.length > 0}
+				<div class="rounded-md bg-destructive/10 p-3">
+					{#each errors.formErrors as error}
+						<p class="text-sm text-destructive">{error}</p>
+					{/each}
+				</div>
+			{/if}
 
 			<!-- Actions -->
 			<div class="flex items-center gap-3 pt-4">

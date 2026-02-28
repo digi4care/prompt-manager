@@ -3,10 +3,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { PromptEditor } from '$lib/components/prompts';
 	import { PromptMetadata } from '$lib/components/prompts';
+	import { SnippetPicker } from '$lib/components/snippets';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import { goto } from '$app/navigation';
 	import { cn } from '$lib/utils';
 	import { setupUnsavedChangesWarning } from '$lib/utils/unsaved-changes';
+	import { ClipboardPaste } from 'lucide-svelte';
 
 	interface Props {
 		data: PageData;
@@ -22,9 +24,24 @@
 	let llmProviders = $state<string[]>([]);
 	let content = $state('');
 
-			// Editor change handler
+	// Snippet picker state
+	let showSnippetPicker = $state(false);
+	let snippetInsertText = $state('');
+
+	// Editor change handler
 	function handleContentChange(newContent: string) {
 		content = newContent;
+	}
+
+	// Snippet picker handlers
+	function handleSnippetSelect(snippet: { content: string }) {
+		// Set the text to insert - the PromptEditor will handle insertion at cursor
+		snippetInsertText = snippet.content;
+	}
+
+	function handleSnippetInsertComplete() {
+		// Clear the insert text signal after insertion
+		snippetInsertText = '';
 	}
 
 	// Validation state
@@ -126,14 +143,10 @@
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<div>
 			<h1 class="text-3xl font-bold tracking-tight">Create New Prompt</h1>
-			<p class="text-muted-foreground mt-1">
-				Add a new prompt to your collection
-			</p>
+			<p class="mt-1 text-muted-foreground">Add a new prompt to your collection</p>
 		</div>
 		<div class="flex items-center gap-2">
-			<Button variant="outline" onclick={handleCancel} disabled={saving}>
-				Cancel
-			</Button>
+			<Button variant="outline" onclick={handleCancel} disabled={saving}>Cancel</Button>
 			<Button onclick={handleSave} loading={saving} disabled={saving}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -186,14 +199,27 @@
 	<!-- Form -->
 	<div class="grid gap-6 lg:grid-cols-3">
 		<!-- Main Content Area -->
-		<div class="lg:col-span-2 space-y-6">
+		<div class="space-y-6 lg:col-span-2">
 			<!-- Prompt Content Editor -->
 			<div class="rounded-lg border bg-card">
 				<div class="flex flex-col space-y-1.5 p-6">
-					<h2 class="text-lg font-semibold leading-none tracking-tight">Prompt Content</h2>
-					<p class="text-sm text-muted-foreground">
-						Enter the actual prompt text. You can use template placeholders for dynamic content.
-					</p>
+					<div class="flex items-center justify-between">
+						<div>
+							<h2 class="text-lg leading-none font-semibold tracking-tight">Prompt Content</h2>
+							<p class="text-sm text-muted-foreground">
+								Enter the actual prompt text. You can use template placeholders for dynamic content.
+							</p>
+						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							onclick={() => (showSnippetPicker = true)}
+							class="gap-1.5"
+						>
+							<ClipboardPaste size={14} />
+							Insert Snippet
+						</Button>
+					</div>
 				</div>
 				<div class="p-6 pt-0">
 					<PromptEditor
@@ -202,9 +228,11 @@
 						language="markdown"
 						placeholder="Enter your prompt here..."
 						onchange={handleContentChange}
+						insertText={snippetInsertText}
+						onInsertComplete={handleSnippetInsertComplete}
 					/>
 					{#if contentError}
-						<p class="text-xs text-destructive mt-2">{contentError}</p>
+						<p class="mt-2 text-xs text-destructive">{contentError}</p>
 					{/if}
 				</div>
 			</div>
@@ -214,18 +242,18 @@
 		<aside class="space-y-6">
 			<div class="rounded-lg border bg-card">
 				<div class="flex flex-col space-y-1.5 p-6">
-					<h2 class="text-lg font-semibold leading-none tracking-tight">Prompt Details</h2>
+					<h2 class="text-lg leading-none font-semibold tracking-tight">Prompt Details</h2>
 					<p class="text-sm text-muted-foreground">
 						Provide metadata to help organize and find this prompt later.
 					</p>
 				</div>
 				<div class="p-6 pt-0">
 					<PromptMetadata
-						title={title}
-						description={description}
-						purpose={purpose}
-						tags={tags}
-						llmProviders={llmProviders}
+						{title}
+						{description}
+						{purpose}
+						{tags}
+						{llmProviders}
 						errors={{ title: titleError }}
 					/>
 				</div>
@@ -233,7 +261,7 @@
 
 			<!-- Tips Card -->
 			<div class="rounded-lg border bg-muted/50 p-4">
-				<h3 class="font-semibold flex items-center gap-2 mb-3">
+				<h3 class="mb-3 flex items-center gap-2 font-semibold">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -262,7 +290,7 @@
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-primary">•</span>
-						Template placeholders like {"{{TASK}}"} allow dynamic content
+						Template placeholders like {'{{TASK}}'} allow dynamic content
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-primary">•</span>
@@ -273,7 +301,7 @@
 
 			<!-- Keyboard Shortcuts -->
 			<div class="rounded-lg border bg-muted/50 p-4">
-				<h3 class="font-semibold flex items-center gap-2 mb-3">
+				<h3 class="mb-3 flex items-center gap-2 font-semibold">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -302,7 +330,7 @@
 					<div class="flex items-center justify-between">
 						<span class="text-muted-foreground">Save</span>
 						<kbd
-							class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground"
+							class="pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground select-none"
 						>
 							<span class="text-xs">⌘</span>S
 						</kbd>
@@ -310,7 +338,7 @@
 					<div class="flex items-center justify-between">
 						<span class="text-muted-foreground">Cancel</span>
 						<kbd
-							class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground"
+							class="pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground select-none"
 						>
 							Esc
 						</kbd>
@@ -322,9 +350,9 @@
 
 	<!-- Form dirty indicator -->
 	{#if isDirty && !saving}
-		<div class="fixed bottom-4 right-4 text-sm text-muted-foreground">
+		<div class="fixed right-4 bottom-4 text-sm text-muted-foreground">
 			Press <kbd
-				class="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium"
+				class="pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium select-none"
 			>
 				<span class="text-xs">⌘</span>S
 			</kbd>
@@ -332,3 +360,10 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Snippet Picker -->
+<SnippetPicker
+	open={showSnippetPicker}
+	onclose={() => (showSnippetPicker = false)}
+	onselect={handleSnippetSelect}
+/>

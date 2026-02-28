@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 
 ## Current Position
 
-Phase: 8 of 11 (Snippet Library) - IN PROGRESS (Gap Closure)
-Plan: 5 of 6 in current phase
-Status: Plan 08-05 complete - Form validation, loading states, toast notifications
-Last activity: 2026-02-28 — Plan 08-05: Toast system, SnippetForm component, ConfirmDialog
+Phase: 8 of 11 (Snippet Library) - COMPLETE
+Plan: 6 of 6 in current phase
+Status: Plan 08-06 complete - Dropdown styling fix, admin taxonomy management UI
+Last activity: 2026-02-28 — Plan 08-06: Gap closure fixes for snippet library
 
 Progress: [███████████] 100%
 
@@ -20,9 +20,9 @@ Progress: [███████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: 12min
-- Total execution time: 3.6 hours
+- Total execution time: 3.7 hours
 
 **By Phase:**
 
@@ -35,11 +35,11 @@ Progress: [███████████] 100%
 | 05-test-runner-ui      | 2     | 20min  | 10min    |
 | 06-streaming-execution | 2     | 27min  | 13.5min  |
 | 07-council-correct     | 2     | 32min  | 16min    |
-| 08-snippet-library     | 5     | 70min  | 14min    |
+| 08-snippet-library     | 6     | 75min  | 12.5min  |
 
 **Recent Trend:**
 
-- Last 5 plans: 12min, 15min, 15min, 9min, 8min
+- Last 5 plans: 15min, 15min, 9min, 8min, 5min
 - Trend: Consistent execution with established patterns
   | Phase 07-council-correct-mode P02 | 43 | 3 tasks | 4 files |
   | Phase 08 P01 | 8 | 3 tasks | 4 files |
@@ -100,6 +100,9 @@ Recent decisions affecting current work:
 - [Phase 08-05]: Used existing shadcn-svelte toast instead of new system — Wrapper provides simpler API
 - [Phase 08-05]: JSON.stringify change detection for hasChanges — Simple approach, works for forms
 - [Phase 08-05]: Stay on edit page after save (no redirect) — Allows multiple saves in one session
+- [Phase 08-06]: Single page with tabs for Categories and Tags (simpler than separate pages) — Admin taxonomy management
+- [Phase 08-06]: Inline editing for categories without modal — Faster UX for simple name/description edits
+- [Phase 08-06]: Native select with pr-8 padding for dropdown caret — Prevents text overlap with native arrow
 
 ### Pending Todos
 
@@ -123,7 +126,7 @@ Phases likely needing deeper research during planning:
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped At: Phase 8 Plan 05 complete - Form validation and UX feedback
+Stopped At: Phase 8 Plan 06 complete - Gap closure fixes, admin taxonomy UI
 Resume file: None
 
 ## Phase 8 Implementation Details
@@ -175,6 +178,24 @@ Resume file: None
 - Save button disabled when no changes or while saving
 - Loading states during save/delete operations
 - Confirmation dialog for destructive actions
+
+### Plan 08-06: Gap Closure Fixes
+
+**Files Created:**
+
+- `src/routes/admin/snippets/+page.svelte` - Admin taxonomy management with tabs
+- `src/routes/admin/snippets/+page.server.ts` - Server-side data loading
+
+**Files Modified:**
+
+- `src/lib/components/snippets/snippet-form.svelte` - Fixed dropdown caret padding
+
+**Key Patterns:**
+
+- Tabbed interface for Categories and Tags
+- Inline editing for categories (no modal)
+- Asymmetric padding on native select (pl-3 pr-8)
+- Reuse of existing toast and ConfirmDialog components
 
 ### Plan 08-02: Snippet Library UI
 

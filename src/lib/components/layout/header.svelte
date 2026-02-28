@@ -23,6 +23,7 @@
 
 	const navItems: NavItem[] = [
 		{ href: '/prompts', label: 'Prompts' },
+		{ href: '/snippets', label: 'Snippets' },
 		{ href: '/analytics', label: 'Analytics' },
 		{ href: '/settings', label: 'Settings' }
 	];

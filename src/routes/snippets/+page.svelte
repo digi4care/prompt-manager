@@ -17,6 +17,7 @@
 		List
 	} from 'lucide-svelte';
 	import { browser } from '$app/environment';
+	import { extractVariables } from '$lib/utils/snippet-variables';
 
 	interface Props {
 		data: PageData;
@@ -344,12 +345,17 @@
 										{/if}
 									</td>
 									<td class="px-4 py-3">
-										{#if snippet.variables && Object.keys(snippet.variables).length > 0}
-											<span
-												class="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-											>
-												{Object.keys(snippet.variables).length} vars
-											</span>
+										{#if snippet.content}
+											{@const vars = extractVariables(snippet.content)}
+											{#if vars.length > 0}
+												<span
+													class="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+												>
+													{vars.length} vars
+												</span>
+											{:else}
+												<span class="text-muted-foreground">—</span>
+											{/if}
 										{:else}
 											<span class="text-muted-foreground">—</span>
 										{/if}

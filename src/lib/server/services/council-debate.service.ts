@@ -524,10 +524,21 @@ ${context}
 
 		// Process events (with 120s max implicit timeout from HeadersTimeoutError)
 		try {
+			console.log(`[${agent.archetype}] Starting event processing for session ${sessionID}`);
+			let eventCount = 0;
 			for await (const event of eventStream) {
+				eventCount++;
+				console.log(`[${agent.archetype}] Event #${eventCount}: type=${event.type}`);
+
+				// Handle message.part.delta (preferred - has sessionID filter)
 				if (event.type === 'message.part.delta') {
-					const props = event.properties as { sessionID?: string; delta?: string } | undefined;
-					if (props?.sessionID === sessionID && props?.delta) {
+					const props = event.properties as
+						| { sessionID?: string; delta?: string; field?: string }
+						| undefined;
+					console.log(
+						`[${agent.archetype}] message.part.delta: sessionID=${props?.sessionID}, field=${props?.field}, hasDelta=${!!props?.delta}`
+					);
+					if (props?.sessionID === sessionID && props?.delta && props?.field === 'text') {
 						accumulatedOutput += props.delta;
 						yield {
 							type: 'agent_delta',
@@ -538,10 +549,26 @@ ${context}
 					}
 				}
 
+				// Handle session.status (new SDK uses this instead of session.idle)
+				if (event.type === 'session.status') {
+					const props = event.properties as
+						| { sessionID?: string; status?: { type?: string } }
+						| undefined;
+					console.log(
+						`[${agent.archetype}] session.status: sessionID=${props?.sessionID}, status.type=${props?.status?.type}`
+					);
+					if (props?.sessionID === sessionID && props?.status?.type === 'idle') {
+						console.log(`[${agent.archetype}] Session idle, breaking event loop`);
+						break;
+					}
+				}
+
+				// Handle session.idle (deprecated but still emitted)
 				if (event.type === 'session.idle') {
 					const props = event.properties as { sessionID?: string } | undefined;
+					console.log(`[${agent.archetype}] session.idle: sessionID=${props?.sessionID}`);
 					if (props?.sessionID === sessionID) {
-						// Session complete - token info available via message API if needed
+						console.log(`[${agent.archetype}] Session idle (legacy), breaking event loop`);
 						break;
 					}
 				}
@@ -658,8 +685,10 @@ async function* runSynthesizer(
 		// Process events
 		for await (const event of eventStream) {
 			if (event.type === 'message.part.delta') {
-				const props = event.properties as { sessionID?: string; delta?: string } | undefined;
-				if (props?.sessionID === sessionID && props?.delta) {
+				const props = event.properties as
+					| { sessionID?: string; delta?: string; field?: string }
+					| undefined;
+				if (props?.sessionID === sessionID && props?.delta && props?.field === 'text') {
 					accumulatedOutput += props.delta;
 					yield {
 						type: 'synthesis_delta',
@@ -668,10 +697,20 @@ async function* runSynthesizer(
 				}
 			}
 
+			// Handle session.status (new SDK)
+			if (event.type === 'session.status') {
+				const props = event.properties as
+					| { sessionID?: string; status?: { type?: string } }
+					| undefined;
+				if (props?.sessionID === sessionID && props?.status?.type === 'idle') {
+					break;
+				}
+			}
+
+			// Handle session.idle (deprecated but still emitted)
 			if (event.type === 'session.idle') {
 				const props = event.properties as { sessionID?: string } | undefined;
 				if (props?.sessionID === sessionID) {
-					// Session complete
 					break;
 				}
 			}

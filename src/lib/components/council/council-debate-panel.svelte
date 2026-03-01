@@ -976,24 +976,58 @@
 	<!-- Controls -->
 	{#if uiState === 'idle'}
 		<div class="space-y-3">
-			<Button onclick={startDebate} disabled={!canExecute} class="w-full">
+			<Button
+				onclick={startDebate}
+				disabled={!canExecute || councilAgents.length === 0}
+				class="w-full"
+			>
 				<Play class="mr-2 h-4 w-4" />
 				Start Debate
 			</Button>
 			<div class="text-center text-xs text-muted-foreground">
-				<p class="mb-1">3 AI agents will debate your topic across 3 rounds:</p>
-				<p class="flex flex-wrap justify-center gap-2">
-					{#each councilAgents as agent, i}
-						{@const colors = [
-							'bg-blue-100 dark:bg-blue-900',
-							'bg-red-100 dark:bg-red-900',
-							'bg-amber-100 dark:bg-amber-900'
-						]}
-						<span class="rounded {colors[i % 3]} px-2 py-0.5">
-							{agent.promptName || 'Agent ' + (i + 1)}
-						</span>
-					{/each}
-				</p>
+				{#if councilAgents.length > 0}
+					<p class="mb-1">
+						{councilAgents.length} AI agents will debate your topic across 3 rounds:
+					</p>
+					<p class="flex flex-wrap justify-center gap-2">
+						{#each councilAgents as agent, i}
+							{@const archetype = getArchetypeFromOrder(agent.agentOrder)}
+							{@const hasOverrideForAgent = hasOverride(archetype)}
+							{@const colors = [
+								'bg-blue-100 dark:bg-blue-900',
+								'bg-red-100 dark:bg-red-900',
+								'bg-amber-100 dark:bg-amber-900',
+								'bg-green-100 dark:bg-green-900',
+								'bg-purple-100 dark:bg-purple-900'
+							]}
+							<button
+								type="button"
+								class="group relative cursor-pointer rounded px-2 py-0.5 transition-colors hover:ring-2 hover:ring-primary/50 {colors[
+									i % colors.length
+								]}"
+								class:ring-2={hasOverrideForAgent}
+								class:ring-amber-500={hasOverrideForAgent}
+								onclick={() => openOverrideModal(archetype, agent.promptName || `Agent ${i + 1}`)}
+								title="Click to override prompt"
+							>
+								{agent.promptName || 'Agent ' + (i + 1)}
+								{#if hasOverrideForAgent}
+									<span class="ml-1 text-amber-600 dark:text-amber-400">*</span>
+								{/if}
+								<Edit
+									class="ml-1 inline-block h-3 w-3 opacity-0 transition-opacity group-hover:opacity-50"
+								/>
+							</button>
+						{/each}
+					</p>
+					<p class="mt-1 text-[10px] opacity-70">Click agent name to override prompt</p>
+				{:else}
+					<p class="text-sm">
+						No debate agents configured. Add agents in <a href="/settings" class="underline"
+							>Settings</a
+						>.
+					</p>
+				{/if}
 			</div>
 		</div>
 	{/if}

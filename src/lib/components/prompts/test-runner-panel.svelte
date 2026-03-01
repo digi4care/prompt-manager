@@ -105,6 +105,42 @@
 	type ExecutionMode = 'single' | 'review' | 'debate';
 	let executionMode = $state<ExecutionMode>('single');
 
+	// Council agents with prompt names (fetched from API)
+	interface CouncilAgent {
+		id: number;
+		agentOrder: number;
+		modelId: string;
+		promptLinkId: number | null;
+		promptName?: string;
+	}
+	let councilAgents = $state<CouncilAgent[]>([]);
+
+	// Fetch council agents on mount
+	$effect(() => {
+		async function fetchCouncilAgents() {
+			try {
+				const response = await fetch('/api/admin/council-agents');
+				if (response.ok) {
+					const data = await response.json();
+					councilAgents = (data.agents || []).sort(
+						(a: CouncilAgent, b: CouncilAgent) => a.agentOrder - b.agentOrder
+					);
+				}
+			} catch (error) {
+				console.error('[TestRunner] Failed to fetch council agents:', error);
+			}
+		}
+		fetchCouncilAgents();
+	});
+
+	// Get formatted agent names for display
+	let agentNamesDisplay = $derived(() => {
+		if (councilAgents.length === 0) {
+			return 'Proponent vs Skeptic vs Pragmatist';
+		}
+		return councilAgents.map((a) => a.promptName || 'Agent ' + a.agentOrder).join(' vs ');
+	});
+
 	// Track council review state (received from CouncilReviewPanel)
 	type CouncilState = 'idle' | 'running' | 'complete' | 'error';
 	let councilState = $state<CouncilState>('idle');
@@ -323,7 +359,7 @@
 		</p>
 	{:else if executionMode === 'debate'}
 		<p class="mb-2 text-xs text-muted-foreground">
-			3 AI agents debate your topic across 3 rounds: Proponent vs Skeptic vs Pragmatist
+			3 AI agents debate your topic across 3 rounds: {agentNamesDisplay()}
 		</p>
 	{/if}
 

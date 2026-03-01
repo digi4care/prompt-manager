@@ -852,9 +852,16 @@
 			<div class="text-center text-xs text-muted-foreground">
 				<p class="mb-1">3 AI agents will debate your topic across 3 rounds:</p>
 				<p class="flex flex-wrap justify-center gap-2">
-					<span class="rounded bg-blue-100 px-2 py-0.5 dark:bg-blue-900">Proponent</span>
-					<span class="rounded bg-red-100 px-2 py-0.5 dark:bg-red-900">Skeptic</span>
-					<span class="rounded bg-amber-100 px-2 py-0.5 dark:bg-amber-900">Pragmatist</span>
+					{#each councilAgents as agent, i}
+						{@const colors = [
+							'bg-blue-100 dark:bg-blue-900',
+							'bg-red-100 dark:bg-red-900',
+							'bg-amber-100 dark:bg-amber-900'
+						]}
+						<span class="rounded {colors[i % 3]} px-2 py-0.5">
+							{agent.promptName || 'Agent ' + (i + 1)}
+						</span>
+					{/each}
 				</p>
 			</div>
 		</div>

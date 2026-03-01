@@ -11,9 +11,15 @@
  * 3. After Round 3, run synthesizer to produce structured conclusion
  */
 import { db } from '../db/client';
-import { councilRuns, prompts, promptVersions, functionDefaults } from '../db/schema';
+import {
+	councilRuns,
+	prompts,
+	promptVersions,
+	functionDefaults,
+	councilAgents
+} from '../db/schema';
 import { getOpencodeClient } from './opencode.service';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import type { Session } from '@opencode-ai/sdk';
 import type { FunctionType } from './function-defaults.service';
 
@@ -333,60 +339,72 @@ function parseSynthesisJson(content: string): DebateSynthesis | null {
 }
 
 /**
- * Load debate agent configurations
- * Uses default archetypes unless overrides are provided
+ * Load debate agent configurations from database settings
+ * Order and names are determined by council_agents table
  */
 async function loadDebateAgents(
 	overrides?: Map<DebateArchetype, AgentOverride>
 ): Promise<DebateAgentConfig[]> {
-	const archetypes: DebateArchetype[] = ['proponent', 'skeptic', 'pragmatist'];
+	// Fetch council agents from database (ordered by agentOrder)
+	const dbAgents = await db
+		.select({
+			id: councilAgents.id,
+			agentOrder: councilAgents.agentOrder,
+			modelId: councilAgents.modelId,
+			promptLinkId: councilAgents.promptLinkId,
+			promptTitle: prompts.title,
+			promptVersionId: prompts.latestVersionId
+		})
+		.from(councilAgents)
+		.leftJoin(prompts, eq(councilAgents.promptLinkId, prompts.id))
+		.where(eq(councilAgents.parentType, 'function_defaults'))
+		.orderBy(asc(councilAgents.agentOrder));
+
+	if (dbAgents.length === 0) {
+		console.warn('[CouncilDebate] No council agents found in database, using defaults');
+		// Fallback to defaults if no agents configured
+		const archetypes: DebateArchetype[] = ['proponent', 'skeptic', 'pragmatist'];
+		return archetypes.map((archetype, i) => ({
+			id: i + 1,
+			archetype,
+			name: archetype.charAt(0).toUpperCase() + archetype.slice(1),
+			systemPrompt: ARCHETYPE_PROMPTS[archetype],
+			modelId: 'glm-5',
+			providerId: 'zhipu'
+		}));
+	}
+
 	const agents: DebateAgentConfig[] = [];
 
-	for (let i = 0; i < archetypes.length; i++) {
-		const archetype = archetypes[i];
-		let systemPrompt = ARCHETYPE_PROMPTS[archetype];
-		let name = archetype.charAt(0).toUpperCase() + archetype.slice(1);
+	for (let i = 0; i < dbAgents.length; i++) {
+		const dbAgent = dbAgents[i];
+		// Use agentOrder as archetype identifier (1=first, 2=second, 3=third)
+		const archetypeIndex = (dbAgent.agentOrder - 1) % 3;
+		const archetypes: DebateArchetype[] = ['proponent', 'skeptic', 'pragmatist'];
+		const archetype = archetypes[archetypeIndex];
 
-		// Check for override
-		const override = overrides?.get(archetype);
-		if (override?.promptId) {
-			// Load custom prompt content
-			const [linkedPrompt] = await db
-				.select({ title: prompts.title, latestVersionId: prompts.latestVersionId })
-				.from(prompts)
-				.where(eq(prompts.id, override.promptId))
+		let systemPrompt = ARCHETYPE_PROMPTS[archetype];
+		let name = dbAgent.promptTitle || archetype.charAt(0).toUpperCase() + archetype.slice(1);
+
+		// Load prompt content if linked
+		if (dbAgent.promptLinkId && dbAgent.promptVersionId) {
+			const [version] = await db
+				.select({ content: promptVersions.content })
+				.from(promptVersions)
+				.where(eq(promptVersions.id, dbAgent.promptVersionId))
 				.limit(1);
 
-			if (linkedPrompt) {
-				name = linkedPrompt.title || name;
-
-				const versionIdToUse = override.versionId || linkedPrompt.latestVersionId;
-				if (versionIdToUse) {
-					const [version] = await db
-						.select({ content: promptVersions.content })
-						.from(promptVersions)
-						.where(eq(promptVersions.id, versionIdToUse))
-						.limit(1);
-
-					if (version?.content) {
-						systemPrompt = version.content;
-					}
-				}
+			if (version?.content) {
+				systemPrompt = version.content;
 			}
 		}
 
-		// Get model from 'judge' function defaults for synthesizer-like behavior
-		const judgeDefaults = await db
-			.select()
-			.from(functionDefaults)
-			.where(eq(functionDefaults.functionType, 'judge' as FunctionType))
-			.limit(1);
-
-		const modelIdValue = judgeDefaults[0]?.modelId || 'zai-coding-plan/glm-5';
+		// Parse model ID
+		const modelIdValue = dbAgent.modelId || 'zai-coding-plan/glm-5';
 		const { providerId, modelId } = parseModelId(modelIdValue);
 
 		agents.push({
-			id: i + 1,
+			id: dbAgent.id,
 			archetype,
 			name,
 			systemPrompt,
@@ -396,8 +414,8 @@ async function loadDebateAgents(
 	}
 
 	console.log(
-		'[CouncilDebate] Loaded debate agents:',
-		agents.map((a) => a.name)
+		'[CouncilDebate] Loaded debate agents from settings:',
+		agents.map((a) => `${a.name} (${a.archetype})`)
 	);
 	return agents;
 }

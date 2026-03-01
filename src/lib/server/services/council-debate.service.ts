@@ -530,15 +530,18 @@ ${context}
 				eventCount++;
 				console.log(`[${agent.archetype}] Event #${eventCount}: type=${event.type}`);
 
-				// Handle message.part.delta (preferred - has sessionID filter)
-				if (event.type === 'message.part.delta') {
+				// SDK 1.2.15: message.part.updated (NOT message.part.delta)
+				if (event.type === 'message.part.updated') {
 					const props = event.properties as
-						| { sessionID?: string; delta?: string; field?: string }
+						| {
+								part?: { sessionID?: string; type?: string };
+								delta?: string;
+						  }
 						| undefined;
 					console.log(
-						`[${agent.archetype}] message.part.delta: sessionID=${props?.sessionID}, field=${props?.field}, hasDelta=${!!props?.delta}`
+						`[${agent.archetype}] message.part.updated: sessionID=${props?.part?.sessionID}, hasDelta=${!!props?.delta}`
 					);
-					if (props?.sessionID === sessionID && props?.delta && props?.field === 'text') {
+					if (props?.part?.sessionID === sessionID && props?.delta) {
 						accumulatedOutput += props.delta;
 						yield {
 							type: 'agent_delta',
@@ -682,13 +685,17 @@ async function* runSynthesizer(
 			}
 		});
 
-		// Process events
+		// Process events (SDK 1.2.15)
 		for await (const event of eventStream) {
-			if (event.type === 'message.part.delta') {
+			// SDK 1.2.15: message.part.updated (NOT message.part.delta)
+			if (event.type === 'message.part.updated') {
 				const props = event.properties as
-					| { sessionID?: string; delta?: string; field?: string }
+					| {
+							part?: { sessionID?: string; type?: string };
+							delta?: string;
+					  }
 					| undefined;
-				if (props?.sessionID === sessionID && props?.delta && props?.field === 'text') {
+				if (props?.part?.sessionID === sessionID && props?.delta) {
 					accumulatedOutput += props.delta;
 					yield {
 						type: 'synthesis_delta',

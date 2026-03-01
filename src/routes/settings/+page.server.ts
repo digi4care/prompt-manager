@@ -223,8 +223,12 @@ export const load: PageServerLoad = async ({ url }) => {
 	console.log('[Settings] Loading council agents...');
 	let councilAgentsList: CouncilAgent[] = [];
 	try {
-		// Get all council agents from the database
-		const result = await db.select().from(councilAgents).all();
+		// Get council agents from the database (ONLY function_defaults)
+		const result = await db
+			.select()
+			.from(councilAgents)
+			.where(eq(councilAgents.parentType, 'function_defaults'))
+			.all();
 		console.log('[Settings] Raw council agents query result:', result.length);
 
 		// Enrich with model info - look up model details from the models list

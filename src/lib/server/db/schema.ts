@@ -477,7 +477,7 @@ export const councilRuns = sqliteTable('council_runs', {
 export const councilAgents = sqliteTable('council_agents', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	parentType: text('parent_type')
-		.$type<'function_defaults' | 'prompt_function_settings'>()
+		.$type<'function_defaults' | 'prompt_function_settings' | 'review_defaults'>()
 		.notNull(),
 	parentId: integer('parent_id').notNull(),
 	agentOrder: integer('agent_order').notNull(),

@@ -90,6 +90,12 @@
 			description: 'Multi-model council agents'
 		},
 		{
+			id: 'review',
+			title: 'LLM Review',
+			color: 'purple',
+			description: 'Multi-model review agents'
+		},
+		{
 			id: 'catalog',
 			title: 'Model Catalog',
 			color: 'peach',
@@ -381,6 +387,89 @@
 		}
 	}
 
+	// Review CRUD functions
+	async function addReviewMember() {
+		try {
+			// Use a safe default model ID with provider prefix
+			const defaultModelId = 'zai-coding-plan/glm-5';
+			const response = await fetch('/api/admin/council-agents', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					parentType: 'review_defaults',
+					parentId: 1, // Review agents have their own parent ID
+					modelId: defaultModelId,
+					temperature: 0.5,
+					maxTokens: 8192,
+					promptLinkId: null
+				})
+			});
+			if (!response.ok) {
+				if (response.status === 302 || response.status === 401) {
+					throw new Error('Je moet ingelogd zijn om dit te doen');
+				}
+				const err = await response.json();
+				throw new Error(err.message || 'Failed to add review member');
+			}
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error adding review member:', error);
+			alert(error instanceof Error ? error.message : 'Failed to add review member');
+		}
+	}
+
+	async function deleteReviewMember(id: number) {
+		try {
+			const response = await fetch(`/api/admin/council-agents/${id}`, {
+				method: 'DELETE'
+			});
+			if (!response.ok) throw new Error('Failed to delete review member');
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error deleting review member:', error);
+		}
+	}
+
+	async function updateReviewPrompt(agentId: number, promptId: number | null) {
+		try {
+			const response = await fetch(`/api/admin/council-agents/${agentId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ promptLinkId: promptId })
+			});
+			if (!response.ok) throw new Error('Failed to update review prompt');
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error updating review prompt:', error);
+		}
+	}
+
+	async function updateReviewModel(
+		agentId: number,
+		model: { id: string; name: string; provider: string; logo?: string }
+	) {
+		if (!model?.id) return;
+
+		try {
+			const response = await fetch(`/api/admin/council-agents/${agentId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					modelId: model.id,
+					modelName: model.name,
+					modelProvider: model.provider,
+					modelLogo: model.logo
+				})
+			});
+
+			if (!response.ok) throw new Error('Failed to update');
+
+			invalidateAll();
+		} catch (error) {
+			console.error('Error updating review model:', error);
+		}
+	}
+
 	// Navigate to prompts page
 	function goToPrompts() {
 		window.location.href = '/prompts';
@@ -560,6 +649,18 @@
 									onDelete={deleteCouncilMember}
 									onAdd={addCouncilMember}
 									onPromptChange={updateCouncilPrompt}
+								/>
+							{:else if section.id === 'review'}
+								<CouncilMembersList
+									agents={data.reviewAgents ?? []}
+									prompts={data.prompts}
+									models={data.models}
+									allowedModels={data.allowedModels}
+									onModelChange={updateReviewModel}
+									onDelete={deleteReviewMember}
+									onAdd={addReviewMember}
+									onPromptChange={updateReviewPrompt}
+									parentType="review_defaults"
 								/>
 							{:else if section.id === 'catalog'}
 								<CatalogView allowedModels={data.allowedModels} />

@@ -269,6 +269,54 @@ export const load: PageServerLoad = async ({ url }) => {
 		console.error('[Settings] Error loading council agents:', err);
 	}
 
+	// Load review agents (same table, different parentType)
+	console.log('[Settings] Loading review agents...');
+	let reviewAgentsList: CouncilAgent[] = [];
+	try {
+		const reviewResult = await db
+			.select()
+			.from(councilAgents)
+			.where(eq(councilAgents.parentType, 'review_defaults'))
+			.all();
+
+		reviewAgentsList = reviewResult.map((agent) => {
+			const model = models.find((m: unknown) => (m as { id: string }).id === agent.modelId) as
+				| { id: string; name: string; provider: string; logo?: string }
+				| undefined;
+
+			let providerId: string | undefined;
+			let modelIdOnly = agent.modelId;
+			if (agent.modelId.includes('/')) {
+				const parts = agent.modelId.split('/');
+				providerId = parts[0];
+				modelIdOnly = parts.slice(1).join('/');
+			} else if (model?.provider) {
+				providerId = model.provider;
+			}
+
+			const resolvedModelName = agent.modelName || model?.name || agent.modelId;
+			return {
+				id: String(agent.id),
+				name: resolvedModelName,
+				modelId: agent.modelName ? modelIdOnly : agent.modelId,
+				modelName: resolvedModelName,
+				providerId: agent.modelProvider || providerId,
+				modelProvider: agent.modelProvider || model?.provider || providerId,
+				modelLogo: agent.modelLogo || model?.logo,
+				temperature: agent.temperature,
+				maxTokens: agent.maxTokens,
+				promptLinkId: agent.promptLinkId || undefined,
+				modelVariant: agent.modelVariant ?? undefined,
+				createdAt: agent.createdAt?.toISOString(),
+				updatedAt: agent.updatedAt?.toISOString()
+			};
+		});
+
+		console.log('[Settings] Review agents loaded:', reviewAgentsList.length);
+	} catch (err) {
+		console.error('[Settings] Error loading review agents:', err);
+	}
+
 	return {
 		settings,
 		connection,
@@ -277,7 +325,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		connectedProviderIds,
 		allowedModels,
 		prompts: promptsList,
-		councilAgents: councilAgentsList
+		councilAgents: councilAgentsList,
+		reviewAgents: reviewAgentsList
 	};
 };
 

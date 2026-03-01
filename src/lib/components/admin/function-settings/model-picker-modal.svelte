@@ -45,7 +45,6 @@
 	}: Props = $props();
 
 	let searchQuery = $state('');
-	let draftModelId = $state('');
 	let draftModelIds = $state<string[]>([]);
 	let showSelectedOnly = $state(false);
 	let dialogElement = $state<HTMLDivElement | null>(null);
@@ -58,7 +57,6 @@
 		}
 
 		searchQuery = '';
-		draftModelId = selectedModelId;
 		draftModelIds = Array.from(new Set(selectedModelIds));
 		showSelectedOnly = false;
 		dialogElement?.focus();
@@ -102,12 +100,6 @@
 		return baseList;
 	});
 
-	let selectedModel = $derived(
-		multiSelect
-			? null
-			: allModels.find((model) => `${model.providerId}/${model.id}` === draftModelId) || null
-	);
-
 	let selectedModels = $derived.by(() => {
 		if (!multiSelect) {
 			return [] as FlatModel[];
@@ -117,16 +109,14 @@
 		return allModels.filter((model) => selectedSet.has(`${model.providerId}/${model.id}`));
 	});
 
-	let selectedCount = $derived(
-		multiSelect ? draftModelIds.length : draftModelId.length > 0 ? 1 : 0
-	);
+	let selectedCount = $derived(multiSelect ? draftModelIds.length : 0);
 
 	function isSelectedModel(providerModelId: string): boolean {
-		return multiSelect ? draftModelIds.includes(providerModelId) : draftModelId === providerModelId;
+		return draftModelIds.includes(providerModelId);
 	}
 
 	function handleSelectModel(model: FlatModel): void {
-		// Use provider/model format for consistent identification
+		// Store internally with provider prefix for correct matching
 		const providerModelId = `${model.providerId}/${model.id}`;
 
 		if (multiSelect) {
@@ -138,7 +128,9 @@
 			return;
 		}
 
-		draftModelId = providerModelId;
+		// Single-select: Save immediately and close modal (auto-save behavior)
+		onSave?.(model.id);
+		onClose();
 	}
 
 	function handleSelectAllFiltered(): void {
@@ -163,17 +155,15 @@
 	}
 
 	function handleSave(): void {
-		if (multiSelect) {
-			onSaveMultiple?.(Array.from(new Set(draftModelIds)));
-			onClose();
-			return;
-		}
+		// Only used for multi-select mode
+		if (!multiSelect) return;
 
-		if (!draftModelId) {
-			return;
-		}
-
-		onSave?.(draftModelId);
+		// Extract raw model IDs without provider prefix
+		const rawIds = draftModelIds.map((id) => {
+			const parts = id.split('/');
+			return parts.length > 1 ? parts.slice(1).join('/') : id;
+		});
+		onSaveMultiple?.(Array.from(new Set(rawIds)));
 		onClose();
 	}
 
@@ -215,6 +205,7 @@
 			aria-label={title}
 			tabindex="-1"
 			onkeydown={handleDialogKeydown}
+			onclick={(e) => e.stopPropagation()}
 		>
 			<div class="border-b px-4 py-3">
 				<div class="flex items-center justify-between gap-3">
@@ -304,7 +295,10 @@
 									)
 										? 'border-primary bg-primary/5'
 										: 'border-border'}"
-									onclick={() => handleSelectModel(model)}
+									onclick={(e) => {
+										e.stopPropagation();
+										handleSelectModel(model);
+									}}
 								>
 									<div class="flex items-center justify-between gap-2">
 										<div class="flex items-center gap-2">
@@ -315,7 +309,7 @@
 											/>
 											<span class="font-medium">{model.providerName} / {model.name}</span>
 										</div>
-										{#if isSelectedModel(model.id)}
+										{#if isSelectedModel(`${model.providerId}/${model.id}`)}
 											<span
 												class="rounded border border-primary bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-foreground"
 											>
@@ -355,32 +349,20 @@
 							{/if}
 						</div>
 					</div>
-				{:else if selectedModel}
-					<div class="rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
-						<div class="flex items-center gap-2 font-medium">
-							<ProviderLogo
-								providerId={selectedModel.providerId}
-								name={selectedModel.providerName}
-								size="sm"
-							/>
-							Selected: {selectedModel.providerName} / {selectedModel.name}
-						</div>
-						<div class="font-mono text-muted-foreground">{selectedModel.id}</div>
-					</div>
 				{/if}
 			</div>
 
-			<div
-				class="flex justify-end gap-2 border-t px-4 py-3"
-				class:sticky={isMobile}
-				class:bottom-0={isMobile}
-				class:bg-background={isMobile}
-			>
-				<Button variant="outline" onclick={handleClose}>Cancel</Button>
-				<Button onclick={handleSave} disabled={multiSelect ? false : !draftModelId}
-					>Save Selection</Button
+			{#if multiSelect}
+				<div
+					class="flex justify-end gap-2 border-t px-4 py-3"
+					class:sticky={isMobile}
+					class:bottom-0={isMobile}
+					class:bg-background={isMobile}
 				>
-			</div>
+					<Button variant="outline" onclick={handleClose}>Cancel</Button>
+					<Button onclick={handleSave} disabled={draftModelIds.length === 0}>Save Selection</Button>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}

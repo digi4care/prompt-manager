@@ -526,28 +526,96 @@ ${context}
 		try {
 			console.log(`[${agent.archetype}] Starting event processing for session ${sessionID}`);
 			let eventCount = 0;
+			let lastPartTextLength = 0; // Track incremental text position
+
 			for await (const event of eventStream) {
 				eventCount++;
-				console.log(`[${agent.archetype}] Event #${eventCount}: type=${event.type}`);
 
-				// SDK 1.2.15: message.part.updated (NOT message.part.delta)
-				if (event.type === 'message.part.updated') {
-					const props = event.properties as
-						| {
-								part?: { sessionID?: string; type?: string };
-								delta?: string;
-						  }
-						| undefined;
+				// VERBOSE DEBUG: Log full event structure for first 10 events
+				if (eventCount <= 10) {
 					console.log(
-						`[${agent.archetype}] message.part.updated: sessionID=${props?.part?.sessionID}, hasDelta=${!!props?.delta}`
+						`[${agent.archetype}] Event #${eventCount} FULL:`,
+						JSON.stringify(event, (key, value) =>
+							typeof value === 'string' && value.length > 200
+								? value.substring(0, 200) + '...[truncated]'
+								: value
+						)
 					);
-					if (props?.part?.sessionID === sessionID && props?.delta) {
+				} else {
+					console.log(`[${agent.archetype}] Event #${eventCount}: type=${event.type}`);
+				}
+
+				// SDK 1.2.15: message.part.updated (contains full part.text, not delta)
+				if (event.type === 'message.part.updated') {
+					const props = event.properties as Record<string, unknown> | undefined;
+					const partObj = props?.part as Record<string, unknown> | undefined;
+					const partSessionID = partObj?.sessionID || props?.sessionID || null;
+
+					// Only process events for OUR session (prevent cross-talk)
+					if (partSessionID !== sessionID) {
+						console.log(
+							`[${agent.archetype}] Skipping event - sessionID mismatch: ${partSessionID} !== ${sessionID}`
+						);
+						continue;
+					}
+
+					// Get full text from part.text
+					const fullText = typeof partObj?.text === 'string' ? partObj.text : null;
+
+					if (fullText && fullText.length > lastPartTextLength) {
+						// Calculate incremental delta (only new characters)
+						const delta = fullText.substring(lastPartTextLength);
+						lastPartTextLength = fullText.length;
+						accumulatedOutput = fullText; // Use full text as accumulated
+
+						console.log(
+							`[${agent.archetype}] message.part.updated: deltaLen=${delta.length}, totalLen=${fullText.length}`
+						);
+
+						yield {
+							type: 'agent_delta',
+							round,
+							archetype: agent.archetype,
+							data: { delta, accumulated: accumulatedOutput }
+						};
+					} else if (typeof props?.delta === 'string') {
+						// Fallback: use explicit delta if provided
 						accumulatedOutput += props.delta;
 						yield {
 							type: 'agent_delta',
 							round,
 							archetype: agent.archetype,
 							data: { delta: props.delta, accumulated: accumulatedOutput }
+						};
+					}
+				}
+
+				// SDK 1.2.15: message.part.delta (incremental AI content - THIS IS THE ONE!)
+				if (event.type === 'message.part.delta') {
+					const props = event.properties as
+						| { sessionID?: string; delta?: string; part?: { sessionID?: string } }
+						| undefined;
+					const deltaSessionID = props?.sessionID || props?.part?.sessionID || null;
+
+					// Only process events for OUR session (prevent cross-talk)
+					if (deltaSessionID !== sessionID) {
+						console.log(
+							`[${agent.archetype}] Skipping delta - sessionID mismatch: ${deltaSessionID} !== ${sessionID}`
+						);
+						continue;
+					}
+
+					const delta = props?.delta;
+					if (delta) {
+						accumulatedOutput += delta;
+						console.log(
+							`[${agent.archetype}] message.part.delta: deltaLen=${delta.length}, totalLen=${accumulatedOutput.length}`
+						);
+						yield {
+							type: 'agent_delta',
+							round,
+							archetype: agent.archetype,
+							data: { delta, accumulated: accumulatedOutput }
 						};
 					}
 				}

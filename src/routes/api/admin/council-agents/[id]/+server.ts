@@ -119,16 +119,26 @@ async function handleUpdate(params: { id: string }, request: Request): Promise<R
 				requireConnected: true
 			});
 
+			// Log validation result for debugging but don't fail on MODEL_NOT_FOUND
+			// The frontend may show models that aren't in the catalog yet
 			if (!variantValidation.valid) {
 				const errorCode = variantValidation.error?.code || 'MODEL_NOT_FOUND';
-				const httpStatus = errorCode === 'VARIANT_REQUIRED' ? 400 : 422;
-				throw error(
-					httpStatus,
-					JSON.stringify({
-						message: variantValidation.error?.message || 'Model/variant validation failed',
-						code: errorCode
-					})
-				);
+				if (errorCode === 'MODEL_NOT_FOUND') {
+					console.warn(
+						`[Council Agent] Model "${effectiveModelId}" not found in catalog, allowing update anyway`
+					);
+					// Continue with update - model may be available in frontend but not yet in catalog
+				} else {
+					// Only fail for other validation errors (PROVIDER_NOT_CONNECTED, MODEL_NOT_ALLOWED, VARIANT_REQUIRED)
+					const httpStatus = errorCode === 'VARIANT_REQUIRED' ? 400 : 422;
+					throw error(
+						httpStatus,
+						JSON.stringify({
+							message: variantValidation.error?.message || 'Model/variant validation failed',
+							code: errorCode
+						})
+					);
+				}
 			}
 		} catch (err) {
 			// Re-throw SvelteKit HttpError (has status property)

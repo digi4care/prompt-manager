@@ -98,17 +98,21 @@ export const POST: RequestHandler = async (event) => {
 
 		// Execute using OpenCode session.prompt
 		// Using 'chat' as agent name - this would need to be defined in OpenCode
-		const res = await executeAgentWithSession({
+		const res = await executeAgentWithSession<string>({
 			model: modelSelection,
 			agent: 'chat',
 			parts: [{ type: 'text', text: message }],
 			maxTokens: 1024
 		});
 
+		// Handle errors from OpenCode
+		if (res.error) {
+			throw error(500, res.error.message || 'AI request failed');
+		}
+
 		// Extract content from OpenCode response
-		// The response format depends on the agent implementation
-		const payload = (res as any)?.data ?? res;
-		const content = typeof payload === 'string' ? payload : JSON.stringify(payload);
+		// executeAgentWithSession returns { data?: TOutput, error?: { message: string } }
+		const content = res.data || '';
 
 		// Extract usage info if available
 		const usage = (res as any)?.usage ?? { input_tokens: 0, output_tokens: 0 };

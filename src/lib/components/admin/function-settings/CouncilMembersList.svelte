@@ -23,8 +23,9 @@
 		modelName?: string | null;
 		modelProvider?: string | null;
 		modelLogo?: string | null;
-		temperature?: number;
-		maxTokens?: number;
+		temperature?: number | null;
+		maxTokens?: number | null;
+		thinkingLevel?: string | null;
 		promptLinkId?: number | null;
 		modelVariant?: string | null;
 	}
@@ -34,11 +35,20 @@
 		prompts?: { id: number; title: string }[];
 		models?: Model[];
 		allowedModels?: string[];
+		parentType?: 'function_defaults' | 'prompt_function_settings' | 'review_defaults';
 		onModelChange: (agentId: number, model: Model) => void;
 		onVariantChange?: (agentId: number, variant: string | null) => void;
 		onDelete: (agentId: number) => void;
 		onAdd: () => void;
 		onPromptChange?: (agentId: number, promptId: number | null) => void;
+		onSettingsChange?: (
+			agentId: number,
+			settings: {
+				temperature?: number | null;
+				maxTokens?: number | null;
+				thinkingLevel?: string | null;
+			}
+		) => void;
 	}
 
 	let {
@@ -46,11 +56,13 @@
 		prompts = [],
 		models = [],
 		allowedModels = [],
+		parentType = 'function_defaults',
 		onModelChange,
 		onVariantChange,
 		onDelete,
 		onAdd,
-		onPromptChange
+		onPromptChange,
+		onSettingsChange
 	}: Props = $props();
 
 	let activeModal = $state<number | null>(null);
@@ -194,6 +206,58 @@
 							{/each}
 						</select>
 					{/if}
+
+					<!-- Agent-specific settings -->
+					<div class="flex items-center gap-1">
+						<input
+							type="number"
+							step="0.1"
+							min="0"
+							max="2"
+							placeholder="Temp"
+							value={agent.temperature ?? ''}
+							class="h-8 w-14 rounded-md border border-border/60 bg-background px-1.5 text-center text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+							onchange={(e) => {
+								const val = (e.target as HTMLInputElement).value;
+								onSettingsChange?.(agent.id, {
+									temperature: val ? parseFloat(val) : null
+								});
+							}}
+							title="Temperature (0-2)"
+						/>
+						<input
+							type="number"
+							step="256"
+							min="256"
+							max="32000"
+							placeholder="Tokens"
+							value={agent.maxTokens ?? ''}
+							class="h-8 w-16 rounded-md border border-border/60 bg-background px-1.5 text-center text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+							onchange={(e) => {
+								const val = (e.target as HTMLInputElement).value;
+								onSettingsChange?.(agent.id, {
+									maxTokens: val ? parseInt(val) : null
+								});
+							}}
+							title="Max tokens"
+						/>
+						<select
+							class="h-8 rounded-md border border-border/60 bg-background px-1.5 text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+							value={agent.thinkingLevel ?? ''}
+							onchange={(e) => {
+								const val = (e.target as HTMLSelectElement).value;
+								onSettingsChange?.(agent.id, {
+									thinkingLevel: val || null
+								});
+							}}
+							title="Thinking level"
+						>
+							<option value="">Think</option>
+							<option value="low" selected={agent.thinkingLevel === 'low'}>Low</option>
+							<option value="medium" selected={agent.thinkingLevel === 'medium'}>Med</option>
+							<option value="high" selected={agent.thinkingLevel === 'high'}>High</option>
+						</select>
+					</div>
 
 					<button
 						type="button"

@@ -38,6 +38,7 @@
 		| 'policy'
 		| 'defaults'
 		| 'council'
+		| 'review'
 		| 'catalog'
 		| 'presets'
 		| 'snippets';
@@ -387,6 +388,30 @@
 		}
 	}
 
+	// Update agent settings (temperature, maxTokens, thinkingLevel)
+	async function updateAgentSettings(
+		agentId: number,
+		settings: {
+			temperature?: number | null;
+			maxTokens?: number | null;
+			thinkingLevel?: string | null;
+		}
+	) {
+		try {
+			const response = await fetch(`/api/admin/council-agents/${agentId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(settings)
+			});
+
+			if (!response.ok) throw new Error('Failed to update settings');
+
+			invalidateAll();
+		} catch (error) {
+			console.error('Error updating agent settings:', error);
+		}
+	}
+
 	// Review CRUD functions
 	async function addReviewMember() {
 		try {
@@ -649,6 +674,7 @@
 									onDelete={deleteCouncilMember}
 									onAdd={addCouncilMember}
 									onPromptChange={updateCouncilPrompt}
+									onSettingsChange={updateAgentSettings}
 								/>
 							{:else if section.id === 'review'}
 								<CouncilMembersList
@@ -661,6 +687,7 @@
 									onAdd={addReviewMember}
 									onPromptChange={updateReviewPrompt}
 									parentType="review_defaults"
+									onSettingsChange={updateAgentSettings}
 								/>
 							{:else if section.id === 'catalog'}
 								<CatalogView allowedModels={data.allowedModels} />

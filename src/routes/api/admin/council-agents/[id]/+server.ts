@@ -53,6 +53,7 @@ async function handleUpdate(params: { id: string }, request: Request): Promise<R
 		modelLogo,
 		temperature,
 		maxTokens,
+		thinkingLevel,
 		promptLinkId,
 		agentOrder
 	} = body;
@@ -65,6 +66,7 @@ async function handleUpdate(params: { id: string }, request: Request): Promise<R
 	if (modelLogo !== undefined) updateData.modelLogo = modelLogo;
 	if (temperature !== undefined) updateData.temperature = temperature;
 	if (maxTokens !== undefined) updateData.maxTokens = maxTokens;
+	if (thinkingLevel !== undefined) updateData.thinkingLevel = thinkingLevel;
 	if (promptLinkId !== undefined) updateData.promptLinkId = promptLinkId;
 	if (agentOrder !== undefined) updateData.agentOrder = agentOrder;
 

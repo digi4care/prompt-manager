@@ -1,6 +1,7 @@
 import { db } from '../db/client';
 import {
 	promptFunctionSettings,
+	councilAgents,
 	type PromptFunctionSetting,
 	type NewPromptFunctionSetting
 } from '../db/schema';
@@ -272,6 +273,7 @@ export async function upsertPromptFunctionSettings(
 
 /**
  * Delete prompt function settings (remove override)
+ * Also cascades delete to related council agents
  */
 export async function deletePromptFunctionSettings(
 	promptId: number,
@@ -283,6 +285,17 @@ export async function deletePromptFunctionSettings(
 		return false; // Nothing to delete
 	}
 
+	// Cascade delete: remove council agents linked to this settings record
+	await db
+		.delete(councilAgents)
+		.where(
+			and(
+				eq(councilAgents.parentType, 'prompt_function_settings'),
+				eq(councilAgents.parentId, existing.id)
+			)
+		);
+
+	// Delete the settings record
 	await db.delete(promptFunctionSettings).where(eq(promptFunctionSettings.id, existing.id));
 
 	return true;

@@ -488,6 +488,7 @@ export const councilAgents = sqliteTable('council_agents', {
 	modelLogo: text('model_logo'),
 	temperature: real('temperature').notNull().default(0.5),
 	maxTokens: integer('max_tokens').notNull().default(8192),
+	thinkingLevel: text('thinking_level').$type<'low' | 'medium' | 'high'>(),
 	promptLinkId: integer('prompt_link_id').references(() => prompts.id),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()

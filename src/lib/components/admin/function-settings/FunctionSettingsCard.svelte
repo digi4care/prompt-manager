@@ -28,6 +28,7 @@
 		onselect?: (model: Model) => void;
 		onDelete?: () => void;
 		promptLinkId?: number | null;
+		onPromptChange?: (promptId: number | null) => void;
 	}
 
 	let {

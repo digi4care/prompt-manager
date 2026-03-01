@@ -209,13 +209,29 @@
 	let _description = $state(description || '');
 	let _purpose = $state(purpose || '');
 
-	// Sync bindable props with internal state
+	// Sync internal state with bindable props when they change from outside
+	$effect(() => {
+		if (title !== undefined && title !== _title) _title = title;
+	});
+	$effect(() => {
+		if (description !== undefined && description !== _description) _description = description;
+	});
+	$effect(() => {
+		if (purpose !== undefined && purpose !== _purpose) _purpose = purpose;
+	});
+
+	// Sync bindable props with internal state (outward sync)
 	$effect(() => {
 		title = _title;
+	});
+	$effect(() => {
 		description = _description;
+	});
+	$effect(() => {
 		purpose = _purpose;
 	});
 
+	// Sync from data prop (for non-bound usage)
 	$effect(() => {
 		if (data.title !== undefined && data.title !== _title) _title = data.title;
 		if (data.description !== undefined && data.description !== _description) {

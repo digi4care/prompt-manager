@@ -28,6 +28,7 @@
 	import CheckCircle from 'lucide-svelte/icons/check-circle';
 	import Clock from 'lucide-svelte/icons/clock';
 	import MessageSquare from 'lucide-svelte/icons/message-square';
+	import Edit from 'lucide-svelte/icons/edit';
 	import Square from 'lucide-svelte/icons/square';
 	import Copy from 'lucide-svelte/icons/copy';
 	import Star from 'lucide-svelte/icons/star';

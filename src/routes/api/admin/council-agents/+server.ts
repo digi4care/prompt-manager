@@ -54,6 +54,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		modelVariant = null,
 		temperature = 0.7,
 		maxTokens = 4096,
+		thinkingLevel = null,
 		promptLinkId = null
 	} = body;
 
@@ -149,6 +150,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			modelVariant,
 			temperature,
 			maxTokens,
+			thinkingLevel,
 			promptLinkId: promptLinkId ?? null,
 			agentOrder: nextOrder
 		})

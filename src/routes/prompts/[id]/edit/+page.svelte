@@ -6,6 +6,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import { goto } from '$app/navigation';
+	import { toast } from 'svelte-sonner';
 	import {
 		ChevronRight,
 		Save,
@@ -44,6 +45,9 @@
 	let showSnippetPicker = $state(false);
 	let snippetInsertText = $state('');
 
+	// Track if initial values are loaded (prevents false dirty state)
+	let initialized = $state(false);
+
 	onMount(() => {
 		title = data.prompt.title || '';
 		description = data.prompt.description || '';
@@ -51,6 +55,8 @@
 		tags = data.prompt.tags || [];
 		content = data.currentVersion?.content || '';
 		frontmatterYaml = (((data.currentVersion as any)?.frontmatterYaml as string) || '') as string;
+		// Mark as initialized after setting initial values
+		initialized = true;
 	});
 
 	// Version control state
@@ -152,7 +158,8 @@
 	);
 
 	// Overall dirty state
-	let isDirty = $derived(contentChanged || metadataChanged || frontmatterChanged);
+	// Only consider dirty after initial values are loaded
+	let isDirty = $derived(initialized && (contentChanged || metadataChanged || frontmatterChanged));
 
 	// Update saveStatus when dirty state changes
 	$effect(() => {
@@ -353,10 +360,14 @@ Write 1-2 sentences describing what changed and why. Keep it under 200 character
 			}
 
 			// Navigate back to the prompt detail page
+			toast.success('Changes saved successfully');
 			goto(`/prompts/${data.prompt.id}`);
 		} catch (err) {
 			errorMessage = err instanceof Error ? err.message : 'Failed to save changes';
 			saving = false;
+			toast.error('Failed to save changes', {
+				description: errorMessage
+			});
 		}
 	}
 

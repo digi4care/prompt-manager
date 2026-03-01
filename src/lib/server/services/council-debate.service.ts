@@ -509,22 +509,18 @@ ${context}
 
 ## Your Response:`;
 
-		// Send prompt with timeout protection
-		const promptPromise = Promise.race([
-			client.session.prompt({
-				path: { id: sessionID },
-				body: {
-					parts: [{ type: 'text', text: fullPrompt }],
-					model: {
-						providerID: agent.providerId,
-						modelID: agent.modelId
-					}
+		// Send prompt ASYNC - returns immediately with 204, track completion via events
+		// This prevents HeadersTimeoutError from long-running connections
+		await client.session.promptAsync({
+			path: { id: sessionID },
+			body: {
+				parts: [{ type: 'text', text: fullPrompt }],
+				model: {
+					providerID: agent.providerId,
+					modelID: agent.modelId
 				}
-			}),
-			new Promise<never>((_, reject) =>
-				setTimeout(() => reject(new Error('Prompt request timeout after 60s')), 60000)
-			)
-		]);
+			}
+		});
 
 		// Process events (with 120s max implicit timeout from HeadersTimeoutError)
 		try {
@@ -545,15 +541,7 @@ ${context}
 				if (event.type === 'session.idle') {
 					const props = event.properties as { sessionID?: string } | undefined;
 					if (props?.sessionID === sessionID) {
-						try {
-							const promptResult = await promptPromise;
-							if (promptResult.data?.info?.tokens) {
-								promptTokens = promptResult.data.info.tokens.input ?? 0;
-								completionTokens = promptResult.data.info.tokens.output ?? 0;
-							}
-						} catch {
-							// Continue without usage info
-						}
+						// Session complete - token info available via message API if needed
 						break;
 					}
 				}
@@ -655,8 +643,8 @@ async function* runSynthesizer(
 		// Build synthesis prompt
 		const synthesisPrompt = buildSynthesisPrompt(topic, rounds);
 
-		// Send prompt
-		const promptPromise = client.session.prompt({
+		// Send prompt ASYNC - returns immediately with 204, track completion via events
+		await client.session.promptAsync({
 			path: { id: sessionID },
 			body: {
 				parts: [{ type: 'text', text: synthesisPrompt }],
@@ -683,7 +671,7 @@ async function* runSynthesizer(
 			if (event.type === 'session.idle') {
 				const props = event.properties as { sessionID?: string } | undefined;
 				if (props?.sessionID === sessionID) {
-					await promptPromise; // Ensure prompt completed
+					// Session complete
 					break;
 				}
 			}

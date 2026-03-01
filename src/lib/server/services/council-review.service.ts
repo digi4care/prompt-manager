@@ -338,8 +338,9 @@ ${userPrompt}
 
 ## Your Review:`;
 
-		// Send prompt
-		const promptPromise = client.session.prompt({
+		// Send prompt ASYNC - returns immediately with 204, track completion via events
+		// This prevents HeadersTimeoutError from long-running connections
+		await client.session.promptAsync({
 			path: { id: sessionID },
 			body: {
 				parts: [{ type: 'text', text: fullPrompt }],
@@ -368,15 +369,7 @@ ${userPrompt}
 			if (event.type === 'session.idle') {
 				const props = event.properties as { sessionID?: string } | undefined;
 				if (props?.sessionID === sessionID) {
-					try {
-						const promptResult = await promptPromise;
-						if (promptResult.data?.info?.tokens) {
-							inputTokens = promptResult.data.info.tokens.input ?? 0;
-							outputTokens = promptResult.data.info.tokens.output ?? 0;
-						}
-					} catch {
-						// Continue without usage info
-					}
+					// Session complete - token info available via message API if needed
 					break;
 				}
 			}

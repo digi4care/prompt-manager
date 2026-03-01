@@ -114,31 +114,55 @@
 		promptName?: string;
 	}
 	let councilAgents = $state<CouncilAgent[]>([]);
+	let reviewAgents = $state<CouncilAgent[]>([]);
 
-	// Fetch council agents on mount
+	// Fetch council and review agents on mount
 	$effect(() => {
-		async function fetchCouncilAgents() {
+		async function fetchAgents() {
 			try {
-				const response = await fetch('/api/admin/council-agents');
-				if (response.ok) {
-					const data = await response.json();
+				// Fetch council agents (debate)
+				const councilResponse = await fetch(
+					'/api/admin/council-agents?parentType=function_defaults'
+				);
+				if (councilResponse.ok) {
+					const data = await councilResponse.json();
 					councilAgents = (data.agents || []).sort(
 						(a: CouncilAgent, b: CouncilAgent) => a.agentOrder - b.agentOrder
 					);
 				}
+
+				// Fetch review agents
+				const reviewResponse = await fetch('/api/admin/council-agents?parentType=review_defaults');
+				if (reviewResponse.ok) {
+					const data = await reviewResponse.json();
+					reviewAgents = (data.agents || []).sort(
+						(a: CouncilAgent, b: CouncilAgent) => a.agentOrder - b.agentOrder
+					);
+				}
 			} catch (error) {
-				console.error('[TestRunner] Failed to fetch council agents:', error);
+				console.error('[TestRunner] Failed to fetch agents:', error);
 			}
 		}
-		fetchCouncilAgents();
+		fetchAgents();
 	});
 
+	// Derived: which modes are available based on configured agents
+	let hasCouncilAgents = $derived(councilAgents.length > 0);
+	let hasReviewAgents = $derived(reviewAgents.length > 0);
+
 	// Get formatted agent names for display
-	let agentNamesDisplay = $derived(() => {
+	let councilAgentNamesDisplay = $derived(() => {
 		if (councilAgents.length === 0) {
-			return 'Proponent vs Skeptic vs Pragmatist';
+			return 'No agents configured';
 		}
 		return councilAgents.map((a) => a.promptName || 'Agent ' + a.agentOrder).join(' vs ');
+	});
+
+	let reviewAgentNamesDisplay = $derived(() => {
+		if (reviewAgents.length === 0) {
+			return 'No agents configured';
+		}
+		return reviewAgents.map((a) => a.promptName || 'Agent ' + a.agentOrder).join(' + ');
 	});
 
 	// Track council review state (received from CouncilReviewPanel)
@@ -326,28 +350,32 @@
 			/>
 			<span>Single</span>
 		</label>
-		<label class="flex cursor-pointer items-center gap-2 text-sm">
-			<input
-				type="radio"
-				name="mode-{promptId}"
-				value="review"
-				bind:group={executionMode}
-				disabled={isAnyExecuting}
-				class="h-4 w-4"
-			/>
-			<span>Review</span>
-		</label>
-		<label class="flex cursor-pointer items-center gap-2 text-sm">
-			<input
-				type="radio"
-				name="mode-{promptId}"
-				value="debate"
-				bind:group={executionMode}
-				disabled={isAnyExecuting}
-				class="h-4 w-4"
-			/>
-			<span>Debate</span>
-		</label>
+		{#if hasReviewAgents}
+			<label class="flex cursor-pointer items-center gap-2 text-sm">
+				<input
+					type="radio"
+					name="mode-{promptId}"
+					value="review"
+					bind:group={executionMode}
+					disabled={isAnyExecuting}
+					class="h-4 w-4"
+				/>
+				<span>Review ({reviewAgents.length})</span>
+			</label>
+		{/if}
+		{#if hasCouncilAgents}
+			<label class="flex cursor-pointer items-center gap-2 text-sm">
+				<input
+					type="radio"
+					name="mode-{promptId}"
+					value="debate"
+					bind:group={executionMode}
+					disabled={isAnyExecuting}
+					class="h-4 w-4"
+				/>
+				<span>Debate ({councilAgents.length})</span>
+			</label>
+		{/if}
 		{#if isAnyExecuting}
 			<span class="ml-auto text-xs text-muted-foreground">Running...</span>
 		{/if}
@@ -355,11 +383,11 @@
 
 	{#if executionMode === 'review'}
 		<p class="mb-2 text-xs text-muted-foreground">
-			3 AI agents review your prompt in parallel from different perspectives
+			{reviewAgents.length} AI agents review your prompt in parallel: {reviewAgentNamesDisplay()}
 		</p>
 	{:else if executionMode === 'debate'}
 		<p class="mb-2 text-xs text-muted-foreground">
-			3 AI agents debate your topic across 3 rounds: {agentNamesDisplay()}
+			{councilAgents.length} AI agents debate your topic across 3 rounds: {councilAgentNamesDisplay()}
 		</p>
 	{/if}
 

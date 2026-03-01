@@ -123,6 +123,73 @@
 	// Flag for intentional connection closure
 	let connectionIntentionallyClosed = false;
 
+	// Council agents with prompt info (fetched from API)
+	interface CouncilAgent {
+		id: number;
+		agentOrder: number;
+		modelId: string;
+		modelName?: string;
+		promptLinkId: number | null;
+		promptName?: string;
+	}
+	let councilAgents = $state<CouncilAgent[]>([]);
+	let agentPromptNames = $state<Map<DebateArchetype, string>>(new Map());
+
+	// Map agentOrder to archetype (1-based: 1=proponent, 2=skeptic, 3=pragmatist)
+	function getArchetypeFromOrder(order: number): DebateArchetype {
+		const mapping: Record<number, DebateArchetype> = {
+			1: 'proponent',
+			2: 'skeptic',
+			3: 'pragmatist'
+		};
+		return mapping[order] || 'proponent';
+	}
+
+	// Fetch council agents on mount
+	$effect(() => {
+		async function fetchCouncilAgents() {
+			try {
+				const response = await fetch('/api/admin/council-agents');
+				if (response.ok) {
+					const data = await response.json();
+					councilAgents = (data.agents || []).map((agent: any) => ({
+						id: agent.id,
+						agentOrder: agent.agentOrder,
+						modelId: agent.modelId,
+						modelName: agent.modelName,
+						promptLinkId: agent.promptLinkId,
+						promptName: agent.promptName
+					}));
+
+					// Build prompt names map based on agentOrder -> archetype mapping
+					const namesMap = new Map<DebateArchetype, string>();
+					for (const agent of councilAgents) {
+						const archetype = getArchetypeFromOrder(agent.agentOrder);
+						if (agent.promptName) {
+							namesMap.set(archetype, agent.promptName);
+						}
+					}
+					agentPromptNames = namesMap;
+
+					// Auto-fill agentOverrides if empty and agents have promptLinkIds
+					if (agentOverrides.size === 0) {
+						for (const agent of councilAgents) {
+							if (agent.promptLinkId) {
+								const archetype = getArchetypeFromOrder(agent.agentOrder);
+								agentOverrides.set(archetype, {
+									promptId: agent.promptLinkId
+								});
+							}
+						}
+					}
+				}
+			} catch (error) {
+				console.error('[CouncilDebatePanel] Failed to fetch council agents:', error);
+			}
+		}
+		fetchCouncilAgents();
+	});
+
 	// Archetype colors (per plan spec)
 	const ARCHETYPE_COLORS: Record<
 		DebateArchetype,
@@ -680,6 +747,7 @@
 								{#each archetypes as archetype (archetype)}
 									{@const state = getAgentState(currentRound, archetype)}
 									{@const colors = getArchetypeColors(archetype)}
+									{@const promptName = agentPromptNames.get(archetype)}
 									<div
 										class={cn(
 											'rounded-lg border p-4',
@@ -691,7 +759,9 @@
 									>
 										<div class="mb-2 flex items-center gap-2">
 											<span class="text-sm font-medium">
-												{state?.name || archetype.charAt(0).toUpperCase() + archetype.slice(1)}
+												{state?.name ||
+													promptName ||
+													archetype.charAt(0).toUpperCase() + archetype.slice(1)}
 											</span>
 											{#if state?.status === 'streaming'}
 												<Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />

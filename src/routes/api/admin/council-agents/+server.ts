@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/client';
-import { councilAgents } from '$lib/server/db/schema';
+import { councilAgents, prompts } from '$lib/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
@@ -14,17 +14,33 @@ import {
 
 type ParentType = 'function_defaults' | 'prompt_function_settings';
 
-// GET: List all council agents for function_defaults
+// GET: List all council agents for function_defaults with prompt names
 export const GET: RequestHandler = async ({ url }) => {
 	const parentType = (url.searchParams.get('parentType') ?? 'function_defaults') as ParentType;
 
 	const agents = await db
-		.select()
+		.select({
+			id: councilAgents.id,
+			parentType: councilAgents.parentType,
+			parentId: councilAgents.parentId,
+			modelId: councilAgents.modelId,
+			modelVariant: councilAgents.modelVariant,
+			modelName: councilAgents.modelName,
+			modelProvider: councilAgents.modelProvider,
+			temperature: councilAgents.temperature,
+			maxTokens: councilAgents.maxTokens,
+			agentOrder: councilAgents.agentOrder,
+			promptLinkId: councilAgents.promptLinkId,
+			createdAt: councilAgents.createdAt,
+			updatedAt: councilAgents.updatedAt,
+			promptName: prompts.title
+		})
 		.from(councilAgents)
+		.leftJoin(prompts, eq(councilAgents.promptLinkId, prompts.id))
 		.where(eq(councilAgents.parentType, parentType))
 		.orderBy(asc(councilAgents.agentOrder));
 
-	return json({ data: agents });
+	return json({ agents });
 };
 
 // POST: Create new council agent with variant validation

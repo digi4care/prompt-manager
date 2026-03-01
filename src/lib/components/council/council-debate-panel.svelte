@@ -135,6 +135,19 @@
 	let councilAgents = $state<CouncilAgent[]>([]);
 	let agentPromptNames = $state<Map<DebateArchetype, string>>(new Map());
 
+	// Override modal state
+	let showOverrideModal = $state(false);
+	let overrideAgentId = $state<number | null>(null);
+	let overrideAgentName = $state('');
+	let overrideAgentArchetype = $state<DebateArchetype | null>(null);
+	let promptsList = $state<{ id: number; title: string; versionCount: number }[]>([]);
+	let promptsLoading = $state(false);
+	let selectedOverride = $state<{ promptId: number; versionId?: number } | null>(null);
+	let expandedPromptId = $state<number | null>(null);
+	let versionsList = $state<{ id: number; version: string; createdAt: string }[]>([]);
+	let versionsLoading = $state(false);
+	let searchQuery = $state('');
+
 	// Map agentOrder to archetype (1-based: 1=proponent, 2=skeptic, 3=pragmatist)
 	function getArchetypeFromOrder(order: number): DebateArchetype {
 		const mapping: Record<number, DebateArchetype> = {
@@ -143,6 +156,124 @@
 			3: 'pragmatist'
 		};
 		return mapping[order] || 'proponent';
+	}
+
+	// Check if agent has override
+	function hasOverride(archetype: DebateArchetype): boolean {
+		return agentOverrides.has(archetype);
+	}
+
+	// Open override modal for an agent
+	async function openOverrideModal(archetype: DebateArchetype, agentName: string) {
+		overrideAgentArchetype = archetype;
+		overrideAgentName = agentName;
+		searchQuery = '';
+
+		const existingOverride = agentOverrides.get(archetype);
+		if (existingOverride) {
+			selectedOverride = {
+				promptId: existingOverride.promptId,
+				versionId: existingOverride.versionId
+			};
+			expandedPromptId = existingOverride.promptId;
+		} else {
+			selectedOverride = null;
+			expandedPromptId = null;
+		}
+		versionsList = [];
+		showOverrideModal = true;
+
+		// Fetch prompts
+		promptsLoading = true;
+		try {
+			const response = await fetch('/api/prompts?limit=100');
+			if (response.ok) {
+				const data = await response.json();
+				const promptArray = data.data?.prompts || [];
+				promptsList = (promptArray || []).map(
+					(p: { id: number; title: string; latestVersionId?: number }) => ({
+						id: p.id,
+						title: p.title,
+						versionCount: p.latestVersionId ? 1 : 0
+					})
+				);
+			}
+		} catch (err) {
+			console.error('[CouncilDebatePanel] Failed to fetch prompts:', err);
+		}
+		promptsLoading = false;
+
+		if (expandedPromptId) {
+			await loadVersionsForPrompt(expandedPromptId);
+		}
+	}
+
+	// Close override modal
+	function closeOverrideModal() {
+		showOverrideModal = false;
+		overrideAgentArchetype = null;
+		overrideAgentName = '';
+		searchQuery = '';
+		selectedOverride = null;
+		expandedPromptId = null;
+		versionsList = [];
+	}
+
+	// Load versions for a prompt
+	async function loadVersionsForPrompt(promptId: number) {
+		versionsLoading = true;
+		versionsList = [];
+		try {
+			const response = await fetch(`/api/prompts/${promptId}/versions`);
+			if (response.ok) {
+				const data = await response.json();
+				versionsList = (data.versions || []).map(
+					(v: { id: number; version: string; createdAt: string | number }) => ({
+						id: v.id,
+						version: v.version,
+						createdAt:
+							typeof v.createdAt === 'number'
+								? new Date(v.createdAt * 1000).toISOString()
+								: v.createdAt
+					})
+				);
+			}
+		} catch (err) {
+			console.error('[CouncilDebatePanel] Failed to fetch versions:', err);
+		}
+		versionsLoading = false;
+	}
+
+	// Select prompt for override
+	function selectPromptOverride(promptId: number) {
+		if (selectedOverride?.promptId === promptId) {
+			selectedOverride = null;
+			expandedPromptId = null;
+			versionsList = [];
+		} else {
+			selectedOverride = { promptId };
+			expandedPromptId = promptId;
+			loadVersionsForPrompt(promptId);
+		}
+	}
+
+	// Apply override
+	function applyOverride() {
+		if (overrideAgentArchetype && selectedOverride) {
+			agentOverrides.set(overrideAgentArchetype, {
+				promptId: selectedOverride.promptId,
+				versionId: selectedOverride.versionId
+			});
+		}
+		closeOverrideModal();
+	}
+
+	// Clear override
+	function clearOverride() {
+		if (overrideAgentArchetype) {
+			agentOverrides.delete(overrideAgentArchetype);
+		}
+		closeOverrideModal();
 	}
 
 	// Fetch council agents on mount

@@ -12,7 +12,7 @@ import {
 	type CatalogData
 } from '$lib/server/validators/model-variant.validator';
 
-type ParentType = 'function_defaults' | 'prompt_function_settings';
+type ParentType = 'function_defaults' | 'prompt_function_settings' | 'review_defaults';
 
 // GET: List all council agents for function_defaults with prompt names
 export const GET: RequestHandler = async ({ url }) => {

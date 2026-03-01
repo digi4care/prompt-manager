@@ -69,6 +69,8 @@
 		}) => void;
 		/** Disable execution (e.g., when required variables are missing) */
 		disabled?: boolean;
+		/** Optional: Pre-configured agents from settings. If not provided, will fetch from API */
+		agents?: { id: number; name: string; promptId?: number }[];
 	}
 
 	let {
@@ -86,6 +88,41 @@
 	let agentList = $state<{ id: number; name: string }[]>([]);
 	let errorMessage = $state<string | null>(null);
 	let reviewSummary = $state<string | null>(null);
+
+	// Configured review agents from settings (fetched from API)
+	interface ConfiguredAgent {
+		id: number;
+		agentOrder: number;
+		modelId: string;
+		promptLinkId: number | null;
+		promptName?: string;
+	}
+	let configuredAgents = $state<ConfiguredAgent[]>([]);
+
+	// Fetch review agents from settings on mount
+	$effect(() => {
+		async function fetchReviewAgents() {
+			try {
+				const response = await fetch('/api/admin/council-agents?parentType=review_defaults');
+				if (response.ok) {
+					const data = await response.json();
+					configuredAgents = (data.agents || []).sort(
+						(a: ConfiguredAgent, b: ConfiguredAgent) => a.agentOrder - b.agentOrder
+					);
+				}
+			} catch (error) {
+				console.error('[CouncilReview] Failed to fetch review agents:', error);
+			}
+		}
+		fetchReviewAgents();
+	});
+
+	// Derived: display agents (use configured agents if available, otherwise empty)
+	let displayAgents = $derived(
+		configuredAgents.length > 0
+			? configuredAgents.map((a, i) => ({ id: a.id, name: a.promptName || `Agent ${i + 1}` }))
+			: []
+	);
 
 	// Notify parent of state changes
 	$effect(() => {
@@ -932,26 +969,29 @@
 						{/each}
 					</p>
 					<p class="mt-1 text-[10px] opacity-70">Click agent name to override prompt</p>
-				{:else}
-					<!-- Default agents when no council run yet - these are clickable -->
+				{:else if displayAgents.length > 0}
+					<!-- Configured agents from settings - these are clickable -->
 					<p class="flex flex-wrap justify-center gap-2">
-						{#each [{ id: 1, name: 'Code Quality' }, { id: 2, name: 'Security' }, { id: 3, name: 'Best Practices' }] as defaultAgent, i (defaultAgent.id)}
-							{@const hasOverrideForAgent = hasOverride(defaultAgent.id)}
+						{#each displayAgents as agent, i (agent.id)}
+							{@const hasOverrideForAgent = hasOverride(agent.id)}
+							{@const colors = [
+								'bg-blue-100 dark:bg-blue-900',
+								'bg-amber-100 dark:bg-amber-900',
+								'bg-green-100 dark:bg-green-900',
+								'bg-purple-100 dark:bg-purple-900',
+								'bg-rose-100 dark:bg-rose-900'
+							]}
 							<button
 								type="button"
-								class="group relative cursor-pointer rounded px-2 py-0.5 transition-colors hover:ring-2 hover:ring-primary/50"
-								class:bg-blue-100={i === 0}
-								class:dark:bg-blue-900={i === 0}
-								class:bg-amber-100={i === 1}
-								class:dark:bg-amber-900={i === 1}
-								class:bg-green-100={i === 2}
-								class:dark:bg-green-900={i === 2}
+								class="group relative cursor-pointer rounded px-2 py-0.5 transition-colors hover:ring-2 hover:ring-primary/50 {colors[
+									i % colors.length
+								]}"
 								class:ring-2={hasOverrideForAgent}
 								class:ring-amber-500={hasOverrideForAgent}
-								onclick={() => openOverrideModal(defaultAgent.id, defaultAgent.name)}
+								onclick={() => openOverrideModal(agent.id, agent.name)}
 								title="Click to override prompt"
 							>
-								{defaultAgent.name}
+								{agent.name}
 								{#if hasOverrideForAgent}
 									<span class="ml-1 text-amber-600 dark:text-amber-400">*</span>
 								{/if}
@@ -962,6 +1002,13 @@
 						{/each}
 					</p>
 					<p class="mt-1 text-[10px] opacity-70">Click agent name to override prompt</p>
+				{:else}
+					<!-- No agents configured -->
+					<p class="text-sm text-muted-foreground">
+						No review agents configured. Add agents in <a href="/settings" class="underline"
+							>Settings</a
+						>.
+					</p>
 				{/if}
 			</div>
 		</div>

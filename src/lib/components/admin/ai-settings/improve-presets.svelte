@@ -10,17 +10,15 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import Collapsible from './collapsible.svelte';
-	import ModelPickerModal from '$lib/components/admin/function-settings/model-picker-modal.svelte';
+	import ModelPickerModal from '$lib/components/shared/model-selection/model-picker-modal.svelte';
 	import { toast } from 'svelte-sonner';
 	import type { ImprovePreset } from '$lib/server/db/schema';
-	import type { CatalogResponse, ModelInfo } from '$lib/server/services/opencode.service';
+	import type { ProviderGroup } from '$lib/types/model.types';
+	import type { CatalogResponse } from '$lib/server/services/opencode.service';
 	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
+	import { normalizeToProviderGroups } from '$lib/types/model.types';
 
-	interface Props {
-		class?: string;
-		onSave?: () => void;
-	}
-
+	// Local interface - not shared
 	interface ImprovePresetExample {
 		name: string;
 		description: string;
@@ -28,22 +26,9 @@
 		temperature: number;
 	}
 
-	interface ModelVariant {
-		id: string;
-		label?: string;
-		isDefault?: boolean;
-	}
-
-	interface GroupedModel {
-		id: string;
-		name: string;
-		variants?: ModelVariant[];
-	}
-
-	interface ProviderGroup {
-		providerName: string;
-		providerId: string;
-		models: GroupedModel[];
+	interface Props {
+		class?: string;
+		onSave?: () => void;
 	}
 
 	let { class: className = '', onSave }: Props = $props();
@@ -147,111 +132,16 @@
 		}
 	}
 
-	function normalizeProviderGroups(payload: CatalogResponse): ProviderGroup[] {
-		if (!Array.isArray(payload.providers)) {
-			return [];
-		}
-
-		return payload.providers
-			.map((provider) => {
-				const source = provider.models;
-				const models = Array.isArray(source)
-					? source
-					: (Object.values(source || {}) as ModelInfo[]);
-
-				const normalizedModels = models
-					.filter((model) => model?.id && (!model.status || model.status === 'active'))
-					.map((model) => ({
-						id: model.id,
-						name: model.name || model.id,
-						variants: model.variants ?? undefined
-					}))
-					.sort((a, b) => a.name.localeCompare(b.name));
-
-				return {
-					providerName: provider.name,
-					providerId: provider.id,
-					models: normalizedModels
-				};
-			})
-			.filter((provider) => provider.models.length > 0)
-			.sort((a, b) => a.providerName.localeCompare(b.providerName));
-	}
-
-	let allModels = $derived.by(() => {
-		const models: Array<{ id: string; name: string; providerName: string; providerId: string }> =
-			[];
-		for (const provider of groupedModels) {
-			for (const model of provider.models) {
-				models.push({
-					id: model.id,
-					name: model.name,
-					providerName: provider.providerName,
-					providerId: provider.providerId
-				});
-			}
-		}
-		return models;
-	});
-
-	function resolveModelById(modelId: string): {
-		id: string;
-		name: string;
-		providerName: string;
-		providerId: string;
-	} | null {
-		if (!modelId) {
-			return null;
-		}
-
-		for (const model of allModels) {
-			if (model.id === modelId) {
-				return model;
-			}
-		}
-
-		return null;
-	}
-
-	let selectedOverrideModel = $derived(resolveModelById(formModel));
-
-	let availableVariants = $derived.by(() => {
-		if (!selectedOverrideModel) return [];
-		// Find the model in groupedModels to get variants
-		for (const provider of groupedModels) {
-			if (provider.providerId === selectedOverrideModel.providerId) {
-				const model = provider.models.find((m) => m.id === selectedOverrideModel.id);
-				return model?.variants ?? [];
-			}
-		}
-		return [];
-	});
-
-	let selectedAllowedModels = $derived.by(() => {
-		const selectedSet = new Set(formAllowedModels);
-		return allModels.filter((model) => selectedSet.has(model.id));
-	});
-
 	async function loadPresets() {
 		try {
 			const response = await fetch('/api/admin/improve-presets');
-			const payload = await response.text();
-
-			if (parseApiError(payload).startsWith('Login required')) {
-				throw new Error('Login required. Open /login and refresh this page.');
-			}
-
 			if (!response.ok) {
-				throw new Error(parseApiError(payload));
+				throw new Error('Failed to load presets');
 			}
-
-			const result = JSON.parse(payload) as { data?: ImprovePreset[] };
-			presets = result.data || [];
-			error = null;
+			presets = await response.json();
 		} catch (err) {
 			console.error('Failed to load presets:', err);
 			error = err instanceof Error ? err.message : 'Failed to load presets';
-			toast.error('Failed to load improve presets');
 		} finally {
 			isLoading = false;
 		}
@@ -259,31 +149,72 @@
 
 	async function loadCatalog() {
 		try {
-			const cachedCatalog = getCachedModelCatalog();
-			if (cachedCatalog) {
-				catalog = cachedCatalog as CatalogResponse;
-				groupedModels = normalizeProviderGroups(catalog);
+			// Try cache first
+			const cached = getCachedModelCatalog();
+			if (cached) {
+				catalog = cached;
+				groupedModels = normalizeToProviderGroups(cached.providers as Record<string, unknown>[]);
 				return;
 			}
 
-			const response = await fetch('/api/opencode/providers');
-			const payload = await response.text();
-
-			if (parseApiError(payload).startsWith('Login required')) {
-				throw new Error('Login required. Open /login and refresh this page.');
-			}
-
+			const response = await fetch('/api/admin/model-catalog');
 			if (!response.ok) {
-				throw new Error(parseApiError(payload));
+				throw new Error('Failed to load model catalog');
 			}
-
-			const result = JSON.parse(payload) as CatalogResponse;
-			catalog = result;
-			groupedModels = normalizeProviderGroups(result);
-			setCachedModelCatalog(result);
+			catalog = await response.json();
+			setCachedModelCatalog(catalog);
+			groupedModels = normalizeToProviderGroups(catalog.providers as Record<string, unknown>[]);
 		} catch (err) {
 			console.error('Failed to load catalog:', err);
+			error = err instanceof Error ? err.message : String(err);
 		}
+	}
+
+	// Derived: flatten all models for lookup
+	let allModels = $derived.by(() => {
+		const models: Array<{
+			id: string;
+			name: string;
+			providerName: string;
+			providerId: string;
+			variants?: { id: string; label?: string }[];
+		}> = [];
+
+		for (const provider of groupedModels) {
+			for (const model of provider.models) {
+				models.push({
+					id: model.id,
+					name: model.name,
+					providerName: provider.providerName,
+					providerId: provider.providerId,
+					variants: model.variants
+				});
+			}
+		}
+
+		return models;
+	});
+
+	function getModelById(id: string) {
+		return allModels.find((m) => m.id === id);
+	}
+
+	function getSelectedModelName(): string {
+		if (!formModel) return '';
+		const model = getModelById(formModel);
+		return model?.name ?? '';
+	}
+
+	function getSelectedProviderName(): string {
+		if (!formModel) return '';
+		const model = getModelById(formModel);
+		return model?.providerName ?? '';
+	}
+
+	function getSelectedModelVariants() {
+		if (!formModel) return [];
+		const model = getModelById(formModel);
+		return model?.variants ?? [];
 	}
 
 	function startCreate() {
@@ -292,28 +223,24 @@
 		resetForm();
 	}
 
-	function startCreateFromExample(example: ImprovePresetExample) {
-		startCreate();
-		formName = example.name;
-		formDescription = example.description;
-		formInstruction = example.instruction;
-		formTemperature = example.temperature;
+	function startEdit(preset: ImprovePreset) {
+		editingPreset = preset;
+		isCreating = true;
+		formName = preset.name;
+		formDescription = preset.description ?? '';
+		formInstruction = preset.instruction ?? '';
+		formModel = preset.modelId ?? '';
+		formVariant = preset.modelVariant ?? '';
+		formTemperature = preset.temperature ?? 0.5;
+		formAllowedModels = preset.allowedModels ? JSON.parse(preset.allowedModels) : [];
+		formIsDefault = preset.isDefault ?? false;
 		showAdvanced = true;
 	}
 
-	function startEdit(preset: ImprovePreset) {
+	function cancelEdit() {
+		editingPreset = null;
 		isCreating = false;
-		editingPreset = preset;
-		formName = preset.name;
-		formDescription = preset.description || '';
-		formInstruction = preset.instruction;
-		formModel = preset.model || '';
-		formVariant = preset.modelVariant || '';
-		formTemperature =
-			preset.temperature !== null && preset.temperature !== undefined ? preset.temperature : 0.5;
-		formAllowedModels = preset.allowedModels ? JSON.parse(preset.allowedModels) : [];
-		formIsDefault = preset.isDefault;
-		showAdvanced = !!(formModel || formAllowedModels.length > 0);
+		resetForm();
 	}
 
 	function resetForm() {
@@ -328,92 +255,80 @@
 		showAdvanced = false;
 	}
 
-	function cancelEdit() {
-		isCreating = false;
-		editingPreset = null;
-		resetForm();
-	}
-
-	async function handleSave() {
-		if (!formName || !formInstruction) {
-			toast.error('Name and instruction are required');
+	async function savePreset() {
+		if (!formName.trim()) {
+			toast.error('Preset name is required');
+			return;
+		}
+		if (!formInstruction.trim()) {
+			toast.error('Instruction is required');
 			return;
 		}
 
 		isSaving = true;
-
 		try {
-			const body = {
+			const payload: Record<string, unknown> = {
 				name: formName,
-				description: formDescription,
+				description: formDescription || null,
 				instruction: formInstruction,
-				model: formModel || null,
-				modelVariant: formVariant || null,
-				temperature: formTemperature !== 0.5 ? formTemperature : null,
-				allowedModels: formAllowedModels.length > 0 ? JSON.stringify(formAllowedModels) : null,
+				temperature: formTemperature,
 				isDefault: formIsDefault
 			};
 
-			if (isCreating) {
-				const response = await fetch('/api/admin/improve-presets', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(body)
-				});
+			if (formModel) {
+				payload.modelId = formModel;
+				payload.modelVariant = formVariant || null;
+			}
 
-				if (!response.ok) {
-					const errorPayload = await response.text();
-					throw new Error(parseApiError(errorPayload) || 'Failed to create preset');
-				}
+			if (formAllowedModels.length > 0) {
+				payload.allowedModels = JSON.stringify(formAllowedModels);
+			}
 
-				toast.success('Preset created successfully');
-			} else if (editingPreset) {
-				const response = await fetch(`/api/admin/improve-presets/${editingPreset.id}`, {
+			let response: Response;
+			if (editingPreset) {
+				response = await fetch(`/api/admin/improve-presets/${editingPreset.id}`, {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(body)
+					body: JSON.stringify(payload)
 				});
-
-				if (!response.ok) {
-					const errorPayload = await response.text();
-					throw new Error(parseApiError(errorPayload) || 'Failed to update preset');
-				}
-
-				toast.success('Preset updated successfully');
+			} else {
+				response = await fetch('/api/admin/improve-presets', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload)
+				});
 			}
 
-			cancelEdit();
+			if (!response.ok) {
+				const errorData = await response.text();
+				throw new Error(parseApiError(errorData));
+			}
+
+			toast.success(editingPreset ? 'Preset updated' : 'Preset created');
 			await loadPresets();
-
-			if (onSave) {
-				onSave();
-			}
+			cancelEdit();
+			onSave?.();
 		} catch (err) {
 			console.error('Failed to save preset:', err);
-			toast.error('Failed to save preset', {
-				description: err instanceof Error ? err.message : 'Unknown error'
-			});
+			toast.error(err instanceof Error ? err.message : 'Failed to save preset');
 		} finally {
 			isSaving = false;
 		}
 	}
 
-	async function handleDelete(preset: ImprovePreset) {
-		if (!confirm(`Delete preset "${preset.name}"?`)) {
-			return;
-		}
+	async function deletePreset(id: number) {
+		if (!confirm('Delete this preset?')) return;
 
 		try {
-			const response = await fetch(`/api/admin/improve-presets/${preset.id}`, {
+			const response = await fetch(`/api/admin/improve-presets/${id}`, {
 				method: 'DELETE'
 			});
 
 			if (!response.ok) {
-				const errorPayload = await response.text();
-				throw new Error(parseApiError(errorPayload) || 'Failed to delete preset');
+				throw new Error('Failed to delete preset');
 			}
 
-			toast.success('Preset deleted successfully');
+			toast.success('Preset deleted');
 			await loadPresets();
 		} catch (err) {
 			console.error('Failed to delete preset:', err);
@@ -421,295 +336,305 @@
 		}
 	}
 
-	function handleModelOverrideSave(modelId: string): void {
-		formModel = modelId;
-	}
-
-	function clearModelOverride(): void {
-		formModel = '';
-	}
-
-	function handleAllowedModelsSave(modelIds: string[]): void {
-		formAllowedModels = Array.from(
-			new Set(modelIds.filter((id) => typeof id === 'string' && id.trim().length > 0))
-		);
+	function applyExample(example: ImprovePresetExample) {
+		formName = example.name;
+		formDescription = example.description;
+		formInstruction = example.instruction;
+		formTemperature = example.temperature;
 	}
 </script>
 
-<Card class={className}>
-	<CardHeader>
-		<div class="flex items-center justify-between">
-			<div>
-				<CardTitle class="text-lg">Improve Presets</CardTitle>
-				<CardDescription>Manage instruction presets for Improve workflow</CardDescription>
-			</div>
-			<Button
-				variant="default"
-				size="sm"
-				onclick={startCreate}
-				disabled={isCreating || editingPreset !== null}
-			>
-				New Preset
-			</Button>
-		</div>
-	</CardHeader>
-	<CardContent class="space-y-4">
-		{#if !isLoading && !error && !isCreating && !editingPreset}
-			<div class="rounded-lg border bg-muted/20 p-3">
-				<div class="mb-3">
-					<div class="text-sm font-medium">Preset examples</div>
-					<div class="text-xs text-muted-foreground">
-						Start snel met een template en pas daarna details aan.
-					</div>
+<div class={className}>
+	<Card>
+		<CardHeader>
+			<CardTitle>Improve Presets</CardTitle>
+			<CardDescription>Configure improve presets for content enhancement workflows</CardDescription>
+		</CardHeader>
+		<CardContent>
+			{#if isLoading}
+				<div class="flex items-center gap-2 text-muted-foreground">
+					<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-current"></div>
+					<span>Loading...</span>
 				</div>
-				<div class="grid gap-2 md:grid-cols-2">
-					{#each presetExamples as example}
-						<div class="rounded-md border bg-card p-3">
-							<div class="text-sm font-medium">{example.name}</div>
-							<p class="mt-1 text-xs text-muted-foreground">{example.description}</p>
-							<div class="mt-2 flex items-center justify-between">
-								<span
-									class="rounded-md border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
-									>Temp {example.temperature}</span
-								>
-								<Button variant="outline" size="sm" onclick={() => startCreateFromExample(example)}>
-									Use template
-								</Button>
-							</div>
-						</div>
-					{/each}
+			{:else if error}
+				<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+					{error}
 				</div>
-			</div>
-		{/if}
-
-		{#if isLoading}
-			<div class="flex items-center gap-2 text-muted-foreground">
-				<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-current"></div>
-				<span>Loading presets...</span>
-			</div>
-		{:else if error}
-			<div class="text-sm text-destructive">
-				<p>Failed to load presets: {error}</p>
-			</div>
-		{:else if isCreating || editingPreset}
-			<!-- Form -->
-			<div class="space-y-4 rounded-lg border bg-muted/20 p-4">
-				<div class="text-lg font-medium">
-					{isCreating ? 'Create New Preset' : 'Edit Preset'}
-				</div>
-
-				<div class="space-y-2">
-					<label for="preset-name" class="text-sm font-medium">Name *</label>
-					<Input id="preset-name" bind:value={formName} placeholder="e.g., Content Polish" />
-				</div>
-
-				<div class="space-y-2">
-					<label for="preset-description" class="text-sm font-medium">Description</label>
-					<Input
-						id="preset-description"
-						bind:value={formDescription}
-						placeholder="Optional description"
-					/>
-				</div>
-
-				<div class="space-y-2">
-					<label for="preset-instruction" class="text-sm font-medium">Instruction *</label>
-					<textarea
-						id="preset-instruction"
-						class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-						bind:value={formInstruction}
-						placeholder="Instruction template (use &#123;content&#125; token for prompt content)"
-					></textarea>
-				</div>
-
-				<Collapsible title="Advanced Settings" defaultOpen={showAdvanced}>
-					<div class="space-y-4">
-						<div class="space-y-2">
-							<p class="text-sm font-medium">Model Override</p>
-							<div class="rounded-md border bg-background px-3 py-2">
-								<dl class="space-y-1">
-									<dt class="text-[11px] tracking-wide text-muted-foreground uppercase">
-										Selected model
-									</dt>
-									<dd class="text-sm">
-										{#if selectedOverrideModel}
-											{selectedOverrideModel.providerName} / {selectedOverrideModel.name}
-										{:else}
-											<span class="text-muted-foreground">Use policy default</span>
-										{/if}
-									</dd>
-									{#if selectedOverrideModel}
-										<dd class="font-mono text-[11px] text-muted-foreground">
-											{selectedOverrideModel.id}
-										</dd>
-									{/if}
-								</dl>
-							</div>
-							<div class="flex flex-wrap gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onclick={() => (isModelOverrideModalOpen = true)}
-								>
-									{formModel ? 'Change model' : 'Select model'}
-								</Button>
-								{#if formModel}
-									<Button variant="ghost" size="sm" onclick={clearModelOverride}>
-										Use policy default
-									</Button>
-								{/if}
-							</div>
+			{:else}
+				<div class="space-y-6">
+					<!-- Preset list -->
+					{#if !isCreating}
+						<div class="mb-4">
+							<Button onclick={startCreate} variant="outline">Create Preset</Button>
 						</div>
 
-						{#if availableVariants.length > 0}
-							<div class="space-y-2">
-								<label for="preset-variant" class="text-sm font-medium">Model Variant</label>
-								<select
-									id="preset-variant"
-									class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-primary/30 focus:outline-none"
-									value={formVariant}
-									onchange={(e) => {
-										formVariant = (e.target as HTMLSelectElement).value;
-									}}
-								>
-									<option value="">Default variant</option>
-									{#each availableVariants as variant}
-										<option value={variant.id} selected={formVariant === variant.id}>
-											{variant.label || variant.id}
-										</option>
-									{/each}
-								</select>
-								<p class="text-xs text-muted-foreground">
-									Select a specific variant for this model (e.g., low, medium, high context).
-								</p>
+						{#if presets.length === 0}
+							<div
+								class="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 py-8"
+							>
+								<span class="mb-2 text-2xl">👥</span>
+								<p class="mb-4 text-sm text-muted-foreground">No presets configured yet</p>
+								<Button variant="outline" onclick={startCreate}>Create Preset</Button>
+							</div>
+						{:else}
+							<div class="space-y-3">
+								{#each presets as preset}
+									<div
+										class="preset-card flex items-center justify-between rounded-lg border bg-card p-4"
+									>
+										<div>
+											<div class="font-medium">{preset.name}</div>
+											{#if preset.description}
+												<div class="text-sm text-muted-foreground">
+													{preset.description}
+												</div>
+											{/if}
+											<div class="mt-1 flex gap-2 text-xs text-muted-foreground">
+												{#if preset.modelId}
+													<span class="rounded bg-muted px-1.5">{preset.modelId}</span>
+												{/if}
+												<span>Temp: {preset.temperature}</span>
+												{#if preset.isDefault}
+													<span class="text-primary">Default</span>
+												{/if}
+											</div>
+										</div>
+										<div class="flex gap-2">
+											<Button variant="outline" size="sm" onclick={() => startEdit(preset)}>
+												Edit
+											</Button>
+											<Button
+												variant="ghost"
+												size="sm"
+												class="text-destructive"
+												onclick={() => deletePreset(preset.id)}
+											>
+												Delete
+											</Button>
+										</div>
+									</div>
+								{/each}
 							</div>
 						{/if}
-
-						<div class="space-y-2">
-							<label for="preset-temp" class="text-sm font-medium"> Temperature Override </label>
-							<Input
-								id="preset-temp"
-								type="number"
-								min="0"
-								max="2"
-								step="0.1"
-								bind:value={formTemperature}
-							/>
-						</div>
-
-						<div class="space-y-2">
-							<div class="flex items-center justify-between">
-								<label for="default-preset" class="text-sm font-medium">Default Preset</label>
-								<input
-									id="default-preset"
-									type="checkbox"
-									bind:checked={formIsDefault}
-									class="h-4 w-4"
+					{:else}
+						<!-- Edit/Create Form -->
+						<div class="space-y-4">
+							<div>
+								<label class="mb-2 block text-sm font-medium">Name</label>
+								<Input
+									id="preset-name"
+									value={formName}
+									placeholder="e.g., Content Polish"
+									oninput={(e) => (formName = e.currentTarget.value)}
 								/>
 							</div>
-						</div>
 
-						<div class="space-y-2">
-							<p class="text-sm font-medium">Allowed Models</p>
-							<div class="rounded-md border bg-background px-3 py-2">
-								<div class="text-sm">
-									{formAllowedModels.length > 0
-										? `${formAllowedModels.length} models selected`
-										: 'No model allowlist (all policy-allowed models)'}
-								</div>
-								{#if selectedAllowedModels.length > 0}
-									<div class="mt-2 flex flex-wrap gap-1">
-										{#each selectedAllowedModels.slice(0, 6) as model}
-											<span class="rounded-md border bg-muted px-1.5 py-0.5 text-[10px]">
-												{model.providerName} / {model.name}
-											</span>
-										{/each}
-										{#if selectedAllowedModels.length > 6}
-											<span
-												class="rounded-md border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-											>
-												+{selectedAllowedModels.length - 6} more
-											</span>
-										{/if}
-									</div>
-								{/if}
+							<div>
+								<label class="mb-2 block text-sm font-medium">Description (optional)</label>
+								<Input
+									id="preset-description"
+									value={formDescription}
+									placeholder="Optional description"
+									oninput={(e) => (formDescription = e.currentTarget.value)}
+								/>
 							</div>
-							<Button variant="outline" size="sm" onclick={() => (isAllowedModelsModalOpen = true)}>
-								Select allowed models
-							</Button>
-						</div>
-					</div>
-				</Collapsible>
 
-				<div class="flex gap-2">
-					<Button variant="outline" onclick={cancelEdit} disabled={isSaving}>Cancel</Button>
-					<Button onclick={handleSave} disabled={isSaving}>
-						{isSaving ? 'Saving...' : isCreating ? 'Create' : 'Save'}
-					</Button>
-				</div>
-			</div>
-		{:else if presets.length === 0}
-			<div class="py-8 text-center text-muted-foreground">
-				<p class="mb-4">No presets configured yet</p>
-				<Button variant="outline" onclick={startCreate}>Create First Preset</Button>
-			</div>
-		{:else}
-			<!-- Presets List -->
-			<div class="space-y-2">
-				{#each presets as preset (preset.id)}
-					<div
-						class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/30"
-					>
-						<div class="min-w-0 flex-1">
-							<div class="flex items-center gap-2">
-								<span class="font-medium">{preset.name}</span>
-								{#if preset.isDefault}
-									<span class="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground"
-										>Default</span
-									>
-								{/if}
-							</div>
-							{#if preset.description}
-								<p class="mt-1 text-sm text-muted-foreground">
-									{preset.description}
+							<div>
+								<label class="mb-2 block text-sm font-medium">Instruction Template</label>
+								<textarea
+									id="preset-instruction"
+									rows="6"
+									value={formInstruction}
+									placeholder="Instruction template (use {content} placeholder)"
+									class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									oninput={(e) => (formInstruction = e.currentTarget.value)}
+								></textarea>
+								<p class="mt-1 text-xs text-muted-foreground">
+									Use <code class="rounded bg-muted px-1">{'{'}content{'}'}</code> as placeholder for
+									the content to improve.
 								</p>
-							{/if}
-							<div class="mt-2 flex gap-4 text-xs text-muted-foreground">
-								{#if preset.model}
-									<span>Model: {preset.model}</span>
-								{/if}
-								{#if preset.temperature !== null && preset.temperature !== undefined}
-									<span>Temp: {preset.temperature}</span>
-								{/if}
-								<span>Updated: {new Date(preset.updatedAt).toLocaleDateString()}</span>
+							</div>
+
+							<!-- Advanced Settings -->
+							<Collapsible title="Advanced Settings" open={showAdvanced}>
+								<div class="space-y-4">
+									<!-- Model Override -->
+									<div>
+										<label class="mb-2 block text-sm font-medium">Model Override</label>
+										<button
+											type="button"
+											class="flex min-h-[40px] w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm"
+											onclick={() => (isModelOverrideModalOpen = true)}
+										>
+											{#if formModel}
+												<span class="font-medium">{getSelectedModelName()}</span>
+												<span class="text-xs text-muted-foreground"
+													>{getSelectedProviderName()}</span
+												>
+											{:else}
+												<span class="text-muted-foreground">Select model...</span>
+											{/if}
+											<span class="text-xs text-muted-foreground">Change</span>
+										</button>
+									</div>
+
+									<!-- Variant -->
+									{#if getSelectedModelVariants().length > 0}
+										<div>
+											<label
+												for="variant"
+												class="mb-1 block text-xs font-medium text-muted-foreground">Variant</label
+											>
+											<select
+												id="variant"
+												class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+												value={formVariant}
+												onchange={(e) => (formVariant = e.currentTarget.value)}
+											>
+												<option value="">Default</option>
+												{#each getSelectedModelVariants() as variant}
+													<option value={variant.id} selected={formVariant === variant.id}
+														>{variant.label || variant.id}</option
+													>
+												{/each}
+											</select>
+										</div>
+									{/if}
+
+									<!-- Temperature -->
+									<div>
+										<label class="mb-1 block text-xs font-medium text-muted-foreground"
+											>Temperature ({formTemperature})</label
+										>
+										<input
+											type="range"
+											id="temperature"
+											min="0"
+											max="1"
+											step="0.1"
+											class="w-full"
+											value={formTemperature}
+											oninput={(e) => (formTemperature = parseFloat(e.currentTarget.value))}
+										/>
+									</div>
+
+									<!-- Default -->
+									<div class="flex items-center gap-2">
+										<input
+											type="checkbox"
+											id="is-default"
+											class="h-4 w-4"
+											checked={formIsDefault}
+											onchange={(e) => (formIsDefault = e.currentTarget.checked)}
+										/>
+										<label for="is-default" class="text-sm font-medium">Default preset</label>
+									</div>
+								</div>
+							</Collapsible>
+
+							<!-- Allowed Models (Allowlist) -->
+							<Collapsible title="Allowed Models (Allowlist)" open={showAdvanced}>
+								<div class="space-y-3">
+									<div class="rounded-md border bg-muted/30 p-3">
+										<span class="text-sm font-medium">
+											{formAllowedModels.length} model(s) allowed
+										</span>
+										<button
+											type="button"
+											class="ml-2 text-xs text-primary"
+											onclick={() => (isAllowedModelsModalOpen = true)}
+										>
+											Manage
+										</button>
+									</div>
+
+									{#if formAllowedModels.length > 0}
+										<ul class="space-y-2">
+											{#each formAllowedModels as modelId}
+												<li class="flex items-center justify-between rounded-md bg-muted px-3 py-2">
+													<span class="font-mono text-xs">{modelId}</span>
+													<button
+														type="button"
+														class="text-xs text-destructive"
+														onclick={() => {
+															formAllowedModels = formAllowedModels.filter((m) => m !== modelId);
+														}}
+													>
+														Remove
+													</button>
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								</div>
+							</Collapsible>
+
+							<!-- Example Presets -->
+							<Collapsible title="Example Presets" open={false}>
+								<div class="grid gap-2 sm:grid-cols-2">
+									{#each presetExamples as example}
+										<button
+											type="button"
+											class="rounded-md border bg-muted/30 p-3 text-left transition-colors hover:bg-muted/50"
+											onclick={() => applyExample(example)}
+										>
+											<div class="text-sm font-medium">{example.name}</div>
+											<div class="text-xs text-muted-foreground">
+												{example.description}
+											</div>
+										</button>
+									{/each}
+								</div>
+							</Collapsible>
+
+							<!-- Action Buttons -->
+							<div class="flex justify-end gap-2 pt-4">
+								<Button variant="outline" onclick={cancelEdit}>Cancel</Button>
+								<Button onclick={savePreset} disabled={isSaving}>
+									{isSaving ? 'Saving...' : 'Save Preset'}
+								</Button>
 							</div>
 						</div>
-						<div class="flex gap-2">
-							<Button variant="ghost" size="sm" onclick={() => startEdit(preset)}>Edit</Button>
-							<Button variant="ghost" size="sm" onclick={() => handleDelete(preset)}>Delete</Button>
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</CardContent>
-</Card>
+					{/if}
+				</div>
+			{/if}
+		</CardContent>
+	</Card>
+</div>
 
+<!-- Model Override Modal -->
 <ModelPickerModal
-	bind:open={isModelOverrideModalOpen}
-	title="Select model override"
+	open={isModelOverrideModalOpen}
+	title="Select Override Model"
 	{groupedModels}
 	selectedModelId={formModel}
-	onSave={handleModelOverrideSave}
+	onSave={(modelId: string) => {
+		formModel = modelId;
+		formVariant = '';
+		isModelOverrideModalOpen = false;
+	}}
 	onClose={() => (isModelOverrideModalOpen = false)}
 />
 
+<!-- Allowed Models Modal -->
 <ModelPickerModal
-	bind:open={isAllowedModelsModalOpen}
-	title="Select allowed models"
+	open={isAllowedModelsModalOpen}
+	title="Select Allowed Models"
 	{groupedModels}
 	selectedModelIds={formAllowedModels}
-	multiSelect={true}
-	onSaveMultiple={handleAllowedModelsSave}
+	config={{ multiSelect: true, showVariants: false, showThinkingLevel: false }}
+	onSaveMultiple={(modelIds: string[]) => {
+		formAllowedModels = modelIds;
+		isAllowedModelsModalOpen = false;
+	}}
 	onClose={() => (isAllowedModelsModalOpen = false)}
 />
+
+<style>
+	.preset-card {
+		transition: all 0.2s ease-out;
+	}
+	.preset-card:hover {
+		border-color: hsl(var(--primary) / 0.5);
+	}
+</style>

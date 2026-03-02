@@ -39,25 +39,48 @@ interface CouncilAgent {
  * Check if a model supports thinking/extended thinking based on model ID
  */
 function modelSupportsThinking(modelId: string): boolean {
-	const thinkingModels = [
-		// OpenAI o1/o3 series
-		'o1-',
-		'o1_',
-		'o3-',
-		'o3_',
-		// DeepSeek R1
-		'deepseek-r1',
-		'deepseek_reasoner',
-		// Google Gemini thinking
-		'gemini-2.0-flash-thinking',
-		'gemini-2.5-flash-thinking',
-		// Claude with extended thinking
-		'claude-3-7',
-		'claude-3.7',
-		'claude-sonnet-4'
-	];
 	const lowerModelId = modelId.toLowerCase();
-	return thinkingModels.some((tm) => lowerModelId.includes(tm));
+
+	// Check for explicit -thinking suffix (most reliable)
+	if (lowerModelId.includes('-thinking') || lowerModelId.includes('_thinking')) {
+		return true;
+	}
+
+	// OpenAI o1/o3 series
+	if (
+		lowerModelId.startsWith('o1-') ||
+		lowerModelId.startsWith('o1_') ||
+		lowerModelId.startsWith('o3-') ||
+		lowerModelId.startsWith('o3_')
+	) {
+		return true;
+	}
+
+	// GPT-5.x thinking variants
+	if (lowerModelId.includes('gpt-5.') && lowerModelId.includes('thinking')) {
+		return true;
+	}
+
+	// DeepSeek R1
+	if (lowerModelId.includes('deepseek-r1') || lowerModelId.includes('deepseek_reasoner')) {
+		return true;
+	}
+
+	// Google Gemini thinking
+	if (lowerModelId.includes('gemini') && lowerModelId.includes('thinking')) {
+		return true;
+	}
+
+	// Claude with extended thinking
+	if (
+		lowerModelId.includes('claude-3-7') ||
+		lowerModelId.includes('claude-3.7') ||
+		lowerModelId.includes('claude-sonnet-4')
+	) {
+		return true;
+	}
+
+	return false;
 }
 
 interface FunctionDefaultsSettings {

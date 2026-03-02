@@ -1,88 +1,120 @@
 <script lang="ts">
+	/**
+	 * ModelPickerModal - REUSABLE model selection modal
+	 *
+	 * SINGLE SOURCE OF TRUTH for model selection UI.
+	 * Uses shared types, whitelist filtering, and feature flags.
+	 *
+	 * DO NOT duplicate this component. Import from:
+	 *   '$lib/components/shared/model-selection/model-picker-modal.svelte'
+	 */
+
 	import { Button } from '$lib/components/ui/button';
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 	import { innerWidth } from 'svelte/reactivity/window';
+	import type { ProviderGroup, Model, ModelSelectionConfig } from '$lib/types/model.types';
+	import { DEFAULT_MODEL_SELECTION_CONFIG } from '$lib/types/model.types';
+	import { filterProviderGroupsByWhitelist, isWhitelistActive } from '$lib/utils/model-whitelist';
 
-	interface GroupedModel {
-		id: string;
-		name: string;
-		variantOptions?: string[];
-	}
-
-	interface ProviderGroup {
-		providerName: string;
-		providerId: string;
-		models: GroupedModel[];
-	}
-
-	interface FlatModel extends GroupedModel {
-		providerName: string;
-		providerId: string;
-	}
-
+	// ===== PROPS =====
 	interface Props {
+		/** Whether modal is open */
 		open: boolean;
-		title: string;
+		/** Modal title */
+		title?: string;
+		/** Provider groups with models (raw from API) */
 		groupedModels: ProviderGroup[];
+		/** Currently selected model ID (single-select) */
 		selectedModelId?: string;
+		/** Currently selected model IDs (multi-select) */
 		selectedModelIds?: string[];
-		multiSelect?: boolean;
-		onSave?: (modelId: string) => void;
+		/** Whitelist of allowed models (e.g., from policy) */
+		whitelist?: string[];
+		/** Feature flags for what to show/enable */
+		config?: ModelSelectionConfig;
+		/** Callback when model selected (single-select) */
+		onSave?: (modelId: string, providerId: string) => void;
+		/** Callback when models selected (multi-select) */
 		onSaveMultiple?: (modelIds: string[]) => void;
+		/** Callback when modal closed */
 		onClose: () => void;
 	}
 
 	let {
 		open = $bindable(false),
-		title,
+		title = 'Select Model',
 		groupedModels,
 		selectedModelId = '',
 		selectedModelIds = [],
-		multiSelect = false,
+		whitelist,
+		config = DEFAULT_MODEL_SELECTION_CONFIG,
 		onSave,
 		onSaveMultiple,
 		onClose
 	}: Props = $props();
 
+	// ===== STATE =====
 	let searchQuery = $state('');
 	let draftModelIds = $state<string[]>([]);
 	let showSelectedOnly = $state(false);
 	let dialogElement = $state<HTMLDivElement | null>(null);
 
 	let isMobile = $derived((innerWidth.current ?? 0) < 768);
+	let hasWhitelist = $derived(isWhitelistActive(whitelist));
 
+	// Apply whitelist filtering
+	let filteredGroups = $derived(
+		config.enableWhitelist && hasWhitelist
+			? filterProviderGroupsByWhitelist(groupedModels, whitelist)
+			: groupedModels
+	);
+
+	// Normalize selectedModelIds to include provider prefix on modal open
 	$effect(() => {
-		if (!open) {
-			return;
-		}
+		if (!open) return;
 
 		searchQuery = '';
-		// Normalize selectedModelIds to include provider prefix
-		// selectedModelIds may contain raw IDs (e.g., 'glm-5') or prefixed IDs (e.g., 'zai-coding-plan/glm-5')
 		const normalizedIds = new Set<string>();
+
+		// Also include selectedModelId for single-select mode
+		if (selectedModelId) {
+			const prefixed = findPrefixedId(selectedModelId);
+			if (prefixed) normalizedIds.add(prefixed);
+		}
+
 		for (const rawId of selectedModelIds) {
-			// If already prefixed, use as-is
 			if (rawId.includes('/')) {
 				normalizedIds.add(rawId);
 				continue;
 			}
-			// Find the provider for this raw model ID
-			for (const provider of groupedModels) {
-				const model = provider.models.find((m) => m.id === rawId);
-				if (model) {
-					normalizedIds.add(`${provider.providerId}/${rawId}`);
-					break;
-				}
-			}
+			const prefixed = findPrefixedId(rawId);
+			if (prefixed) normalizedIds.add(prefixed);
 		}
+
 		draftModelIds = Array.from(normalizedIds);
 		showSelectedOnly = false;
 		dialogElement?.focus();
 	});
 
+	// Find provider prefix for a raw model ID
+	function findPrefixedId(rawId: string): string | null {
+		for (const provider of filteredGroups) {
+			if (provider.models.some((m) => m.id === rawId)) {
+				return `${provider.providerId}/${rawId}`;
+			}
+		}
+		return null;
+	}
+
+	// Flatten models for display
+	interface FlatModel extends Model {
+		providerName: string;
+		providerId: string;
+	}
+
 	let allModels = $derived.by(() => {
 		const flat: FlatModel[] = [];
-		for (const provider of groupedModels) {
+		for (const provider of filteredGroups) {
 			for (const model of provider.models) {
 				flat.push({
 					...model,
@@ -91,7 +123,6 @@
 				});
 			}
 		}
-
 		return flat;
 	});
 
@@ -111,7 +142,7 @@
 			});
 		}
 
-		if (multiSelect && showSelectedOnly) {
+		if (config.multiSelect && showSelectedOnly) {
 			return baseList.filter((model) => selectedSet.has(`${model.providerId}/${model.id}`));
 		}
 
@@ -119,25 +150,24 @@
 	});
 
 	let selectedModels = $derived.by(() => {
-		if (!multiSelect) {
-			return [] as FlatModel[];
-		}
+		if (!config.multiSelect) return [] as FlatModel[];
 
 		const selectedSet = new Set(draftModelIds);
 		return allModels.filter((model) => selectedSet.has(`${model.providerId}/${model.id}`));
 	});
 
-	let selectedCount = $derived(multiSelect ? draftModelIds.length : 0);
+	let selectedCount = $derived(config.multiSelect ? draftModelIds.length : 0);
+
+	// ===== HANDLERS =====
 
 	function isSelectedModel(providerModelId: string): boolean {
 		return draftModelIds.includes(providerModelId);
 	}
 
 	function handleSelectModel(model: FlatModel): void {
-		// Store internally with provider prefix for correct matching
 		const providerModelId = `${model.providerId}/${model.id}`;
 
-		if (multiSelect) {
+		if (config.multiSelect) {
 			if (draftModelIds.includes(providerModelId)) {
 				draftModelIds = draftModelIds.filter((id) => id !== providerModelId);
 			} else {
@@ -146,35 +176,28 @@
 			return;
 		}
 
-		// Single-select: Save immediately and close modal (auto-save behavior)
-		onSave?.(model.id);
+		// Single-select: Save immediately and close
+		onSave?.(model.id, model.providerId);
 		onClose();
 	}
 
 	function handleSelectAllFiltered(): void {
-		if (!multiSelect) {
-			return;
-		}
+		if (!config.multiSelect) return;
 
 		const next = new Set(draftModelIds);
 		for (const model of filteredModels) {
 			next.add(`${model.providerId}/${model.id}`);
 		}
-
 		draftModelIds = Array.from(next);
 	}
 
 	function handleClearAllSelection(): void {
-		if (!multiSelect) {
-			return;
-		}
-
+		if (!config.multiSelect) return;
 		draftModelIds = [];
 	}
 
 	function handleSave(): void {
-		// Only used for multi-select mode
-		if (!multiSelect) return;
+		if (!config.multiSelect) return;
 
 		// Extract raw model IDs without provider prefix
 		const rawIds = draftModelIds.map((id) => {
@@ -225,12 +248,13 @@
 			onkeydown={handleDialogKeydown}
 			onclick={(e) => e.stopPropagation()}
 		>
+			<!-- Header -->
 			<div class="border-b px-4 py-3">
 				<div class="flex items-center justify-between gap-3">
 					<div>
 						<h3 class="font-semibold text-base">{title}</h3>
 						<p class="text-xs text-muted-foreground">
-							{multiSelect
+							{config.multiSelect
 								? 'Select one or more models, then save.'
 								: 'Select a model and confirm.'}
 						</p>
@@ -239,7 +263,9 @@
 				</div>
 			</div>
 
+			<!-- Body -->
 			<div class="space-y-3 p-4">
+				<!-- Search -->
 				<input
 					type="text"
 					placeholder="Search provider, model, or id..."
@@ -247,20 +273,28 @@
 					bind:value={searchQuery}
 				/>
 
+				<!-- Status bar -->
 				<div class="rounded-md border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-					{#if multiSelect}
-						<div class="flex items-center justify-between gap-2">
-							<span>{selectedCount} model(s) selected</span>
+					<div class="flex items-center justify-between gap-2">
+						<span>
+							{#if hasWhitelist && config.enableWhitelist}
+								<span class="text-amber-600 dark:text-amber-400"
+									>🔒 {allModels.length} whitelisted models</span
+								>
+							{:else}
+								{allModels.length} models available
+							{/if}
+						</span>
+						{#if config.multiSelect}
 							<span class="rounded border px-1.5 py-0.5 text-[10px]">
 								{selectedCount}/{allModels.length} selected
 							</span>
-						</div>
-					{:else}
-						{selectedCount === 1 ? '1 model selected' : 'No model selected'}
-					{/if}
+						{/if}
+					</div>
 				</div>
 
-				{#if multiSelect}
+				<!-- Multi-select controls -->
+				{#if config.multiSelect}
 					<div
 						class="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-xs"
 					>
@@ -275,7 +309,7 @@
 								onclick={handleSelectAllFiltered}
 								disabled={filteredModels.length === 0}
 							>
-								Select all filtered
+								Select all
 							</Button>
 							<Button
 								variant="ghost"
@@ -283,28 +317,26 @@
 								onclick={handleClearAllSelection}
 								disabled={draftModelIds.length === 0}
 							>
-								Clear all
+								Clear
 							</Button>
-							{#if showSelectedOnly}
-								<Button variant="ghost" size="sm" onclick={() => (showSelectedOnly = false)}>
-									Reset filter
-								</Button>
-							{/if}
 						</div>
 					</div>
 				{/if}
 
+				<!-- Model list -->
 				<div class="max-h-[50vh] overflow-y-auto rounded-md border p-2">
 					<ul class="space-y-2">
 						{#if filteredModels.length === 0}
 							<div class="rounded-md px-3 py-4 text-sm text-muted-foreground">
 								{showSelectedOnly
 									? 'No selected models match this search.'
-									: 'No models match your search.'}
+									: hasWhitelist && config.enableWhitelist
+										? 'No whitelisted models match your search.'
+										: 'No models match your search.'}
 							</div>
 						{/if}
 
-						{#each filteredModels as model}
+						{#each filteredModels as model (model.id)}
 							<li>
 								<button
 									type="button"
@@ -336,12 +368,23 @@
 										{/if}
 									</div>
 									<div class="font-mono text-xs text-muted-foreground">{model.id}</div>
-									{#if model.variantOptions && model.variantOptions.length > 0}
+
+									<!-- Variants -->
+									{#if config.showVariants && model.variants && model.variants.length > 0}
 										<div class="mt-1 flex flex-wrap gap-1 text-[10px] text-muted-foreground">
 											<span>Variants:</span>
-											{#each model.variantOptions as variant}
-												<span class="rounded border px-1.5 py-0.5">{variant}</span>
+											{#each model.variants as variant}
+												<span class="rounded border px-1.5 py-0.5"
+													>{variant.label || variant.id}</span
+												>
 											{/each}
+										</div>
+									{/if}
+
+									<!-- Thinking support indicator -->
+									{#if config.showThinkingLevel && model.supportsThinking}
+										<div class="mt-1 text-[10px] text-blue-600 dark:text-blue-400">
+											🧠 Supports thinking
 										</div>
 									{/if}
 								</button>
@@ -350,9 +393,10 @@
 					</ul>
 				</div>
 
-				{#if multiSelect && selectedModels.length > 0}
+				<!-- Selected models preview (multi-select) -->
+				{#if config.multiSelect && selectedModels.length > 0}
 					<div class="rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
-						<div class="mb-1 font-medium">Selected models ({selectedModels.length})</div>
+						<div class="mb-1 font-medium">Selected ({selectedModels.length})</div>
 						<div class="flex flex-wrap gap-1">
 							{#each selectedModels.slice(0, 8) as model}
 								<span class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5">
@@ -370,7 +414,8 @@
 				{/if}
 			</div>
 
-			{#if multiSelect}
+			<!-- Footer (multi-select only) -->
+			{#if config.multiSelect}
 				<div
 					class="flex justify-end gap-2 border-t px-4 py-3"
 					class:sticky={isMobile}

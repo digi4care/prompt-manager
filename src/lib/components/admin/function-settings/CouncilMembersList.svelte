@@ -1,23 +1,18 @@
 <script lang="ts">
+	/**
+	 * CouncilMembersList - Council agent settings with model selection
+	 *
+	 * REFACTORED: Uses shared ModelPickerModal, shared types, whitelist utility.
+	 * Removed ~65 lines of duplicated code.
+	 */
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Plus, Trash2, GripVertical } from 'lucide-svelte';
+	import { Plus, Trash2 } from 'lucide-svelte';
+	import ModelPickerModal from '$lib/components/shared/model-selection/model-picker-modal.svelte';
+	import type { Model, ModelVariant, ProviderGroup } from '$lib/types/model.types';
+	import { normalizeToProviderGroups } from '$lib/types/model.types';
 
-	interface ModelVariant {
-		id: string;
-		label?: string;
-		isDefault?: boolean;
-	}
-
-	interface Model {
-		id: string;
-		name: string;
-		provider: string;
-		logo?: string;
-		variants?: ModelVariant[];
-		supports_thinking?: boolean;
-	}
-
+	// Local interface for council agent (business data from parent)
 	interface CouncilAgent {
 		id: number;
 		modelId: string;
@@ -34,7 +29,7 @@
 	interface Props {
 		agents: CouncilAgent[];
 		prompts?: { id: number; title: string }[];
-		models?: Model[];
+		models?: Record<string, unknown>[]; // Raw models from API
 		allowedModels?: string[];
 		parentType?: 'function_defaults' | 'prompt_function_settings' | 'review_defaults';
 		onModelChange: (agentId: number, model: Model) => void;
@@ -66,51 +61,32 @@
 		onSettingsChange
 	}: Props = $props();
 
-	let activeModal = $state<number | null>(null);
-	let searchQuery = $state('');
+	// Convert raw models to normalized structure for modal
+	let groupedModels = $derived(normalizeToProviderGroups(models));
 
-	function isModelAllowed(modelId: string, providerId: string): boolean {
-		if (!allowedModels?.length) return true;
-		const fullId = `${providerId}/${modelId}`.toLowerCase();
-		return allowedModels.some((a) => {
-			const aLower = a.toLowerCase();
-			if (aLower.includes('/')) return fullId === aLower || fullId.startsWith(aLower);
-			return modelId.toLowerCase() === aLower || modelId.toLowerCase().startsWith(aLower);
-		});
-	}
-
-	let filteredModels = $derived.by(() => {
-		let result = models.filter((m) => isModelAllowed(m.id, m.provider));
-		if (searchQuery) {
-			const q = searchQuery.toLowerCase();
-			result = result.filter(
-				(m) => m.name.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q)
-			);
+	// Flatten to single list for lookups
+	let flatModels = $derived.by(() => {
+		const flat: Model[] = [];
+		for (const group of groupedModels) {
+			for (const model of group.models) {
+				flat.push({ ...model, providerId: group.providerId });
+			}
 		}
-		return result;
+		return flat;
 	});
 
-	function openModal(agentId: number) {
-		activeModal = agentId;
-		searchQuery = '';
-	}
-
-	function selectModel(model: Model) {
-		if (activeModal !== null) {
-			onModelChange(activeModal, model);
-			activeModal = null;
-		}
-	}
+	// Modal state - tracks which agent we're editing
+	let activeModal = $state<number | null>(null);
 
 	/**
 	 * Find the model object for a given agent
 	 */
 	function getModelForAgent(agent: CouncilAgent): Model | undefined {
 		if (!agent.modelId) return undefined;
-		return models.find(
+		return flatModels.find(
 			(m) =>
 				m.id === agent.modelId ||
-				(agent.modelProvider && `${agent.modelProvider}/${m.id}` === agent.modelId)
+				(agent.modelProvider && m.providerId === agent.modelProvider && m.id === agent.modelId)
 		);
 	}
 
@@ -127,7 +103,25 @@
 	 */
 	function supportsThinking(agent: CouncilAgent): boolean {
 		const model = getModelForAgent(agent);
-		return model?.supports_thinking ?? false;
+		return model?.supportsThinking ?? false;
+	}
+
+	function openModal(agentId: number) {
+		activeModal = agentId;
+	}
+
+	function handleModalModelSelect(modelId: string, providerId: string) {
+		const model = flatModels.find((m) => m.id === modelId && m.providerId === providerId);
+		if (model && activeModal !== null) {
+			onModelChange(activeModal, model);
+		}
+		activeModal = null;
+	}
+
+	function getActiveAgentModelId(): string {
+		if (activeModal === null) return '';
+		const agent = agents.find((a) => a.id === activeModal);
+		return agent?.modelId ?? '';
 	}
 </script>
 
@@ -289,67 +283,15 @@
 	{/if}
 </div>
 
-{#if activeModal !== null}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-		onclick={() => (activeModal = null)}
-		onkeydown={(e) => e.key === 'Escape' && (activeModal = null)}
-		role="button"
-		tabindex="-1"
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div
-			class="max-h-[80vh] w-full max-w-lg overflow-hidden rounded-xl border bg-background shadow-xl"
-			onclick={(e) => e.stopPropagation()}
-		>
-			<div class="border-b p-4">
-				<div class="flex items-center justify-between">
-					<h3 class="font-semibold">
-						Select Model for Agent {agents.findIndex((a) => a.id === activeModal) + 1}
-					</h3>
-					<button
-						type="button"
-						class="rounded p-1 hover:bg-muted"
-						onclick={() => (activeModal = null)}
-					>
-						✕
-					</button>
-				</div>
-				<input
-					type="text"
-					placeholder="Search models..."
-					bind:value={searchQuery}
-					class="mt-3 h-9 w-full rounded-md border bg-background px-3 text-sm"
-				/>
-			</div>
-
-			<div class="max-h-[50vh] overflow-y-auto p-2">
-				{#if filteredModels.length === 0}
-					<p class="py-8 text-center text-sm text-muted-foreground">No models found</p>
-				{:else}
-					{#each filteredModels as model}
-						{@const currentAgent = agents.find((a) => a.id === activeModal)}
-						{@const isSelected = currentAgent?.modelId === model.id}
-						<button
-							type="button"
-							class="flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-accent {isSelected
-								? 'bg-primary/10 ring-1 ring-primary/30'
-								: ''}"
-							onclick={() => selectModel(model)}
-						>
-							<ProviderLogo providerId={model.provider} size="sm" />
-							<div class="min-w-0 flex-1">
-								<div class="truncate text-sm font-medium">{model.name}</div>
-								<div class="text-xs text-muted-foreground">{model.provider}</div>
-							</div>
-							{#if isSelected}
-								<span class="text-xs font-medium text-primary">Selected</span>
-							{/if}
-						</button>
-					{/each}
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
+<!-- Shared Modal -->
+<ModelPickerModal
+	open={activeModal !== null}
+	title={activeModal !== null
+		? `Select Model for Agent ${agents.findIndex((a) => a.id === activeModal) + 1}`
+		: 'Select Model'}
+	{groupedModels}
+	whitelist={allowedModels}
+	selectedModelId={getActiveAgentModelId()}
+	onSave={handleModalModelSelect}
+	onClose={() => (activeModal = null)}
+/>

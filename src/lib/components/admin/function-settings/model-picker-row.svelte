@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
-	import ModelPickerModal from './model-picker-modal.svelte';
+	import ModelPickerModal from '$lib/components/shared/model-selection/model-picker-modal.svelte';
 	import type { FunctionType, SettingField, FunctionSetting } from './types';
 	import Play from '@lucide/svelte/icons/play';
 	import Scale from '@lucide/svelte/icons/scale';

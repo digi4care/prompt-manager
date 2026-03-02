@@ -11,8 +11,11 @@
 	import { toast } from 'svelte-sonner';
 	import { Trash2, ExternalLink } from 'lucide-svelte';
 	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
-	import ModelPickerModal from '$lib/components/admin/function-settings/model-picker-modal.svelte';
+	import ModelPickerModal from '$lib/components/shared/model-selection/model-picker-modal.svelte';
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
+	// Use shared types instead of local interfaces
+	import type { ProviderGroup } from '$lib/types/model.types';
+	import { normalizeToProviderGroups } from '$lib/types/model.types';
 
 	type PolicyScope = 'judge' | 'executor' | 'improve' | 'council';
 
@@ -21,18 +24,6 @@
 		executor: boolean;
 		improve: boolean;
 		council: boolean;
-	}
-
-	interface GroupedModel {
-		id: string;
-		name: string;
-		variantOptions?: string[];
-	}
-
-	interface ProviderGroup {
-		providerName: string;
-		providerId: string;
-		models: GroupedModel[];
 	}
 
 	interface Props {
@@ -122,105 +113,7 @@
 		}
 	}
 
-	function normalizeVariantOptions(modelId: string, model: Record<string, unknown>): string[] {
-		const candidates: unknown[] = [
-			model.variants,
-			model.variantOptions,
-			model.variant_options,
-			model.reasoningEffortLevels,
-			model.reasoning_effort_levels,
-			typeof model.reasoning === 'object' && model.reasoning !== null
-				? (model.reasoning as Record<string, unknown>).levels
-				: undefined
-		];
-
-		for (const candidate of candidates) {
-			// Handle array format: ["low", "medium", "high"]
-			if (Array.isArray(candidate)) {
-				const options = candidate.filter(
-					(value): value is string => typeof value === 'string' && value.trim().length > 0
-				);
-				if (options.length > 0) {
-					return Array.from(new Set(options));
-				}
-			}
-			// Handle object format: { "low": {...}, "medium": {...}, "high": {...} }
-			if (typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)) {
-				const keys = Object.keys(candidate as Record<string, unknown>);
-				if (keys.length > 0) {
-					return Array.from(new Set(keys));
-				}
-			}
-		}
-
-		if (modelId.toLowerCase().includes('codex')) {
-			return ['default', 'low', 'medium', 'high', 'xhigh'];
-		}
-
-		return [];
-	}
-
-	function normalizeProviderGroups(payload: unknown): ProviderGroup[] {
-		// Handle both direct array and { providers: [...] } format
-		if (Array.isArray(payload)) {
-			// Check if already normalized (has providerId field)
-			if (payload.length > 0 && 'providerId' in payload[0]) {
-				// Already normalized ProviderGroup[], return as-is
-				return payload as ProviderGroup[];
-			}
-			// Raw array of providers
-			return normalizeProviders(payload);
-		} else if (typeof payload === 'object' && payload !== null && 'providers' in payload) {
-			// Raw API response { providers: [...] }
-			const providers = (payload as { providers?: unknown[] }).providers || [];
-			return normalizeProviders(providers);
-		}
-		return [];
-	}
-
-	function normalizeProviders(providers: unknown[]): ProviderGroup[] {
-		if (!Array.isArray(providers)) {
-			return [];
-		}
-
-		return providers
-			.map((provider) => {
-				const providerRecord = provider as {
-					id?: unknown;
-					name?: unknown;
-					models?: unknown;
-				};
-
-				const modelList = Array.isArray(providerRecord.models)
-					? providerRecord.models
-					: Object.values((providerRecord.models as Record<string, unknown>) || {});
-
-				const models = modelList
-					.map((model) => model as Record<string, unknown>)
-					.filter((model) => typeof model.id === 'string' && model.id.length > 0)
-					.map((model) => {
-						const modelId = model.id as string;
-						const variantOptions = normalizeVariantOptions(modelId, model);
-
-						return {
-							id: modelId,
-							name:
-								typeof model.name === 'string' && model.name.trim().length > 0
-									? (model.name as string)
-									: modelId,
-							variantOptions: variantOptions.length > 0 ? variantOptions : undefined
-						};
-					});
-
-				return {
-					providerName: typeof providerRecord.name === 'string' ? providerRecord.name : 'Unknown',
-					providerId: typeof providerRecord.id === 'string' ? providerRecord.id : 'unknown',
-					models
-				};
-			})
-			.filter((provider) => provider.models.length > 0)
-			.sort((a, b) => a.providerName.localeCompare(b.providerName));
-	}
+	// Local normalizer functions removed - using shared normalizeToProviderGroups from $lib/types/model.types.ts
 
 	function parseAllowedModelList(raw: string): string[] {
 		try {
@@ -405,7 +298,7 @@
 		try {
 			const cachedCatalog = getCachedModelCatalog();
 			if (cachedCatalog) {
-				groupedModels = normalizeProviderGroups(cachedCatalog);
+				groupedModels = normalizeToProviderGroups(cachedCatalog);
 				isLoadingCatalog = false;
 				return;
 			}
@@ -423,7 +316,7 @@
 
 			const parsedCatalog = JSON.parse(payload);
 			setCachedModelCatalog(parsedCatalog);
-			groupedModels = normalizeProviderGroups(parsedCatalog);
+			groupedModels = normalizeToProviderGroups(parsedCatalog);
 		} catch (err) {
 			console.error('Failed to load catalog:', err);
 			toast.error('Failed to load model catalog');
@@ -1004,7 +897,7 @@
 	title="Select models for AI policy"
 	{groupedModels}
 	selectedModelIds={allowedModels}
-	multiSelect={true}
+	config={{ multiSelect: true }}
 	onSaveMultiple={handleModelSelectionSave}
 	onClose={() => (isPickerOpen = false)}
 />

@@ -1,15 +1,17 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	/**
+	 * FunctionSettingsCard - Card-style function settings with model selection
+	 *
+	 * REFACTORED: Uses shared ModelPickerModal, shared types, whitelist utility.
+	 * Removed ~110 lines of duplicated code.
+	 */
 	import { fly } from 'svelte/transition';
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
+	import ModelPickerModal from '$lib/components/shared/model-selection/model-picker-modal.svelte';
+	import type { Model, ProviderGroup } from '$lib/types/model.types';
+	import { normalizeToProviderGroups } from '$lib/types/model.types';
 
-	interface Model {
-		id: string;
-		name: string;
-		provider: string;
-		logo?: string;
-	}
-
+	// Local interface for props - keeps business logic separate
 	interface Props {
 		type: 'executor' | 'judge' | 'improve' | 'council';
 		id?: number;
@@ -23,7 +25,7 @@
 		maxTokens?: number;
 		promptTemplate?: string | null;
 		prompts?: { id: string; title: string }[];
-		models?: Model[];
+		models?: Record<string, unknown>[]; // Raw models from API
 		allowedModels?: string[];
 		onselect?: (model: Model) => void;
 		onDelete?: () => void;
@@ -52,11 +54,24 @@
 		onPromptChange
 	}: Props = $props();
 
+	// Modal state
 	let showModal = $state(false);
-	let searchQuery = $state('');
-	let showSelectedOnly = $state(false);
 	let savingPrompt = $state(false);
 	let promptSaved = $state(false);
+
+	// Convert raw models to normalized structure for modal
+	let groupedModels = $derived(normalizeToProviderGroups(models));
+
+	// Flatten to single list for lookups
+	let flatModels = $derived.by(() => {
+		const flat: Model[] = [];
+		for (const group of groupedModels) {
+			for (const model of group.models) {
+				flat.push({ ...model, providerId: group.providerId });
+			}
+		}
+		return flat;
+	});
 
 	// Autosave prompt when selection changes
 	async function savePrompt(promptId: number | null) {
@@ -78,61 +93,19 @@
 		}
 	}
 
-	let filteredModels = $derived.by(() => {
-		const modelList = models ?? [];
-		let result = modelList;
-
-		// Filter by whitelist if available (provider/model format)
-		if (allowedModels && allowedModels.length > 0) {
-			result = result.filter((m) => isModelInWhitelist(m.id, m.provider, allowedModels));
-		}
-
-		if (searchQuery) {
-			result = result.filter(
-				(m) =>
-					m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					m.provider.toLowerCase().includes(searchQuery.toLowerCase())
-			);
-		}
-		if (showSelectedOnly && modelId) {
-			result = result.filter((m) => m.id === modelId);
-		}
-		return result;
-	});
-
-	function isModelInWhitelist(modelId: string, providerId: string, whitelist: string[]): boolean {
-		// Use provider/model format for exact matching
-		const providerModelId = `${providerId}/${modelId}`.toLowerCase();
-		const modelIdLower = modelId.toLowerCase();
-
-		for (const allowed of whitelist) {
-			const allowedLower = allowed.toLowerCase();
-			// Match provider/model format (e.g., "openrouter/glm-4")
-			if (allowedLower.includes('/')) {
-				if (providerModelId === allowedLower) return true;
-				// Prefix match for variants like "openrouter/glm-4-32k"
-				if (providerModelId.startsWith(allowedLower)) return true;
-			} else {
-				// Legacy support: match just model ID for backward compatibility
-				if (modelIdLower === allowedLower) return true;
-				if (allowedLower.length >= 7 && modelIdLower.startsWith(allowedLower)) return true;
-			}
-		}
-		return false;
-	}
-
 	function openModal() {
 		showModal = true;
-		searchQuery = '';
-		showSelectedOnly = false;
 	}
 
 	function closeModal() {
 		showModal = false;
 	}
 
-	function selectModel(model: { id: string; name: string; provider: string; logo?: string }) {
-		onselect?.(model);
+	function handleModelSelect(modelId: string, providerId: string) {
+		const model = flatModels.find((m) => m.id === modelId && m.providerId === providerId);
+		if (model) {
+			onselect?.(model);
+		}
 		closeModal();
 	}
 </script>
@@ -258,6 +231,9 @@
 						{/each}
 					</select>
 					<p class="mt-1 text-xs text-muted-foreground">Optional template to prepend</p>
+					{#if promptSaved}
+						<p class="mt-1 text-xs text-green-600">Saved!</p>
+					{/if}
 				{:else}
 					<a
 						href="/prompts"
@@ -313,113 +289,13 @@
 	</div>
 </div>
 
-<!-- Model Picker Modal -->
-{#if showModal}
-	<div
-		class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center"
-		onclick={closeModal}
-		role="dialog"
-		onkeydown={(e) => e.key === 'Escape' && closeModal()}
-	>
-		<div
-			class="max-h-[90vh] w-full overflow-auto rounded-t-lg border bg-background sm:max-h-[80vh] sm:max-w-2xl sm:rounded-lg"
-			transition:fly={{ y: 50, duration: 200 }}
-			role="dialog"
-			onclick={(e) => e.stopPropagation()}
-		>
-			<!-- Modal Header -->
-			<div class="sticky top-0 z-10 border-b bg-background p-4">
-				<div class="flex items-center justify-between">
-					<h2 class="text-lg font-semibold">Select Model for {label}</h2>
-					<button
-						type="button"
-						class="rounded-md p-2 hover:bg-accent"
-						onclick={closeModal}
-						aria-label="Close"
-					>
-						✕
-					</button>
-				</div>
-				<input
-					type="text"
-					placeholder="Search models..."
-					bind:value={searchQuery}
-					class="mt-3 flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-				/>
-				{#if modelId}
-					<label class="mt-2 flex items-center gap-2 text-sm">
-						<input type="checkbox" bind:checked={showSelectedOnly} />
-						Show selected only
-					</label>
-				{/if}
-			</div>
-
-			<!-- Model List -->
-			<div class="p-4">
-				{#if filteredModels.length === 0}
-					<p class="py-8 text-center text-muted-foreground">No models found</p>
-				{:else}
-					{#each filteredModels as model}
-						<button
-							type="button"
-							class="flex w-full items-center gap-3 rounded-md border p-3 hover:bg-accent {modelId ===
-							model.id
-								? 'border-primary bg-primary/5'
-								: ''}"
-							onclick={() => selectModel(model)}
-						>
-							<ProviderLogo providerId={model.provider} size="lg" />
-							<div class="flex-1 text-left">
-								<div class="font-medium">{model.name}</div>
-								<div class="text-xs text-muted-foreground">{model.provider}</div>
-								{#if model.description}
-									<div class="mt-1 line-clamp-2 text-xs text-muted-foreground">
-										{model.description}
-									</div>
-								{/if}
-								<div class="mt-2 flex flex-wrap gap-2">
-									{#if model.context_window}
-										<span class="rounded bg-secondary px-2 py-0.5 text-xs">
-											Context: {(model.context_window / 1000).toFixed(0)}K
-										</span>
-									{/if}
-									{#if model.supports_vision}
-										<span class="rounded bg-green-100 px-2 py-0.5 text-xs text-green-800"
-											>Vision</span
-										>
-									{/if}
-									{#if model.status}
-										<span class="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-800"
-											>{model.status}</span
-										>
-									{/if}
-									{#if model.limit?.context}
-										<span class="rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-800">
-											Limit: {(model.limit.context / 1000).toFixed(0)}K
-										</span>
-									{/if}
-								</div>
-							</div>
-							{#if modelId === model.id}
-								<span class="text-xs text-primary">Selected</span>
-							{/if}
-						</button>
-					{/each}
-				{/if}
-			</div>
-
-			<!-- Modal Footer -->
-			<div class="sticky bottom-0 border-t bg-background p-4">
-				<div class="flex justify-end gap-2">
-					<button
-						type="button"
-						class="rounded-md border px-4 py-2 hover:bg-accent"
-						onclick={closeModal}
-					>
-						Cancel
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
+<!-- Shared Model Picker Modal -->
+<ModelPickerModal
+	open={showModal}
+	title="Select Model for {label}"
+	{groupedModels}
+	whitelist={allowedModels}
+	selectedModelId={modelId ?? ''}
+	onSave={handleModelSelect}
+	onClose={closeModal}
+/>

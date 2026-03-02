@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
-	import ModelPickerModal from './model-picker-modal.svelte';
+	import ModelPickerModal from '$lib/components/shared/model-selection/model-picker-modal.svelte';
 	import Users from '@lucide/svelte/icons/users';
 
 	type SettingField = 'modelId' | 'modelVariant' | 'temperature' | 'maxTokens';

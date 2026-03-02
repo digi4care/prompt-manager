@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import {
 		PromptContentViewer,
-		ExecutionPanel,
+		PromptExecutor,
 		ExecutionHistory,
 		ExecutionLogDetail,
 		EditPromptOverlay
@@ -243,7 +243,7 @@
 				</div>
 				<div class="p-4">
 					{#if data.prompt?.id}
-						<ExecutionPanel promptId={data.prompt.id} content={currentContent} />
+						<PromptExecutor promptId={data.prompt.id} template={currentContent} />
 					{:else}
 						<p class="text-sm text-muted-foreground">Save prompt to enable execution</p>
 					{/if}

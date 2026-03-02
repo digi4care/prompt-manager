@@ -4,12 +4,12 @@
 	import { goto } from '$app/navigation';
 	import { SnippetPicker } from '$lib/components/snippets';
 	import { usePromptEdit } from '$lib/composables/usePromptEdit.svelte';
+	import { PromptExecutor } from '$lib/components/prompts';
 	import {
 		EditPromptHeader,
 		PromptContentEditor,
 		VersionControlSection,
 		EditPromptSidebar,
-		TestRunnerSection,
 		VariantSelectionModal
 	} from './_components';
 
@@ -63,7 +63,7 @@
 			<PromptContentEditor {controller} />
 
 			<!-- Test Runner Section -->
-			<TestRunnerSection {controller} promptId={data.prompt.id} />
+			<PromptExecutor promptId={data.prompt.id} template={controller.content} />
 
 			<!-- Version Control -->
 			<VersionControlSection {controller} />

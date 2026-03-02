@@ -8,7 +8,6 @@
 		PromptContentEditor,
 		VersionControlSection,
 		EditPromptSidebar,
-		TestRunnerSection,
 		VariantSelectionModal
 	} from '../../../routes/prompts/[id]/edit/_components';
 
@@ -91,9 +90,6 @@
 		<div class="space-y-6 lg:col-span-2">
 			<!-- Prompt Content -->
 			<PromptContentEditor {controller} />
-
-			<!-- Test Runner -->
-			<TestRunnerSection {controller} promptId={prompt.id} />
 
 			<!-- Version Control -->
 			<VersionControlSection {controller} />

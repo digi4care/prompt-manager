@@ -13,3 +13,5 @@ export { default as ExecutionLogDetail } from './execution-log-detail.svelte';
 export { default as SnippetPreview } from './snippet-preview.svelte';
 export { default as TestRunnerPanel } from './test-runner-panel.svelte';
 export { default as ExecutionStream } from './execution-stream.svelte';
+export { default as EditPromptOverlay } from './edit-prompt-overlay.svelte';
+export { default as PromptFunctionSettings } from './prompt-function-settings.svelte';

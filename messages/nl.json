@@ -1,0 +1,104 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-messageFormat",
+	"greeting": "Hallo {name}!",
+	"common": {
+		"save": "Opslaan",
+		"cancel": "Annuleren",
+		"delete": "Verwijderen",
+		"edit": "Bewerken",
+		"back": "Terug",
+		"loading": "Laden...",
+		"error": "Er is een fout opgetreden",
+		"success": "Succesvol opgeslagen",
+		"retry": "Opnieuw",
+		"dismiss": "Sluiten",
+		"reset": "Reset",
+		"complete": "Voltooid",
+		"search": "Zoeken",
+		"apply": "Toepassen",
+		"useDefault": "Standaard gebruiken",
+		"latest": "laatste"
+	},
+	"auth": {
+		"login": "Inloggen",
+		"logout": "Uitloggen",
+		"email": "E-mail",
+		"password": "Wachtwoord"
+	},
+	"prompts": {
+		"title": "Prompts",
+		"new": "Nieuwe Prompt",
+		"edit": "Prompt Bewerken",
+		"history": "Geschiedenis",
+		"viewHistory": "Bekijk Geschiedenis",
+		"noHistory": "Geen uitvoergeschiedenis beschikbaar"
+	},
+	"council": {
+		"connectionError": "Verbindingsfout",
+		"unknownError": "Onbekende fout opgetreden",
+		"errorOccurred": "Fout opgetreden",
+		"abortedByUser": "Afgebroken door gebruiker",
+		"reviewAborted": "Review afgebroken door gebruiker. Gedeeltelijke resultaten worden getoond.",
+		"noAgentsConfigured": "Geen {type} agents geconfigureerd. Voeg agents toe in Instellingen.",
+		"connecting": "Verbinden...",
+		"processing": "Verwerken...",
+		"waitingToStart": "Wachten om te starten...",
+		"waitingForResponse": "Wachten op reactie...",
+		"processingRequest": "Verzoek verwerken...",
+		"stillWorking": "Nog bezig... ({time})",
+		"clickToOverride": "Klik op agentnaam om prompt te overschrijven",
+		"agentsWillReview": "{count} AI-agents zullen je prompt parallel beoordelen",
+		"agentsWillDebate": "{count} AI-agents zullen je onderwerp bespreken in 3 rondes",
+		"selectPromptOverride": "Selecteer een prompt om de standaard van de agent te overschrijven.",
+		"usingLatestVersion": "Laatste versie gebruiken. Uitklappen voor specifieke versie.",
+		"selectedSpecificVersion": "Specifieke versie geselecteerd. Klik prompttitel voor laatste.",
+		"noPromptsMatch": "Geen prompts gevonden voor \"{query}\"",
+		"noPromptsAvailable": "Geen prompts beschikbaar",
+		"noVersionsFound": "Geen versies gevonden",
+		"overridePromptFor": "Prompt overschrijven voor {name}",
+		"searchPrompts": "Prompts zoeken...",
+		"loadingPrompts": "Prompts laden...",
+		"loadingVersions": "Versies laden...",
+		"archetypes": {
+			"proponent": "Voorstander",
+			"skeptic": "Skepticus",
+			"pragmatist": "Pragmaticus"
+		},
+		"consensus": {
+			"strong": "Sterke consensus",
+			"moderate": "Gematigde consensus",
+			"mixed": "Gemengde meningen",
+			"none": "Geen consensus"
+		},
+		"review": {
+			"title": "Council Review",
+			"reviewing": "Beoordelen...",
+			"runReview": "Council Review Uitvoeren",
+			"stopReview": "Stop Review",
+			"reviewComplete": "Review Voltooid",
+			"reviewAborted": "Review Afgebroken"
+		},
+		"debate": {
+			"title": "Council Debate",
+			"roundProgress": "Ronde {current}/3...",
+			"startDebate": "Start Debat",
+			"stopDebate": "Stop Debat",
+			"copyAsMarkdown": "Kopieer als Markdown",
+			"synthesis": "Synthese",
+			"argumentsFor": "Argumenten Voor",
+			"argumentsAgainst": "Argumenten Tegen",
+			"pointsOfAgreement": "Punten van Overeenstemming",
+			"finalRecommendation": "Eindaanbeveling",
+			"noSupportingArguments": "Geen ondersteunende argumenten gevonden",
+			"noOpposingArguments": "Geen tegenargumenten gevonden"
+		},
+		"correct": {
+			"title": "Council Voortgang",
+			"runCorrect": "Council Correct Uitvoeren",
+			"finalOutput": "Eindresultaat",
+			"issuesFound": "problemen",
+			"passed": "Goedgekeurd",
+			"description": "Voert producer → reviewer → fixer workflow uit tot 3 rondes"
+		}
+	}
+}

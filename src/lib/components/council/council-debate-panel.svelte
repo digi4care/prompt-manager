@@ -19,6 +19,7 @@
 		AccordionContent
 	} from '$lib/components/ui/accordion';
 	import { cn } from '$lib/utils';
+	import * as m from '$lib/paraglide/messages.js';
 	import MarkdownRenderer from '$lib/components/prompts/markdown-renderer.svelte';
 	import DebateSynthesisCard, { type DebateSynthesis } from './debate-synthesis-card.svelte';
 	import Play from 'lucide-svelte/icons/play';
@@ -785,7 +786,7 @@
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<MessageSquare class="h-5 w-5 text-muted-foreground" />
-				<span class="font-medium">Council Debate</span>
+				<span class="font-medium">{m['council.debate.title']()}</span>
 				{#if uiState === 'debating'}
 					<Badge variant="secondary" class="animate-pulse">
 						<Loader2 class="mr-1 h-3 w-3" />
@@ -950,7 +951,7 @@
 		{#if uiState === 'debating'}
 			<Button variant="destructive" onclick={abortDebate} class="w-full">
 				<Square class="mr-2 h-4 w-4" />
-				Stop Debate
+				{m['council.debate.stopDebate']()}
 			</Button>
 		{/if}
 	{/if}
@@ -983,7 +984,7 @@
 				class="w-full"
 			>
 				<Play class="mr-2 h-4 w-4" />
-				Start Debate
+				{m['council.debate.startDebate']()}
 			</Button>
 			<div class="text-center text-xs text-muted-foreground">
 				{#if councilAgents.length > 0}
@@ -1037,7 +1038,7 @@
 		<div class="flex gap-2">
 			<Button variant="outline" onclick={exportAsMarkdown} class="flex-1">
 				<Copy class="mr-2 h-4 w-4" />
-				Copy as Markdown
+				{m['council.debate.copyAsMarkdown']()}
 			</Button>
 			<Button variant="outline" onclick={handleReset} class="flex-1">
 				<RotateCcw class="mr-2 h-4 w-4" />

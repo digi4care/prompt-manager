@@ -5,14 +5,17 @@
 		PromptContentViewer,
 		ExecutionPanel,
 		ExecutionHistory,
-		ExecutionLogDetail
+		ExecutionLogDetail,
+		EditPromptOverlay
 	} from '$lib/components/prompts';
 	import { VersionTimeline } from '$lib/components/versions';
 	import { promptsStore } from '$lib/stores/prompts.svelte';
 	import type { PromptVersion } from '$lib/stores/prompts.svelte';
-	import { goto } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
+	import { page } from '$app/state';
 	import { cn } from '$lib/utils';
-	import { ChevronRight, Edit, Sparkles, Trash2, History, ChevronDown } from 'lucide-svelte';
+	import { ChevronRight, Edit, Sparkles, Trash2, History, ChevronDown, X } from 'lucide-svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		data: PageData;
@@ -32,10 +35,33 @@
 	let deleting = $state(false);
 	let deleteError = $state('');
 
-	// Execution history state
-	let showHistory = $state(false);
+	// Execution history state - synced with page state for shallow routing
 	let selectedLogId = $state<number | null>(null);
 	let showDetail = $state(false);
+
+	// Shallow routing state - read from page.state
+	const showHistoryOverlay = $derived(!!(page.state as any)?.showHistory);
+	const showEditOverlay = $derived(!!(page.state as any)?.showEdit);
+
+	// Open history with shallow routing
+	function openHistory() {
+		pushState(`/prompts/${data.prompt.id}/history`, { showHistory: true, fromDetail: true });
+	}
+
+	// Close history overlay
+	function closeHistoryOverlay() {
+		history.back();
+	}
+
+	// Open edit with shallow routing
+	function openEdit() {
+		pushState(`/prompts/${data.prompt.id}/edit`, { showEdit: true, fromDetail: true });
+	}
+
+	// Close edit overlay
+	function closeEditOverlay() {
+		history.back();
+	}
 
 	// Format date for display
 	function formatDate(date: Date | string): string {
@@ -54,16 +80,16 @@
 		selectedVersion = version;
 	}
 
-	// Handle edit navigation - open edit page
+	// Handle edit navigation - open edit overlay via shallow routing
 	function handleEdit() {
 		if (!data.prompt?.id) return;
-		goto(`/prompts/${data.prompt.id}/edit`);
+		openEdit();
 	}
 
 	// Handle improve navigation - open edit page with improve button available
 	function handleImprove() {
 		if (!data.prompt?.id) return;
-		goto(`/prompts/${data.prompt.id}/edit`);
+		openEdit();
 	}
 
 	// Handle delete confirmation
@@ -170,6 +196,10 @@
 
 		<!-- Action Buttons -->
 		<div class="flex items-center gap-2">
+			<Button variant="outline" onclick={openHistory} class="gap-1.5">
+				<History size={16} />
+				{m['prompts.viewHistory']()}
+			</Button>
 			<Button variant="default" onclick={handleEdit} class="gap-1.5">
 				<Edit size={16} />
 				Edit
@@ -220,53 +250,7 @@
 				</div>
 			</section>
 
-			<!-- Execution History -->
-			{#if data.prompt?.id}
-				<div class="mt-6">
-					<button
-						class="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-						onclick={() => (showHistory = !showHistory)}
-					>
-						<History class="h-4 w-4" />
-						Execution History
-						<ChevronDown
-							class={cn('h-4 w-4 transition-transform duration-200', showHistory && 'rotate-180')}
-						/>
-					</button>
-
-					{#if showHistory}
-						<div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-							<div class="rounded-lg border bg-card p-4">
-								<h3 class="mb-2 text-xs font-medium text-muted-foreground">Recent Executions</h3>
-								<ExecutionHistory
-									promptId={data.prompt.id}
-									onselect={(log) => {
-										selectedLogId = log.id;
-										showDetail = true;
-									}}
-									{selectedLogId}
-								/>
-							</div>
-							{#if showDetail && selectedLogId}
-								<ExecutionLogDetail
-									logId={selectedLogId}
-									promptId={data.prompt.id}
-									onclose={() => {
-										showDetail = false;
-										selectedLogId = null;
-									}}
-								/>
-							{:else}
-								<div
-									class="flex items-center justify-center rounded-lg border border-dashed bg-muted/30 p-8 text-sm text-muted-foreground"
-								>
-									Select an execution to view details
-								</div>
-							{/if}
-						</div>
-					{/if}
-				</div>
-			{/if}
+			<!-- Execution History (removed - now accessible via header button with shallow routing) -->
 
 			<!-- Selected Version Details -->
 			{#if selectedVersion && selectedVersion.id !== currentVersionId}
@@ -291,6 +275,30 @@
 							<span>{formatDate(selectedVersion.createdAt)}</span>
 						</div>
 					</div>
+				</div>
+			{/if}
+
+			<!-- Edit Overlay (Shallow Routing - Fullscreen) -->
+			{#if showEditOverlay}
+				<div
+					class="fixed inset-0 z-50 flex flex-col bg-background"
+					onkeydown={(e) => {
+						if (e.key === 'Escape') closeEditOverlay();
+					}}
+					tabindex="0"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Edit Prompt"
+				>
+					<EditPromptOverlay
+						prompt={data.prompt}
+						currentVersion={data.currentVersion}
+						onclose={closeEditOverlay}
+						onsaved={() => {
+							// Refresh the page to show updated content
+							window.location.reload();
+						}}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -345,6 +353,70 @@
 				<Button variant="destructive" onclick={handleDeleteConfirm} loading={deleting}
 					>Delete</Button
 				>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- History Overlay (Shallow Routing - Fullscreen) -->
+{#if showHistoryOverlay}
+	<div
+		class="fixed inset-0 z-50 flex flex-col bg-background"
+		onkeydown={(e) => {
+			if (e.key === 'Escape') closeHistoryOverlay();
+		}}
+		tabindex="0"
+		role="dialog"
+		aria-modal="true"
+		aria-label="Execution History"
+	>
+		<!-- Header -->
+		<header class="flex items-center justify-between border-b p-4">
+			<div>
+				<h2 class="text-lg font-semibold">{m['prompts.history']()}</h2>
+				<p class="text-sm text-muted-foreground">{data.prompt.title}</p>
+			</div>
+			<Button variant="ghost" size="icon" onclick={closeHistoryOverlay} aria-label="Close">
+				<X class="h-5 w-5" />
+			</Button>
+		</header>
+
+		<!-- Content -->
+		<div class="flex-1 overflow-auto p-4">
+			<div class="grid gap-4 lg:grid-cols-2">
+				<!-- History list -->
+				<div class="rounded-lg border bg-muted/30 p-4">
+					<h3 class="mb-2 text-xs font-medium text-muted-foreground">Recent Executions</h3>
+					<ExecutionHistory
+						promptId={data.prompt.id}
+						onselect={(log) => {
+							selectedLogId = log.id;
+							showDetail = true;
+						}}
+						{selectedLogId}
+					/>
+				</div>
+
+				<!-- Log detail -->
+				{#if showDetail && selectedLogId}
+					<ExecutionLogDetail
+						logId={selectedLogId}
+						promptId={data.prompt.id}
+						onclose={() => {
+							showDetail = false;
+							selectedLogId = null;
+						}}
+					/>
+				{:else}
+					<div
+						class="flex min-h-[300px] items-center justify-center rounded-lg border border-dashed bg-muted/30 p-8 text-center"
+					>
+						<div>
+							<History class="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+							<p class="text-sm text-muted-foreground">Select an execution to view details</p>
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>

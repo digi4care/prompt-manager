@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { cn } from '$lib/utils';
+	import * as m from '$lib/paraglide/messages.js';
 	import Play from 'lucide-svelte/icons/play';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import AlertCircle from 'lucide-svelte/icons/alert-circle';
@@ -88,6 +89,7 @@
 	let agentList = $state<{ id: number; name: string }[]>([]);
 	let errorMessage = $state<string | null>(null);
 	let reviewSummary = $state<string | null>(null);
+	let reviewAborted = $state(false); // Flag for aborted reviews
 
 	// Configured review agents from settings (fetched from API)
 	interface ConfiguredAgent {
@@ -450,7 +452,7 @@
 
 			error({ error: err }) {
 				console.error('[CouncilReviewPanel] Error:', err);
-				errorMessage = 'Connection error';
+				errorMessage = m['council.connectionError']();
 				uiState = 'error';
 			}
 		});
@@ -758,12 +760,13 @@
 			for (const [id, state] of newStates) {
 				if (state.status === 'streaming' || state.status === 'pending') {
 					state.status = 'error';
-					state.error = 'Aborted by user';
+					state.error = m['council.abortedByUser']();
 				}
 			}
 			agentStates = newStates;
 			uiState = 'complete'; // Show partial results
-			reviewSummary = 'Review aborted by user. Showing partial results.';
+			reviewAborted = true;
+			reviewSummary = m['council.reviewAborted']();
 		} else {
 			// No results - just reset
 			uiState = 'idle';
@@ -782,16 +785,16 @@
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<Users class="h-5 w-5 text-muted-foreground" />
-				<span class="font-medium">Council Review</span>
+				<span class="font-medium">{m['council.review.title']()}</span>
 				{#if uiState === 'running'}
 					<Badge variant="secondary" class="animate-pulse">
 						<Loader2 class="mr-1 h-3 w-3" />
-						Reviewing...
+						{m['council.review.reviewing']()}
 					</Badge>
 				{:else if uiState === 'complete'}
 					<Badge variant="default" class="bg-green-600">
 						<CheckCircle class="mr-1 h-3 w-3" />
-						Complete
+						{m['common.complete']()}
 					</Badge>
 				{/if}
 			</div>
@@ -859,7 +862,7 @@
 							</p>
 						{:else if agent.status === 'error'}
 							<p class="text-sm text-red-600 dark:text-red-400">
-								{agent.error || 'Error occurred'}
+								{agent.error || m['council.errorOccurred']()}
 							</p>
 						{/if}
 					</div>
@@ -870,7 +873,7 @@
 		<!-- Abort button during execution -->
 		<Button variant="destructive" onclick={abortReview} class="w-full">
 			<Square class="mr-2 h-4 w-4" />
-			Stop Review
+			{m['council.review.stopReview']()}
 		</Button>
 	{/if}
 
@@ -878,28 +881,26 @@
 	{#if uiState === 'complete' && reviewSummary}
 		<div
 			class="rounded-lg border p-4"
-			class:border-green-200={reviewSummary !== 'Review aborted by user. Showing partial results.'}
-			class:bg-green-50={reviewSummary !== 'Review aborted by user. Showing partial results.'}
-			class:dark:border-green-900={reviewSummary !==
-				'Review aborted by user. Showing partial results.'}
-			class:dark:bg-green-950={reviewSummary !== 'Review aborted by user. Showing partial results.'}
-			class:border-amber-200={reviewSummary === 'Review aborted by user. Showing partial results.'}
-			class:bg-amber-50={reviewSummary === 'Review aborted by user. Showing partial results.'}
-			class:dark:border-amber-900={reviewSummary ===
-				'Review aborted by user. Showing partial results.'}
-			class:dark:bg-amber-950={reviewSummary === 'Review aborted by user. Showing partial results.'}
+			class:border-green-200={!reviewAborted}
+			class:bg-green-50={!reviewAborted}
+			class:dark:border-green-900={!reviewAborted}
+			class:dark:bg-green-950={!reviewAborted}
+			class:border-amber-200={reviewAborted}
+			class:bg-amber-50={reviewAborted}
+			class:dark:border-amber-900={reviewAborted}
+			class:dark:bg-amber-950={reviewAborted}
 		>
 			<div class="mb-2 flex items-center gap-2">
-				{#if reviewSummary === 'Review aborted by user. Showing partial results.'}
+				{#if reviewAborted}
 					<AlertCircle class="h-5 w-5 text-amber-600 dark:text-amber-400" />
 				{:else}
 					<CheckCircle class="h-5 w-5 text-green-600 dark:text-green-400" />
 				{/if}
 				<h3 class="font-semibold">
-					{#if reviewSummary === 'Review aborted by user. Showing partial results.'}
-						Review Aborted
+					{#if reviewAborted}
+						{m['council.review.reviewAborted']()}
 					{:else}
-						Review Complete
+						{m['council.review.reviewComplete']()}
 					{/if}
 				</h3>
 			</div>
@@ -919,9 +920,9 @@
 			<div class="mt-3 flex gap-2">
 				<Button variant="outline" size="sm" onclick={startCouncilReview}>
 					<Play class="mr-2 h-4 w-4" />
-					Retry
+					{m['common.retry']()}
 				</Button>
-				<Button variant="ghost" size="sm" onclick={handleReset}>Dismiss</Button>
+				<Button variant="ghost" size="sm" onclick={handleReset}>{m['common.dismiss']()}</Button>
 			</div>
 		</div>
 	{/if}
@@ -931,11 +932,11 @@
 		<div class="space-y-3">
 			<Button onclick={startCouncilReview} disabled={!canExecute} class="w-full">
 				<Play class="mr-2 h-4 w-4" />
-				Run Council Review
+				{m['council.review.runReview']()}
 			</Button>
 			<div class="text-center text-xs text-muted-foreground">
 				<p class="mb-1">
-					{agentList.length || 3} AI agents will review your prompt in parallel
+					{m['council.agentsWillReview']({ count: agentList.length || 3 })}
 					{#if agentList.length > 0}
 						:
 					{/if}
@@ -956,7 +957,7 @@
 								class:ring-2={hasOverrideForAgent}
 								class:ring-amber-500={hasOverrideForAgent}
 								onclick={() => openOverrideModal(agent.id, agent.name)}
-								title="Click to override prompt"
+								title={m['council.clickToOverride']()}
 							>
 								{agent.name}
 								{#if hasOverrideForAgent}
@@ -989,7 +990,7 @@
 								class:ring-2={hasOverrideForAgent}
 								class:ring-amber-500={hasOverrideForAgent}
 								onclick={() => openOverrideModal(agent.id, agent.name)}
-								title="Click to override prompt"
+								title={m['council.clickToOverride']()}
 							>
 								{agent.name}
 								{#if hasOverrideForAgent}
@@ -1001,13 +1002,11 @@
 							</button>
 						{/each}
 					</p>
-					<p class="mt-1 text-[10px] opacity-70">Click agent name to override prompt</p>
+					<p class="mt-1 text-[10px] opacity-70">{m['council.clickToOverride']()}</p>
 				{:else}
 					<!-- No agents configured -->
 					<p class="text-sm text-muted-foreground">
-						No review agents configured. Add agents in <a href="/settings" class="underline"
-							>Settings</a
-						>.
+						{m['council.noAgentsConfigured']({ type: 'review' })}
 					</p>
 				{/if}
 			</div>
@@ -1017,7 +1016,7 @@
 	{#if uiState === 'complete' || uiState === 'error'}
 		<Button variant="outline" onclick={handleReset} class="w-full">
 			<RotateCcw class="mr-2 h-4 w-4" />
-			Reset
+			{m['common.reset']()}
 		</Button>
 	{/if}
 

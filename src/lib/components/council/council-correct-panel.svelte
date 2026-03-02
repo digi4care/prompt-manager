@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { cn } from '$lib/utils';
+	import * as m from '$lib/paraglide/messages.js';
 	import Play from 'lucide-svelte/icons/play';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import AlertCircle from 'lucide-svelte/icons/alert-circle';
@@ -389,7 +390,7 @@
 	{#if uiState === 'running' || uiState === 'complete'}
 		<div class="space-y-2">
 			<div class="flex items-center justify-between text-sm">
-				<span class="font-medium">Council Progress</span>
+				<span class="font-medium">{m['council.correct.title']()}</span>
 				<span class="text-muted-foreground">
 					Round {currentRound}/3 {activeStep ? `- ${activeStep}` : ''}
 				</span>
@@ -504,7 +505,7 @@
 		>
 			<div class="mb-2 flex items-center gap-2">
 				<CheckCircle class="h-5 w-5 text-green-600 dark:text-green-400" />
-				<h3 class="font-semibold">Final Output</h3>
+				<h3 class="font-semibold">{m['council.correct.finalOutput']()}</h3>
 			</div>
 			<div class="prose prose-sm max-w-none whitespace-pre-wrap dark:prose-invert">
 				{finalOutput}
@@ -537,7 +538,7 @@
 	{#if uiState === 'idle'}
 		<Button onclick={startCouncil} disabled={!canExecute} class="w-full">
 			<Play class="mr-2 h-4 w-4" />
-			Run Council Correct
+			{m['council.correct.runCorrect']()}
 		</Button>
 		<p class="text-center text-xs text-muted-foreground">
 			Runs producer → reviewer → fixer workflow up to 3 rounds

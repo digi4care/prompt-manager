@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="%paraglide-locale%">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -15,27 +15,27 @@
 
 			// Apply font settings
 			if (userFontSize) {
-				html.style.setProperty("--font-size", userFontSize);
+				html.style.setProperty('--font-size', userFontSize);
 			}
 			if (userTextLength) {
-				html.style.setProperty("--text-length", userTextLength);
+				html.style.setProperty('--text-length', userTextLength);
 			}
 			if (userTextHeight) {
-				html.style.setProperty("--text-height", userTextHeight);
+				html.style.setProperty('--text-height', userTextHeight);
 			}
 
 			// Apply theme
-			const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 			if (userTheme) {
-				if (userTheme === "auto") {
-					html.classList.add(prefersDark ? "dark" : "light");
+				if (userTheme === 'auto') {
+					html.classList.add(prefersDark ? 'dark' : 'light');
 				} else {
 					html.classList.add(userTheme);
 				}
 			} else {
 				// Default to system preference
-				html.classList.add(prefersDark ? "dark" : "light");
-				localStorage.theme = "auto";
+				html.classList.add(prefersDark ? 'dark' : 'light');
+				localStorage.theme = 'auto';
 			}
 		</script>
 		%sveltekit.head%

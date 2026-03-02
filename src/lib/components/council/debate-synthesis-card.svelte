@@ -12,6 +12,7 @@
 	import { Card } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { cn } from '$lib/utils';
+	import * as m from '$lib/paraglide/messages.js';
 	import Star from 'lucide-svelte/icons/star';
 	import CheckCircle from 'lucide-svelte/icons/check-circle';
 	import XCircle from 'lucide-svelte/icons/x-circle';
@@ -71,7 +72,7 @@
 	<!-- Header -->
 	<div class="mb-4 flex items-center gap-3">
 		<Star class="h-5 w-5 fill-primary text-primary" />
-		<h3 class="text-lg font-semibold">Synthesis</h3>
+		<h3 class="text-lg font-semibold">{m['council.debate.synthesis']()}</h3>
 		<Badge class={badgeClass} variant={badgeVariant}>
 			{synthesis.consensusLevel}
 		</Badge>
@@ -90,7 +91,9 @@
 		>
 			<div class="mb-3 flex items-center gap-2">
 				<CheckCircle class="h-4 w-4 text-green-600 dark:text-green-400" />
-				<h4 class="font-medium text-green-700 dark:text-green-300">Arguments For</h4>
+				<h4 class="font-medium text-green-700 dark:text-green-300">
+					{m['council.debate.argumentsFor']()}
+				</h4>
 			</div>
 			{#if synthesis.keyArgumentsFor.length > 0}
 				<ul class="space-y-2 text-sm text-green-800 dark:text-green-200">
@@ -114,7 +117,9 @@
 		>
 			<div class="mb-3 flex items-center gap-2">
 				<XCircle class="h-4 w-4 text-red-600 dark:text-red-400" />
-				<h4 class="font-medium text-red-700 dark:text-red-300">Arguments Against</h4>
+				<h4 class="font-medium text-red-700 dark:text-red-300">
+					{m['council.debate.argumentsAgainst']()}
+				</h4>
 			</div>
 			{#if synthesis.keyArgumentsAgainst.length > 0}
 				<ul class="space-y-2 text-sm text-red-800 dark:text-red-200">

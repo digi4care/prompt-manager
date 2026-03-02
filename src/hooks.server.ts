@@ -4,6 +4,7 @@ import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import * as crypto from 'crypto';
 import { building } from '$app/environment';
+import { paraglideMiddleware } from '$lib/paraglide/server.js';
 
 // Validate environment on server start
 validateEnvironment();
@@ -199,91 +200,106 @@ function redirectToAdminLogin(event: RequestEvent) {
 	return redirect(302, '/login');
 }
 
-export async function handle({ event, resolve }: { event: RequestEvent; resolve: any }) {
-	// 1. Fetch Better Auth session and populate event.locals
-	const session = await auth.api.getSession({
-		headers: event.request.headers
-	});
+export const handle: Handle = async ({ event, resolve }) => {
+	return paraglideMiddleware(event.request, async ({ request: localizedRequest, locale }) => {
+		// Update event.request with the localized request (de-localized URL)
+		event.request = localizedRequest;
 
-	if (session) {
-		event.locals.auth = session as any;
-	}
-
-	// 2. Rate limiting
-	const { limited, retryAfter } = isRateLimited(event);
-	if (limited) {
-		return new Response('Rate limit exceeded. Please try again later.', {
-			status: 429,
-			headers: {
-				'Retry-After': String(retryAfter),
-				'Content-Type': 'text/plain'
-			}
+		// 1. Fetch Better Auth session and populate event.locals
+		const session = await auth.api.getSession({
+			headers: event.request.headers
 		});
-	}
 
-	// 3. Handle Chrome DevTools detection
-	if (dev && event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
-		return new Response(undefined, { status: 404 });
-	}
-
-	// 4. Protect routes with authentication
-	if (requiresAuthentication(event.url.pathname)) {
-		if (!isAdminAuthenticated(event)) {
-			return redirectToAdminLogin(event);
+		if (session) {
+			event.locals.auth = session as any;
 		}
-	}
 
-	// 5. Better Auth SvelteKit handler
-	let response = await svelteKitHandler({ event, resolve, auth, building });
+		// 2. Rate limiting
+		const { limited, retryAfter } = isRateLimited(event);
+		if (limited) {
+			return new Response('Rate limit exceeded. Please try again later.', {
+				status: 429,
+				headers: {
+					'Retry-After': String(retryAfter),
+					'Content-Type': 'text/plain'
+				}
+			});
+		}
 
-	// 6. Add security headers
-	const origin = event.request.headers.get('origin');
-	const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
-	const isApiRoute = event.url.pathname.startsWith('/api/');
+		// 3. Handle Chrome DevTools detection
+		if (dev && event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
+			return new Response(undefined, { status: 404 });
+		}
 
-	if (isApiRoute && origin && allowedOrigins.includes(origin)) {
-		response.headers.set('Access-Control-Allow-Origin', origin);
-		response.headers.set('Access-Control-Allow-Credentials', 'true');
-		response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-		response.headers.set(
-			'Access-Control-Allow-Headers',
-			'Content-Type, Authorization, X-CSRF-Token'
-		);
-	}
-
-	if (event.request.method === 'OPTIONS' && isApiRoute) {
-		return new Response(null, {
-			status: 204,
-			headers: {
-				'Access-Control-Allow-Origin': origin || '*',
-				'Access-Control-Allow-Credentials': 'true',
-				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-				'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token',
-				'Access-Control-Max-Age': '86400'
+		// 4. Protect routes with authentication
+		if (requiresAuthentication(event.url.pathname)) {
+			if (!isAdminAuthenticated(event)) {
+				return redirectToAdminLogin(event);
 			}
+		}
+
+		// 5. Better Auth SvelteKit handler with locale transformation
+		const response = await resolve(event, {
+			transformPageChunk: ({ html }) => html.replace('%paraglide-locale%', locale)
 		});
-	}
 
-	const headers: Record<string, string> = {
-		'Content-Security-Policy':
-			"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://localhost:4096; report-uri /api/csp-report;",
-		'X-Frame-Options': 'DENY',
-		'X-Content-Type-Options': 'nosniff',
-		'Referrer-Policy': 'strict-origin-when-cross-origin',
-		'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-		'X-XSS-Protection': '1; mode=block'
-	};
+		// Apply Better Auth handling after resolution
+		const finalResponse = await svelteKitHandler({
+			event,
+			resolve: () => Promise.resolve(response),
+			auth,
+			building
+		});
 
-	if (process.env.NODE_ENV === 'production') {
-		headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
-	}
+		// 6. Add security headers
+		const origin = event.request.headers.get('origin');
+		const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
+		const isApiRoute = event.url.pathname.startsWith('/api/');
 
-	Object.entries(headers).forEach(([key, value]) => {
-		response.headers.set(key, value);
+		if (isApiRoute && origin && allowedOrigins.includes(origin)) {
+			finalResponse.headers.set('Access-Control-Allow-Origin', origin);
+			finalResponse.headers.set('Access-Control-Allow-Credentials', 'true');
+			finalResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+			finalResponse.headers.set(
+				'Access-Control-Allow-Headers',
+				'Content-Type, Authorization, X-CSRF-Token'
+			);
+		}
+
+		if (event.request.method === 'OPTIONS' && isApiRoute) {
+			return new Response(null, {
+				status: 204,
+				headers: {
+					'Access-Control-Allow-Origin': origin || '*',
+					'Access-Control-Allow-Credentials': 'true',
+					'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+					'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token',
+					'Access-Control-Max-Age': '86400'
+				}
+			});
+		}
+
+		const headers: Record<string, string> = {
+			'Content-Security-Policy':
+				"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://localhost:4096; report-uri /api/csp-report;",
+			'X-Frame-Options': 'DENY',
+			'X-Content-Type-Options': 'nosniff',
+			'Referrer-Policy': 'strict-origin-when-cross-origin',
+			'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+			'X-XSS-Protection': '1; mode=block'
+		};
+
+		if (process.env.NODE_ENV === 'production') {
+			headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
+		}
+
+		Object.entries(headers).forEach(([key, value]) => {
+			finalResponse.headers.set(key, value);
+		});
+
+		return finalResponse;
 	});
-
-	return response;
-}
+};
 
 /**
  * MED-2 FIX: Error handling that doesn't expose stack traces in production

@@ -1,0 +1,104 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-messageFormat",
+	"greeting": "Hello {name}!",
+	"common": {
+		"save": "Save",
+		"cancel": "Cancel",
+		"delete": "Delete",
+		"edit": "Edit",
+		"back": "Back",
+		"loading": "Loading...",
+		"error": "An error occurred",
+		"success": "Successfully saved",
+		"retry": "Retry",
+		"dismiss": "Dismiss",
+		"reset": "Reset",
+		"complete": "Complete",
+		"search": "Search",
+		"apply": "Apply",
+		"useDefault": "Use Default",
+		"latest": "latest"
+	},
+	"auth": {
+		"login": "Login",
+		"logout": "Logout",
+		"email": "Email",
+		"password": "Password"
+	},
+	"prompts": {
+		"title": "Prompts",
+		"new": "New Prompt",
+		"edit": "Edit Prompt",
+		"history": "History",
+		"viewHistory": "View History",
+		"noHistory": "No execution history available"
+	},
+	"council": {
+		"connectionError": "Connection error",
+		"unknownError": "Unknown error occurred",
+		"errorOccurred": "Error occurred",
+		"abortedByUser": "Aborted by user",
+		"reviewAborted": "Review aborted by user. Showing partial results.",
+		"noAgentsConfigured": "No {type} agents configured. Add agents in Settings.",
+		"connecting": "Connecting...",
+		"processing": "Processing...",
+		"waitingToStart": "Waiting to start...",
+		"waitingForResponse": "Waiting for response...",
+		"processingRequest": "Processing request...",
+		"stillWorking": "Still working... ({time})",
+		"clickToOverride": "Click agent name to override prompt",
+		"agentsWillReview": "{count} AI agents will review your prompt in parallel",
+		"agentsWillDebate": "{count} AI agents will debate your topic across 3 rounds",
+		"selectPromptOverride": "Select a prompt to override the agent's default.",
+		"usingLatestVersion": "Using latest version. Expand to select specific version.",
+		"selectedSpecificVersion": "Selected specific version. Click prompt title for latest.",
+		"noPromptsMatch": "No prompts match \"{query}\"",
+		"noPromptsAvailable": "No prompts available",
+		"noVersionsFound": "No versions found",
+		"overridePromptFor": "Override Prompt for {name}",
+		"searchPrompts": "Search prompts...",
+		"loadingPrompts": "Loading prompts...",
+		"loadingVersions": "Loading versions...",
+		"archetypes": {
+			"proponent": "Proponent",
+			"skeptic": "Skeptic",
+			"pragmatist": "Pragmatist"
+		},
+		"consensus": {
+			"strong": "Strong consensus",
+			"moderate": "Moderate consensus",
+			"mixed": "Mixed views",
+			"none": "No consensus"
+		},
+		"review": {
+			"title": "Council Review",
+			"reviewing": "Reviewing...",
+			"runReview": "Run Council Review",
+			"stopReview": "Stop Review",
+			"reviewComplete": "Review Complete",
+			"reviewAborted": "Review Aborted"
+		},
+		"debate": {
+			"title": "Council Debate",
+			"roundProgress": "Round {current}/3...",
+			"startDebate": "Start Debate",
+			"stopDebate": "Stop Debate",
+			"copyAsMarkdown": "Copy as Markdown",
+			"synthesis": "Synthesis",
+			"argumentsFor": "Arguments For",
+			"argumentsAgainst": "Arguments Against",
+			"pointsOfAgreement": "Points of Agreement",
+			"finalRecommendation": "Final Recommendation",
+			"noSupportingArguments": "No supporting arguments identified",
+			"noOpposingArguments": "No opposing arguments identified"
+		},
+		"correct": {
+			"title": "Council Progress",
+			"runCorrect": "Run Council Correct",
+			"finalOutput": "Final Output",
+			"issuesFound": "issues",
+			"passed": "Passed",
+			"description": "Runs producer → reviewer → fixer workflow up to 3 rounds"
+		}
+	}
+}

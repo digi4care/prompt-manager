@@ -15,6 +15,7 @@
 		provider: string;
 		logo?: string;
 		variants?: ModelVariant[];
+		supports_thinking?: boolean;
 	}
 
 	interface CouncilAgent {
@@ -119,6 +120,14 @@
 	function getAvailableVariants(agent: CouncilAgent): ModelVariant[] {
 		const model = getModelForAgent(agent);
 		return model?.variants ?? [];
+	}
+
+	/**
+	 * Check if agent's model supports thinking
+	 */
+	function supportsThinking(agent: CouncilAgent): boolean {
+		const model = getModelForAgent(agent);
+		return model?.supports_thinking ?? false;
 	}
 </script>
 
@@ -241,22 +250,24 @@
 							}}
 							title="Max tokens"
 						/>
-						<select
-							class="h-8 rounded-md border border-border/60 bg-background px-1.5 text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
-							value={agent.thinkingLevel ?? ''}
-							onchange={(e) => {
-								const val = (e.target as HTMLSelectElement).value;
-								onSettingsChange?.(agent.id, {
-									thinkingLevel: val || null
-								});
-							}}
-							title="Thinking level"
-						>
-							<option value="">Think</option>
-							<option value="low" selected={agent.thinkingLevel === 'low'}>Low</option>
-							<option value="medium" selected={agent.thinkingLevel === 'medium'}>Med</option>
-							<option value="high" selected={agent.thinkingLevel === 'high'}>High</option>
-						</select>
+						{#if supportsThinking(agent)}
+							<select
+								class="h-8 rounded-md border border-border/60 bg-background px-1.5 text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+								value={agent.thinkingLevel ?? ''}
+								onchange={(e) => {
+									const val = (e.target as HTMLSelectElement).value;
+									onSettingsChange?.(agent.id, {
+										thinkingLevel: val || null
+									});
+								}}
+								title="Thinking level"
+							>
+								<option value="">Think</option>
+								<option value="low" selected={agent.thinkingLevel === 'low'}>Low</option>
+								<option value="medium" selected={agent.thinkingLevel === 'medium'}>Med</option>
+								<option value="high" selected={agent.thinkingLevel === 'high'}>High</option>
+							</select>
+						{/if}
 					</div>
 
 					<button

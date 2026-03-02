@@ -10,8 +10,12 @@
 	interface ModelMeta {
 		context_window?: number;
 		supports_vision?: boolean;
+		supports_function_call?: boolean;
 		status?: string;
 		limit?: { context: number; output: number };
+		variants?: Array<{ id: string; label?: string; isDefault?: boolean }>;
+		pricing?: { input?: number; output?: number; currency?: string };
+		max_output_tokens?: number;
 	}
 
 	interface Props {
@@ -79,9 +83,39 @@
 				</Badge>
 			{/if}
 
+			{#if meta?.max_output_tokens}
+				<Badge variant="outline" class="text-xs">
+					Max out: {formatContextWindow(meta.max_output_tokens)}
+				</Badge>
+			{/if}
+
 			{#if meta?.supports_vision}
 				<Badge variant="secondary" class="text-xs">
 					<span class="mr-1">👁️</span> Vision
+				</Badge>
+			{/if}
+
+			{#if meta?.supports_function_call}
+				<Badge variant="secondary" class="text-xs">
+					<span class="mr-1">⚡</span> Function Call
+				</Badge>
+			{/if}
+
+			{#if meta?.pricing?.input || meta?.pricing?.output}
+				<Badge variant="outline" class="text-xs">
+					💰
+					{#if meta?.pricing?.input}
+						${meta.pricing.input}/1K in
+					{/if}
+					{#if meta?.pricing?.output}
+						${meta.pricing.output}/1K out
+					{/if}
+				</Badge>
+			{/if}
+
+			{#if meta?.variants && meta.variants.length > 0}
+				<Badge variant="secondary" class="text-xs">
+					{meta.variants.length} variant{meta.variants.length > 1 ? 's' : ''}
 				</Badge>
 			{/if}
 		</div>

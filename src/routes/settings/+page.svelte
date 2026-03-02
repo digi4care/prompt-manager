@@ -314,7 +314,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					parentType: 'function_defaults',
-					parentId: 4, // Match existing council agents in the database
+					parentId: 0,
 					modelId: defaultModel?.id || 'openai/gpt-4o',
 					temperature: 0.5,
 					maxTokens: 8192,
@@ -422,7 +422,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					parentType: 'review_defaults',
-					parentId: 1, // Review agents have their own parent ID
+					parentId: 0,
 					modelId: defaultModelId,
 					temperature: 0.5,
 					maxTokens: 8192,

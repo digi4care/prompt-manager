@@ -57,7 +57,25 @@
 		}
 
 		searchQuery = '';
-		draftModelIds = Array.from(new Set(selectedModelIds));
+		// Normalize selectedModelIds to include provider prefix
+		// selectedModelIds may contain raw IDs (e.g., 'glm-5') or prefixed IDs (e.g., 'zai-coding-plan/glm-5')
+		const normalizedIds = new Set<string>();
+		for (const rawId of selectedModelIds) {
+			// If already prefixed, use as-is
+			if (rawId.includes('/')) {
+				normalizedIds.add(rawId);
+				continue;
+			}
+			// Find the provider for this raw model ID
+			for (const provider of groupedModels) {
+				const model = provider.models.find((m) => m.id === rawId);
+				if (model) {
+					normalizedIds.add(`${provider.providerId}/${rawId}`);
+					break;
+				}
+			}
+		}
+		draftModelIds = Array.from(normalizedIds);
 		showSelectedOnly = false;
 		dialogElement?.focus();
 	});

@@ -307,15 +307,15 @@
 	// Council CRUD functions
 	async function addCouncilMember() {
 		try {
-			// Get first available model as default
-			const defaultModel = data.models?.[0];
+			// Use first whitelisted model as default (guaranteed to exist in catalog)
+			const defaultModelId = data.whitelistModels?.[0] || 'zai-coding-plan/glm-4.7';
 			const response = await fetch('/api/admin/council-agents', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					parentType: 'function_defaults',
 					parentId: 0,
-					modelId: defaultModel?.id || 'openai/gpt-4o',
+					modelId: defaultModelId,
 					temperature: 0.5,
 					maxTokens: 8192,
 					promptLinkId: null

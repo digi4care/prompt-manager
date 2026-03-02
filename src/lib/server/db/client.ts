@@ -5,11 +5,11 @@ import * as schema from './schema';
 
 let _client: Client | null = null;
 
-const getClient = () => {
+export const getRawClient = () => {
 	if (!_client) {
 		_client = createClient({ url: DATABASE_URL });
 	}
 	return _client;
 };
 
-export const db = drizzle(getClient(), { schema });
+export const db = drizzle(getRawClient(), { schema });

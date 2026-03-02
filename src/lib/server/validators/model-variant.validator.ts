@@ -78,7 +78,7 @@ export function formatModelId(providerId: string, modelId: string): string {
 
 /**
  * Check if model is allowed by policy
- * Simple check: model must be in allowedModels (or allowlist is empty = allow all)
+ * Supports both formats: "provider/model" and "model" (without prefix)
  */
 export function isModelAllowedForScope(canonicalModelId: string, policy: PolicyData): boolean {
 	// If no allowlist or empty, allow all models
@@ -86,9 +86,19 @@ export function isModelAllowedForScope(canonicalModelId: string, policy: PolicyD
 		return true;
 	}
 
-	// Check if model is in allowlist (exact or prefix match)
+	// Extract model ID without provider prefix for comparison
+	const parsed = parseModelId(canonicalModelId);
+	const modelIdWithoutPrefix = parsed ? parsed.modelId : canonicalModelId;
+
+	// Check if model is in allowlist (supports both "provider/model" and "model" formats)
 	return policy.allowedModels.some((allowed) => {
-		return canonicalModelId === allowed || canonicalModelId.startsWith(allowed + '/');
+		// Direct match with canonical ID (provider/model)
+		if (canonicalModelId === allowed) return true;
+		// Match model ID without prefix (for backward compatibility)
+		if (modelIdWithoutPrefix === allowed) return true;
+		// Prefix match for variants (provider/model/variant)
+		if (canonicalModelId.startsWith(allowed + '/')) return true;
+		return false;
 	});
 }
 

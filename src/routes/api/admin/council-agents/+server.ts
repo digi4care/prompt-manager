@@ -11,6 +11,7 @@ import {
 	type PolicyData,
 	type CatalogData
 } from '$lib/server/validators/model-variant.validator';
+import { createCouncilAgent } from '$lib/server/db/council-agents.facade';
 
 type ParentType = 'function_defaults' | 'prompt_function_settings' | 'review_defaults';
 
@@ -141,20 +142,17 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const nextOrder = existing.length > 0 ? Math.max(...existing.map((a) => a.agentOrder)) + 1 : 1;
 
-	const [agent] = await db
-		.insert(councilAgents)
-		.values({
-			parentType: parentType as ParentType,
-			parentId,
-			modelId,
-			modelVariant,
-			temperature,
-			maxTokens,
-			thinkingLevel,
-			promptLinkId: promptLinkId ?? null,
-			agentOrder: nextOrder
-		})
-		.returning();
+	// Use facade to work around Drizzle ORM auto-increment bug
+	const agent = await createCouncilAgent({
+		parentType,
+		parentId,
+		modelId,
+		modelVariant,
+		temperature,
+		maxTokens,
+		promptLinkId,
+		agentOrder: nextOrder
+	});
 
 	return json({ data: agent }, { status: 201 });
 };

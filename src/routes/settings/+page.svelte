@@ -13,7 +13,8 @@
 		ChevronUp,
 		ChevronDown,
 		Plus,
-		Tags
+		Tags,
+		FileCheck
 	} from 'lucide-svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { Button } from '$lib/components/ui/button';
@@ -49,6 +50,7 @@
 		policy: Shield,
 		defaults: Settings,
 		council: Users,
+		review: FileCheck,
 		catalog: Database,
 		presets: Sparkles,
 		snippets: Tags
@@ -161,6 +163,8 @@
 			temperature: number;
 			maxTokens: number;
 			promptLinkId: number | null;
+			thinkingLevel: string | null;
+			modelVariant: string | null;
 		};
 		judge: {
 			modelId: string;
@@ -169,6 +173,8 @@
 			temperature: number;
 			maxTokens: number;
 			promptLinkId: number | null;
+			thinkingLevel: string | null;
+			modelVariant: string | null;
 		};
 		improve: {
 			modelId: string;
@@ -177,6 +183,8 @@
 			temperature: number;
 			maxTokens: number;
 			promptLinkId: number | null;
+			thinkingLevel: string | null;
+			modelVariant: string | null;
 		};
 	}>({
 		executor: {
@@ -185,7 +193,9 @@
 			modelProvider: '',
 			temperature: 0.7,
 			maxTokens: 4096,
-			promptLinkId: null
+			promptLinkId: null,
+			thinkingLevel: null,
+			modelVariant: null
 		},
 		judge: {
 			modelId: '',
@@ -193,7 +203,9 @@
 			modelProvider: '',
 			temperature: 0.3,
 			maxTokens: 2048,
-			promptLinkId: null
+			promptLinkId: null,
+			thinkingLevel: null,
+			modelVariant: null
 		},
 		improve: {
 			modelId: '',
@@ -201,7 +213,9 @@
 			modelProvider: '',
 			temperature: 0.5,
 			maxTokens: 4096,
-			promptLinkId: null
+			promptLinkId: null,
+			thinkingLevel: null,
+			modelVariant: null
 		}
 	});
 
@@ -268,6 +282,33 @@
 		promptId: number | null
 	) {
 		functionDefaults[type].promptLinkId = promptId;
+		isDirty = true;
+	}
+
+	// Handle variant change for function defaults
+	function handleVariantChange(type: 'executor' | 'judge' | 'improve', variant: string | null) {
+		functionDefaults[type].modelVariant = variant;
+		isDirty = true;
+	}
+
+	// Handle settings change (temperature, maxTokens, thinkingLevel) for function defaults
+	function updateFunctionSettings(
+		type: 'executor' | 'judge' | 'improve',
+		settings: {
+			temperature?: number | null;
+			maxTokens?: number | null;
+			thinkingLevel?: string | null;
+		}
+	) {
+		if (settings.temperature !== undefined) {
+			functionDefaults[type].temperature = settings.temperature ?? 0.5;
+		}
+		if (settings.maxTokens !== undefined) {
+			functionDefaults[type].maxTokens = settings.maxTokens ?? 8192;
+		}
+		if (settings.thinkingLevel !== undefined) {
+			functionDefaults[type].thinkingLevel = settings.thinkingLevel;
+		}
 		isDirty = true;
 	}
 
@@ -660,6 +701,8 @@
 									allowedModels={data.allowedModels}
 									onModelSelect={handleModelSelect}
 									onPromptChange={handleFunctionPromptChange}
+									onVariantChange={handleVariantChange}
+									onSettingsChange={updateFunctionSettings}
 									onSave={saveFunctionDefaults}
 									{isSaving}
 									{isDirty}

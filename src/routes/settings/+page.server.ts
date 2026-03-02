@@ -23,22 +23,41 @@ interface FunctionDefault {
 	maxTokens: number;
 	promptId?: number;
 	modelVariant?: string | null;
+	thinkingLevel?: string | null;
 }
 
 interface CouncilAgent {
 	id: string;
 	name: string;
-	modelId: string | null;
-	modelName?: string;
-	modelProvider?: string;
-	providerId?: string;
+	modelId: string;
 	temperature: number;
 	maxTokens: number;
-	systemPrompt?: string;
-	modelLogo?: string;
-	promptTemplate?: string;
-	promptLinkId?: number;
-	modelVariant?: string | null;
+	promptLinkId?: number | null;
+}
+
+/**
+ * Check if a model supports thinking/extended thinking based on model ID
+ */
+function modelSupportsThinking(modelId: string): boolean {
+	const thinkingModels = [
+		// OpenAI o1/o3 series
+		'o1-',
+		'o1_',
+		'o3-',
+		'o3_',
+		// DeepSeek R1
+		'deepseek-r1',
+		'deepseek_reasoner',
+		// Google Gemini thinking
+		'gemini-2.0-flash-thinking',
+		'gemini-2.5-flash-thinking',
+		// Claude with extended thinking
+		'claude-3-7',
+		'claude-3.7',
+		'claude-sonnet-4'
+	];
+	const lowerModelId = modelId.toLowerCase();
+	return thinkingModels.some((tm) => lowerModelId.includes(tm));
 }
 
 interface FunctionDefaultsSettings {
@@ -184,7 +203,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 				return filteredModels.map((m) => ({
 					...m,
-					provider: provider.id
+					provider: provider.id,
+					supports_thinking: modelSupportsThinking(m.id)
 				}));
 			});
 

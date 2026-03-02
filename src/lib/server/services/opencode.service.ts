@@ -253,6 +253,7 @@ export interface ModelInfo {
 	description?: string;
 	context_window?: number;
 	supports_vision?: boolean;
+	supports_thinking?: boolean;
 	status?: string;
 	limit?: {
 		context: number;

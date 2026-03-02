@@ -14,6 +14,7 @@
 		provider: string;
 		logo?: string;
 		variants?: ModelVariant[];
+		supportsThinking?: boolean;
 	}
 
 	interface FunctionConfig {
@@ -23,6 +24,7 @@
 		modelLogo?: string | null;
 		temperature: number;
 		maxTokens: number;
+		thinkingLevel?: string | null;
 		promptTemplate?: string | null;
 		promptLinkId?: number | null;
 		modelVariant?: string | null;
@@ -38,6 +40,14 @@
 		onModelSelect: (type: 'executor' | 'judge' | 'improve', model: Model) => void;
 		onVariantChange?: (type: 'executor' | 'judge' | 'improve', variant: string | null) => void;
 		onPromptChange?: (type: 'executor' | 'judge' | 'improve', promptId: number | null) => void;
+		onSettingsChange?: (
+			type: 'executor' | 'judge' | 'improve',
+			settings: {
+				temperature?: number | null;
+				maxTokens?: number | null;
+				thinkingLevel?: string | null;
+			}
+		) => void;
 		onSave?: () => void;
 		isSaving?: boolean;
 		isDirty?: boolean;
@@ -53,6 +63,7 @@
 		onModelSelect,
 		onVariantChange,
 		onPromptChange,
+		onSettingsChange,
 		onSave,
 		isSaving = false,
 		isDirty = false
@@ -125,6 +136,14 @@
 		const model = getModelForConfig(config);
 		return model?.variants ?? [];
 	}
+
+	/**
+	 * Check if model supports thinking
+	 */
+	function supportsThinking(config: FunctionConfig | undefined): boolean {
+		const model = getModelForConfig(config);
+		return model?.supportsThinking ?? false;
+	}
 </script>
 
 <div class="space-y-2">
@@ -187,6 +206,56 @@
 									{variant.label || variant.id}
 								</option>
 							{/each}
+						</select>
+					{/if}
+
+					<!-- Temperature -->
+					<input
+						type="number"
+						step="0.1"
+						min="0"
+						max="2"
+						placeholder="Temp"
+						value={config.temperature ?? ''}
+						class="h-9 w-16 rounded-md border border-border/60 bg-background px-2 text-center text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+						onchange={(e) => {
+							const val = (e.target as HTMLInputElement).value;
+							onSettingsChange?.(type, { temperature: val ? parseFloat(val) : null });
+						}}
+						title="Temperature (0-2)"
+					/>
+
+					<!-- Max Tokens -->
+					<input
+						type="number"
+						step="256"
+						min="256"
+						max="128000"
+						placeholder="Tokens"
+						value={config.maxTokens ?? ''}
+						class="h-9 w-20 rounded-md border border-border/60 bg-background px-2 text-center text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+						onchange={(e) => {
+							const val = (e.target as HTMLInputElement).value;
+							onSettingsChange?.(type, { maxTokens: val ? parseInt(val) : null });
+						}}
+						title="Max tokens"
+					/>
+
+					<!-- Thinking Level (only show if model supports it) -->
+					{#if supportsThinking(config)}
+						<select
+							class="h-9 rounded-md border border-border/60 bg-background px-2 text-xs focus:ring-2 focus:ring-primary/30 focus:outline-none"
+							value={config.thinkingLevel ?? ''}
+							onchange={(e) => {
+								const val = (e.target as HTMLSelectElement).value;
+								onSettingsChange?.(type, { thinkingLevel: val || null });
+							}}
+							title="Thinking level"
+						>
+							<option value="">Think</option>
+							<option value="low" selected={config.thinkingLevel === 'low'}>Low</option>
+							<option value="medium" selected={config.thinkingLevel === 'medium'}>Med</option>
+							<option value="high" selected={config.thinkingLevel === 'high'}>High</option>
 						</select>
 					{/if}
 

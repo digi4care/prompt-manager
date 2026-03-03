@@ -14,14 +14,42 @@ function setupConsoleErrorCheck(page: any): () => Promise<void> {
 	};
 }
 
+/**
+ * Authenticate as admin for E2E tests
+ * Handles both production (with ADMIN_PASSWORD) and dev mode (bypass)
+ */
+async function authenticateAdmin(page: any): Promise<void> {
+	const adminPassword = process.env.ADMIN_PASSWORD;
+
+	// Navigate to login page
+	await page.goto('/login');
+
+	if (adminPassword) {
+		// Production mode: use actual credentials
+		await page.fill('input[name="email"]', 'admin@test.com');
+		await page.fill('input[name="password"]', adminPassword);
+		await page.click('button[type="submit"]');
+
+		// Wait for successful redirect
+		await page.waitForURL(/\/(settings|admin)/);
+	} else {
+		// Dev mode without ADMIN_PASSWORD: bypass is allowed
+		// Just navigate directly to admin - hooks.server.ts allows bypass
+		await page.goto('/admin');
+	}
+}
+
 test.describe('Smoke - Settings + Edit Page', () => {
 	test('settings loads and edit flow has no console errors', async ({ page, request }) => {
 		test.setTimeout(90_000);
 		const cleanup = setupConsoleErrorCheck(page);
 		try {
+			// Authenticate before accessing admin routes
+			await authenticateAdmin(page);
+
 			// Settings
 			await page.goto('/admin');
-			await expect(page.getByRole('heading', { name: /admin settings/i })).toBeVisible();
+			await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 			await page.waitForLoadState('networkidle');
 			await page.waitForTimeout(500);
 

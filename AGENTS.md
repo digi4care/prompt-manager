@@ -8,34 +8,64 @@ Complex logic always goes into a separate file as SOLID dictates.
 
 ## Build, Lint, and Test Commands
 
-### Development
+### Development (Runtime: Bun)
 
-- `npm run dev` - Start development server (port 45678, host 127.0.0.1)
-- `npm run preview` - Preview production build (port 44678)
-- `npm run check` - Run TypeScript and SvelteKit type checking
-- `npm run check:watch` - Watch mode for type checking
+- `bun run dev` - Start development server (port 45678, host 127.0.0.1)
+- `bun run preview` - Preview production build (port 44678)
+- `bun run check` - Run TypeScript and SvelteKit type checking
+- `bun run check:watch` - Watch mode for type checking
 
-### Testing
+### Testing (3-Fase Testing)
 
-- `npm run test` - Run Vitest unit tests
-- `npm run test:watch` - Watch mode for unit tests
-- `npm run test:coverage` - Generate coverage report
-- `npm run test:e2e` - Run Playwright E2E tests (chromium only)
-- `npm run test:e2e:all` - Run E2E tests across all browsers (chromium, firefox)
+**Fase 1: CLI/Unit Testing (headless, no server)**
+
+```bash
+bun run test              # Vitest unit tests
+bun run test:watch        # Watch mode for unit tests
+bun run test:coverage     # Generate coverage report
+```
+
+**Fase 2: Server-Side E2E Testing (headless, server required)**
+
+```bash
+bun run dev               # Start server (port 45678)
+bun run test:e2e          # Run E2E tests (chromium only)
+bun run test:e2e:all     # Run E2E tests (all browsers)
+# Stop server: lsof -ti:45678 | xargs kill -9
+```
+
+**Fase 3: Visual Frontend Testing (headed, browser visible)**
+
+```bash
+bun run dev               # Start server (if not running)
+bun run test:e2e -- --ui --headed    # UI mode with visible browser
+# Stop server: lsof -ti:45678 | xargs kill -9
+```
+
+### Multi-Project Testing Isolation
+
+⚠️ **IMPORTANT**: This system runs multiple projects. Follow these rules:
+
+| Action       | ✅ Correct                                           | ❌ Forbidden        |
+| ------------ | ---------------------------------------------------- | ------------------- |
+| Start server | Note port in `.tmp/services/{project}/registry.json` | Without tracking    |
+| Stop server  | `lsof -ti:45678 \| xargs kill -9` (specific port)    | `killall node`      |
+| Port check   | `lsof -i :45678`                                     | Assume port is free |
+| Cleanup      | Only kill project-specific services                  | `pkill -f "vite"`   |
 
 ### Database
 
-- `npm run db:push` - Push schema changes to database
-- `npm run db:generate` - Generate Drizzle migrations
-- `npm run db:migrate` - Run database migrations
-- `npm run db:studio` - Open Drizzle Studio
-- `npm run seed` - Seed database with initial data
-- `npm run seed:verify` - Verify seed data
+- `bun run db:push` - Push schema changes to database
+- `bun run db:generate` - Generate Drizzle migrations
+- `bun run db:migrate` - Run database migrations
+- `bun run db:studio` - Open Drizzle Studio
+- `bun run seed` - Seed database with initial data
+- `bun run seed:verify` - Verify seed data
 
 ### Code Quality
 
-- `npm run lint` - Run ESLint and Prettier checks
-- `npm run format` - Format all files with Prettier
+- `bun run lint` - Run ESLint and Prettier checks
+- `bun run format` - Format all files with Prettier
 
 ### Docker Testing
 

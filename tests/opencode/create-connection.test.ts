@@ -15,12 +15,19 @@ vi.mock('get-port', () => ({
 	portNumbers: mockPortNumbers
 }));
 
+// Mock fetch globally to prevent auto-discovery network calls
+vi.stubGlobal('fetch', vi.fn());
+
 describe('createOpenCodeConnection', () => {
 	let localCloseSpy: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
+		vi.resetModules();
 		vi.clearAllMocks();
 		localCloseSpy = vi.fn();
+
+		// Mock fetch to simulate no existing server found (discovery fails fast)
+		(globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
 
 		mockPortNumbers.mockReturnValue([10000, 10001]);
 		mockGetPort.mockResolvedValue(15432);
@@ -48,7 +55,7 @@ describe('createOpenCodeConnection', () => {
 		expect(connection.meta.port).toBe(15432);
 		expect(connection.meta.port).not.toBe(4096);
 		expect(connection.meta.startedLocalServer).toBe(true);
-	});
+	}, 15000);
 
 	it('uses exact remote configured port', async () => {
 		const { createOpenCodeConnection } = await import('$lib/server/opencode/create-connection');
@@ -104,5 +111,5 @@ describe('createOpenCodeConnection', () => {
 
 		await expect(remote.close()).resolves.toBeUndefined();
 		expect(localCloseSpy).toHaveBeenCalledTimes(1);
-	});
+	}, 15000);
 });

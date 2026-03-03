@@ -6,6 +6,12 @@ vi.mock('$lib/server/db/client', () => ({
 	db: {
 		select: vi.fn(() => ({
 			from: vi.fn(() => ({
+				leftJoin: vi.fn(() => ({
+					where: vi.fn(() => ({
+						orderBy: vi.fn().mockResolvedValue([])
+					})),
+					orderBy: vi.fn().mockResolvedValue([])
+				})),
 				where: vi.fn(() => ({
 					orderBy: vi.fn().mockResolvedValue([])
 				})),
@@ -33,7 +39,27 @@ vi.mock('$lib/server/db/client', () => ({
 				returning: vi.fn().mockResolvedValue([{ id: 1 }])
 			}))
 		}))
-	}
+	},
+	getRawClient: vi.fn(() => ({
+		execute: vi.fn().mockResolvedValue({
+			rows: [
+				{
+					id: 1,
+					parent_type: 'function_defaults',
+					parent_id: 0,
+					agent_order: 1,
+					model_id: 'openai/gpt-4o-mini',
+					model_variant: 'low',
+					temperature: 0.7,
+					max_tokens: 4096,
+					prompt_link_id: null,
+					created_at: Math.floor(Date.now() / 1000),
+					updated_at: Math.floor(Date.now() / 1000)
+				}
+			],
+			rowsAffected: 1
+		})
+	}))
 }));
 
 // Mock services
@@ -85,7 +111,7 @@ describe('council-agents API routes', () => {
 			const json = await response.json();
 
 			expect(response.status).toBe(200);
-			expect(json.data).toEqual([]);
+			expect(json.agents).toEqual([]);
 		});
 	});
 

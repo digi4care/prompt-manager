@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 
 // Mock the JWT auth module
-vi.mock('$lib/server/auth/jwt', () => ({
+vi.mock('$lib/server/auth.helper', () => ({
 	authenticateRequest: vi
 		.fn()
 		.mockReturnValue({ userId: '123', email: 'test@example.com', role: 'user' })

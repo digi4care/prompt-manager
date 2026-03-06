@@ -7,7 +7,7 @@ import {
 	type SnippetCategory
 } from '$lib/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import { authenticateRequest } from '$lib/server/auth.helper';
 import { z } from 'zod';
 
 const createCategorySchema = z.object({

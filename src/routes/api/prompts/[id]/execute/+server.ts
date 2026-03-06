@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { executePrompt, ExecutionError } from '$lib/server/services/execution.service';
 import { logExecution } from '$lib/server/services/execution-log.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 
 /**
  * Request validation schema for execute endpoint

@@ -1,19 +1,24 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { cn } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
 	import { Menu, Sun, Moon, X, LogIn, LogOut, UserCircle } from 'lucide-svelte';
+	import { auth } from '$lib/auth.svelte';
 
 	interface Props {
 		onMenuToggle?: () => void;
 		class?: string;
+		isAuthenticated?: boolean;
 	}
 
-	let { onMenuToggle, class: className = '' }: Props = $props();
+	let { onMenuToggle, class: className = '', isAuthenticated = false }: Props = $props();
 
+	// Use server-side auth as primary, fallback to client-side auth for immediate feedback after login
+	let effectiveIsAuthenticated = $derived(isAuthenticated || auth.isAuthenticated);
+
+	// Initialize isDark from DOM (synced via app.html for FOUC prevention)
 	let isDark = $state(false);
-	let navMounted = $state(false);
 	let mobileNavOpen = $state(false);
 
 	interface NavItem {
@@ -28,12 +33,11 @@
 		{ href: '/settings', label: 'Settings' }
 	];
 
-	// Suppress hydration by only showing nav on client mount
-	let mounted = $state(false);
-
-	onMount(() => {
-		mounted = true;
-		isDark = document.documentElement.classList.contains('dark');
+	// Sync isDark with DOM on mount (Svelte 5 pattern)
+	$effect(() => {
+		if (browser) {
+			isDark = document.documentElement.classList.contains('dark');
+		}
 	});
 
 	// Dev-only test page link
@@ -51,6 +55,7 @@
 	}
 
 	function toggleTheme() {
+		if (!browser) return;
 		isDark = !isDark;
 		const html = document.documentElement;
 		if (isDark) {
@@ -121,8 +126,8 @@
 		<!-- Right side: Desktop Nav + Mobile menu + Theme toggle -->
 		<div class="flex items-center gap-4">
 			<!-- Desktop Navigation (only when authenticated) -->
-			{#if $page.data.isAuthenticated}
-				<nav class="hidden items-center gap-1 md:flex">
+			{#if effectiveIsAuthenticated}
+				<nav class="flex items-center gap-1">
 					{#each allNavItems as item}
 						{@const active = isActive(item.href, $page.url.pathname)}
 						<a
@@ -158,59 +163,49 @@
 					{/if}
 				</button>
 
-				<!-- Theme Toggle Button -->
-				{#if mounted}
-					<Button
-						variant="ghost"
-						size="icon"
-						onclick={toggleTheme}
-						aria-label="Toggle theme"
-						title="Toggle dark/light mode"
-					>
-						{#if isDark}
-							<Moon class="h-[1.2rem] w-[1.2rem]" />
-						{:else}
-							<Sun class="h-[1.2rem] w-[1.2rem]" />
-						{/if}
-					</Button>
-				{/if}
-
-				<!-- Login/Logout Button -->
-				{#if mounted}
-					{#if $page.data.isAuthenticated}
-						<div class="flex items-center gap-1">
-							<Button
-								variant="ghost"
-								size="icon"
-								href="/admin/profile"
-								aria-label="Profile"
-								title="Profile"
-							>
-								<UserCircle class="h-[1.2rem] w-[1.2rem]" />
-							</Button>
-							<form method="POST" action="/logout">
-								<Button
-									variant="ghost"
-									size="icon"
-									type="submit"
-									aria-label="Logout"
-									title="Logout"
-								>
-									<LogOut class="h-[1.2rem] w-[1.2rem]" />
-								</Button>
-							</form>
-						</div>
-					{:else if $page.url.pathname !== '/login'}
-						<Button variant="ghost" size="icon" href="/login" aria-label="Login" title="Login">
-							<LogIn class="h-[1.2rem] w-[1.2rem]" />
-						</Button>
+				<!-- Theme Toggle Button - SSR ready, no FOUC -->
+				<Button
+					variant="ghost"
+					size="icon"
+					onclick={toggleTheme}
+					aria-label="Toggle theme"
+					title="Toggle dark/light mode"
+				>
+					{#if isDark}
+						<Moon class="h-[1.2rem] w-[1.2rem]" />
+					{:else}
+						<Sun class="h-[1.2rem] w-[1.2rem]" />
 					{/if}
+				</Button>
+
+				<!-- Login/Logout Button - SSR ready, no FOUC -->
+				{#if effectiveIsAuthenticated}
+					<div class="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon"
+							href="/admin/profile"
+							aria-label="Profile"
+							title="Profile"
+						>
+							<UserCircle class="h-[1.2rem] w-[1.2rem]" />
+						</Button>
+						<form method="POST" action="/logout">
+							<Button variant="ghost" size="icon" type="submit" aria-label="Logout" title="Logout">
+								<LogOut class="h-[1.2rem] w-[1.2rem]" />
+							</Button>
+						</form>
+					</div>
+				{:else if $page.url.pathname !== '/login'}
+					<Button variant="ghost" size="icon" href="/login" aria-label="Login" title="Login">
+						<LogIn class="h-[1.2rem] w-[1.2rem]" />
+					</Button>
 				{/if}
 			</div>
 		</div>
 
 		<!-- Mobile Navigation (slide-out, only when authenticated) -->
-		{#if $page.data.isAuthenticated}
+		{#if effectiveIsAuthenticated}
 			<!-- Backdrop -->
 			{#if mobileNavOpen}
 				<div

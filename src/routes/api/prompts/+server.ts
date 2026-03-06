@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { listPrompts, createPrompt } from '$lib/server/services/prompts.service';
 import { createVersion } from '$lib/server/services/versions.service';
 import { z } from 'zod';
-import { optionalAuthenticateRequest, authenticateRequest } from '$lib/server/auth/jwt';
+import { auth } from '$lib/auth';
 
 const createPromptSchema = z.object({
 	title: z.string().min(1).max(200),
@@ -16,14 +16,22 @@ const createPromptSchema = z.object({
 });
 
 export const GET: RequestHandler = async (event) => {
-	const { url } = event;
+	const { url, request } = event;
 	const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
 	const offset = parseInt(url.searchParams.get('offset') || '0');
 	const search = url.searchParams.get('search') || undefined;
 	const showPublicOnly = url.searchParams.get('public') === 'true';
 
 	// Optional authentication - public prompts accessible without auth
-	const user = optionalAuthenticateRequest(event);
+	let user: { id: string; email: string } | null = null;
+	try {
+		const session = await auth.api.getSession({ headers: request.headers });
+		if (session?.user) {
+			user = { id: session.user.id, email: session.user.email ?? '' };
+		}
+	} catch {
+		// No session - continue as unauthenticated
+	}
 
 	try {
 		// Note: In a full implementation, filter by user ownership and isPublic flag
@@ -42,15 +50,26 @@ export const GET: RequestHandler = async (event) => {
 
 export const POST: RequestHandler = async (event) => {
 	const { request } = event;
+
+	// Require authentication for creating prompts
+	let user: { id: string; email: string };
+	try {
+		const session = await auth.api.getSession({ headers: request.headers });
+		if (!session?.user) {
+			throw error(401, JSON.stringify({ message: 'Authentication required', errors: null }));
+		}
+		user = { id: session.user.id, email: session.user.email ?? '' };
+	} catch (err) {
+		if (err instanceof Error && err.message.includes('401')) throw err;
+		throw error(401, JSON.stringify({ message: 'Authentication required', errors: null }));
+	}
+
 	let data: unknown;
 	try {
 		data = await request.json();
 	} catch {
 		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
 	}
-
-	// Require authentication for creating prompts
-	const user = authenticateRequest(event);
 
 	const parsed = createPromptSchema.safeParse(data);
 	if (!parsed.success) {
@@ -64,7 +83,7 @@ export const POST: RequestHandler = async (event) => {
 
 	try {
 		// Log the authenticated user for audit purposes
-		console.log(`[AUDIT] User ${user.userId} (${user.email}) created prompt: ${promptData.title}`);
+		console.log(`[AUDIT] User ${user.id} (${user.email}) created prompt: ${promptData.title}`);
 
 		const prompt = await createPrompt({
 			...promptData,
@@ -73,13 +92,7 @@ export const POST: RequestHandler = async (event) => {
 		});
 
 		// Use authenticated user ID for version creation
-		const version = await createVersion(
-			prompt.id,
-			content,
-			'major',
-			'Initial version',
-			user.userId
-		);
+		const version = await createVersion(prompt.id, content, 'major', 'Initial version', user.id);
 
 		return json({ ...prompt, latestVersion: version }, { status: 201 });
 	} catch (err) {

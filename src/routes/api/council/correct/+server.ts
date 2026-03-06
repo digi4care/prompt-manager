@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { produce } from 'sveltekit-sse';
 import { executeCouncilCorrect } from '$lib/server/services/council-correct.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 
 /**
  * Request validation schema for council correct endpoint

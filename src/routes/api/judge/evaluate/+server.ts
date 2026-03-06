@@ -4,7 +4,7 @@ import type { PromptVersion } from '$lib/stores/prompts.svelte';
 import { evaluatePrompt, saveEvaluation } from '$lib/server/services/judge.service';
 import { getVersion } from '$lib/server/services/versions.service';
 import { z } from 'zod';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import { auth } from '$lib/auth';
 
 const evaluateRequestSchema = z
 	.object({
@@ -18,7 +18,17 @@ const evaluateRequestSchema = z
 
 export const POST: RequestHandler = async (event) => {
 	// Require authentication for judge evaluation
-	const user = authenticateRequest(event);
+	let user: { id: string; email: string };
+	try {
+		const session = await auth.api.getSession({ headers: event.request.headers });
+		if (!session?.user) {
+			throw error(401, JSON.stringify({ message: 'Authentication required', errors: null }));
+		}
+		user = { id: session.user.id, email: session.user.email ?? '' };
+	} catch (err) {
+		if (err instanceof Error && err.message.includes('401')) throw err;
+		throw error(401, JSON.stringify({ message: 'Authentication required', errors: null }));
+	}
 
 	let data: unknown;
 	try {

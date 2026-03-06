@@ -8,7 +8,7 @@ import {
 	snippetTagAssignments
 } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
-import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 import { z } from 'zod';
 
 export const load: PageServerLoad = async () => {

@@ -1,25 +1,20 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { enhance } from '$app/forms';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 	import type { ActionResult } from '@sveltejs/kit';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import {
 		Card,
 		CardContent,
 		CardDescription,
 		CardHeader,
 		CardTitle
-	} from '$lib/components/ui/card';
-	import { authStore } from '$lib/stores/auth.svelte';
-	import Eye from 'lucide-svelte/icons/eye';
-	import EyeOff from 'lucide-svelte/icons/eye-off';
-	import { onMount } from 'svelte';
-
-	let isBrowser = $state(false);
-	onMount(() => {
-		isBrowser = true;
-	});
+	} from '$lib/components/ui/card/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { auth } from '$lib/auth.svelte';
+	import { Eye, EyeOff } from 'lucide-svelte';
+	import { enhance } from '$app/forms';
+	import { browser } from '$app/environment';
 
 	// Form data type from server action
 	type ActionData = {
@@ -32,30 +27,34 @@
 	let { form }: { form: ActionData } = $props();
 
 	let loading = $state(false);
-	let showTwoFactor = $state(false);
+	let showTwoFactor = $state(form?.requiresTwoFactor ?? false);
 	let showPassword = $state(false);
-	let userEmail = $state('');
-	let email = $state('');
+	let email = $state(form?.email ?? '');
 	let password = $state('');
 	let totpCode = $state('');
+	let isBrowser = $state(false);
 
-	// Watch for 2FA requirement from form result
+	// Derived error from form
+	let error = $derived(form?.error ?? '');
+
+	// Svelte 5: Use $effect for browser detection
 	$effect(() => {
-		if (form?.requiresTwoFactor && form?.email) {
-			showTwoFactor = true;
-			userEmail = form.email;
+		isBrowser = browser;
+	});
+
+	// Svelte 5: Reactive redirect when authenticated
+	$effect(() => {
+		if (browser && auth.isAuthenticated && !loading) {
+			goto('/settings');
 		}
 	});
 
-	onMount(() => {
-		// If already authenticated, redirect to settings
-		const unsubscribe = authStore.subscribe((state) => {
-			if (state.isAuthenticated) {
-				goto('/settings');
-			}
-		});
-
-		return unsubscribe;
+	// Svelte 5: Watch for 2FA requirement from form result
+	$effect(() => {
+		if (form?.requiresTwoFactor && form?.email) {
+			showTwoFactor = true;
+			email = form.email;
+		}
 	});
 
 	// Single enhance handler for the form
@@ -66,7 +65,10 @@
 			loading = false;
 
 			if (result.type === 'redirect') {
-				window.location.href = result.location;
+				// Refresh auth state before redirect so navigation shows correctly
+				await auth.checkSession();
+				await invalidateAll();
+				goto(result.location);
 				return;
 			}
 
@@ -74,15 +76,16 @@
 				const data = result.data as ActionData;
 				if (data.requiresTwoFactor && data.email) {
 					showTwoFactor = true;
-					userEmail = data.email;
+					email = data.email;
 				} else if (data.success) {
-					window.location.href = '/settings';
+					// Refresh auth state before redirect
+					await auth.checkSession();
+					await invalidateAll();
+					goto('/settings');
 				}
 			}
 		};
 	};
-
-	const error = $derived(form?.error || '');
 </script>
 
 <div class="flex min-h-screen items-center justify-center p-4">
@@ -108,12 +111,12 @@
 			<form method="POST" use:enhance={handleFormSubmit} class="space-y-4">
 				{#if showTwoFactor}
 					<!-- 2FA step - hidden email/password + code input -->
-					<input type="hidden" name="email" value={userEmail} />
+					<input type="hidden" name="email" value={email} />
 					<input type="hidden" name="password" value={password} />
 
 					<div class="rounded-md bg-muted p-3 text-center text-sm">
 						<p class="text-muted-foreground">Verifying for:</p>
-						<p class="font-medium">{userEmail}</p>
+						<p class="font-medium">{email}</p>
 					</div>
 
 					<div class="space-y-2">

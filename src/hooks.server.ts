@@ -13,7 +13,6 @@ import { dev } from '$app/environment';
 import { error } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { logSecurityEvent } from '$lib/server/audit';
-import { authenticateRequest, verifyToken } from '$lib/server/auth/jwt';
 import { auth } from '$lib/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 
@@ -60,14 +59,8 @@ const RATE_LIMIT_MAX_AUTH_REQUESTS = 30; // 30 requests per minute for auth rout
 
 /**
  * Check if request exceeds rate limit
- * Skips rate limiting in development mode for easier E2E testing
  */
 function isRateLimited(event: RequestEvent): { limited: boolean; retryAfter: number } {
-	// Skip rate limiting in development mode for easier E2E testing
-	if (dev) {
-		return { limited: false, retryAfter: 0 };
-	}
-
 	const clientIP = event.getClientAddress?.() || 'unknown';
 	const route = event.url.pathname;
 	const isAuthRoute =
@@ -103,10 +96,6 @@ function isRateLimited(event: RequestEvent): { limited: boolean; retryAfter: num
  * Check if request requires authentication
  */
 function requiresAuthentication(pathname: string): boolean {
-	if (dev && pathname.startsWith('/api/admin/setup')) {
-		return false;
-	}
-
 	const publicRoutes = [
 		'/login',
 		'/api/health',
@@ -121,65 +110,10 @@ function requiresAuthentication(pathname: string): boolean {
 }
 
 /**
- * Check if request requires JWT authentication
- */
-function requiresJwtAuthentication(pathname: string): boolean {
-	if (dev && pathname.startsWith('/api/admin/setup')) {
-		return false;
-	}
-
-	// Public admin endpoints - connection settings needed before login
-	const publicAdminRoutes = ['/api/admin/health', '/api/admin/opencode-connection'];
-	if (publicAdminRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
-		return false;
-	}
-
-	return pathname.startsWith('/api/admin') || pathname.startsWith('/api/prompts');
-}
-
-/**
- * Verify admin authentication from Better Auth session or JWT
- * In development mode without ADMIN_PASSWORD, allows bypass access
+ * Verify admin authentication from Better Auth session
  */
 function isAdminAuthenticated(event: RequestEvent): boolean {
-	const pathname = event.url.pathname;
-	const isJwtRequiredRoute = requiresJwtAuthentication(pathname);
-	const hasJsonAccept = event.request.headers.get('accept')?.includes('application/json');
-
-	// DEV MODE BYPASS: Allow admin access when ADMIN_PASSWORD is not set
-	if (dev && !process.env.ADMIN_PASSWORD) {
-		return true;
-	}
-
-	// Logout and profile pages only need Better Auth session, not JWT
-	if (pathname === '/logout' || pathname === '/admin/profile') {
-		return !!event.locals.auth?.session;
-	}
-
-	// For API routes, prioritize JWT authentication
-	if (isJwtRequiredRoute || hasJsonAccept) {
-		try {
-			authenticateRequest(event);
-			return true;
-		} catch (err: any) {
-			// Allow Better Auth session for admin API routes when JWT is missing/invalid
-			if (event.url.pathname.startsWith('/api/admin') && event.locals.auth?.session) {
-				return true;
-			}
-
-			console.warn(`[AUTH] JWT authentication failed for ${event.url.pathname}: ${err?.message}`);
-			return false;
-		}
-	}
-
-	// Check for Better Auth session
-	if (event.locals.auth?.session) {
-		return true;
-	}
-
-	// Require authentication for all admin routes
-
-	return false;
+	return !!event.locals.auth?.session;
 }
 
 /**
@@ -189,7 +123,7 @@ function redirectToAdminLogin(event: RequestEvent) {
 	if (event.request.headers.get('accept')?.includes('application/json')) {
 		const errorBody = JSON.stringify({
 			error: 'Authentication required',
-			message: 'Please provide a valid JWT token or admin session'
+			message: 'Please log in to access this resource'
 		});
 		return new Response(errorBody, {
 			status: 401,

@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { getExecutionHistory } from '$lib/server/services/execution-log.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 
 /**
  * Query parameter validation schema for history endpoint

@@ -5,8 +5,10 @@
 	import { Header } from '$lib/components/layout';
 	import { auth } from '$lib/auth.svelte';
 	import { browser } from '$app/environment';
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
 
-	let { children } = $props();
+	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
 	// Initialize auth on mount - this sets up BroadcastChannel and checks session
 	$effect(() => {
@@ -22,7 +24,7 @@
 <div class="min-h-screen bg-background text-foreground">
 	<!-- Header -->
 	<div class="mx-auto max-w-[1440px]">
-		<Header />
+		<Header isAuthenticated={data.isAuthenticated} />
 	</div>
 
 	<!-- Main content -->

@@ -2,39 +2,19 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { auth } from '$lib/auth';
 import { getAllSettings } from '$lib/server/services/admin-settings.service';
-import { verifyToken } from '$lib/server/auth/jwt';
 
 /**
  * GET /api/admin/settings
  * Fetch all admin settings grouped by category
  */
-export const GET: RequestHandler = async ({ cookies, request }) => {
+export const GET: RequestHandler = async ({ request }) => {
 	try {
-		// Check authentication: Better Auth session OR JWT token
-		let isAuthenticated = false;
-
-		// 1. Try Better Auth session first
+		// Check authentication via Better Auth session
 		const session = await auth.api.getSession({
 			headers: request.headers
 		});
-		if (session) {
-			isAuthenticated = true;
-		}
 
-		// 2. If no session, try JWT token from cookie
-		if (!isAuthenticated) {
-			const jwtToken = cookies.get('jwt_token');
-			if (jwtToken) {
-				try {
-					verifyToken(jwtToken);
-					isAuthenticated = true;
-				} catch {
-					// Invalid JWT, continue to unauthorized
-				}
-			}
-		}
-
-		if (!isAuthenticated) {
+		if (!session) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 

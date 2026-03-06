@@ -8,7 +8,7 @@ import {
 	getAllTags
 } from '$lib/server/services/snippets.service';
 import { z } from 'zod';
-import { optionalAuthenticateRequest, authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { optionalAuthenticateRequest, authenticateWithBetterAuth } from '$lib/server/auth.helper';
 
 const createSnippetSchema = z.object({
 	title: z.string().min(1).max(200),

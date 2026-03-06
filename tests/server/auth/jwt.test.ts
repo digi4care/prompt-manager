@@ -4,7 +4,7 @@ import {
 	verifyToken,
 	extractTokenFromHeader,
 	authenticateRequest
-} from '$lib/server/auth/jwt';
+} from '$lib/server/auth.helper';
 import type { RequestEvent } from '@sveltejs/kit';
 
 describe('JWT Service', () => {

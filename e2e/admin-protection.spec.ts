@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { generateToken } from '$lib/server/auth/jwt';
+import { generateToken } from '$lib/server/auth.helper';
 import { generateTestPrompt } from './helpers';
 
 test.describe('Admin Route Protection', () => {

@@ -8,7 +8,7 @@ import {
 } from '$lib/server/services/settings-cascade.service';
 import { type FunctionType } from '$lib/server/services/function-defaults.service';
 import { validateFunctionField, validateModelId } from '$lib/validators/function-settings';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import { authenticateRequest } from '$lib/server/auth.helper';
 import { db } from '$lib/server/db/client';
 import { prompts } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';

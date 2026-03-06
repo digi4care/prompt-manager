@@ -12,7 +12,7 @@ import {
 	OpenCodeValidationError,
 	OpenCodeExecutionError
 } from '$lib/server/services/opencode.service';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import { authenticateRequest } from '$lib/server/auth.helper';
 
 const chatRequestSchema = z.object({
 	message: z.string().min(1).max(10000),

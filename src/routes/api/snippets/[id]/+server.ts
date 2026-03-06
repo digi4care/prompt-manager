@@ -8,7 +8,7 @@ import {
 	getAllCategories,
 	getAllTags
 } from '$lib/server/services/snippets.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 import { z } from 'zod';
 
 const updateSnippetSchema = z.object({

@@ -6,7 +6,7 @@ import {
 	type FunctionType
 } from '$lib/server/services/function-defaults.service';
 import { validateFunctionSettingUpdate } from '$lib/validators/function-settings';
-import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
 import { getProviderCatalog, type ProviderInfo } from '$lib/server/services/opencode.service';
 import {

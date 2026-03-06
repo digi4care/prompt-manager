@@ -10,7 +10,7 @@ export const actions = {
 		}
 
 		event.cookies.delete('better-auth.session_token', { path: '/' });
-		event.cookies.delete('jwt_token', { path: '/' });
+		event.cookies.delete('better-auth.session_data', { path: '/' });
 
 		throw redirect(303, '/login');
 	}

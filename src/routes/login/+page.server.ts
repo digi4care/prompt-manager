@@ -2,9 +2,6 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { auth } from '$lib/auth';
 
-// Disable SSR to prevent hydration mismatch with Svelte 5 + shadcn-svelte
-export const ssr = false;
-
 export const load: PageServerLoad = async ({ locals }) => {
 	// If already authenticated, redirect to settings
 	if (locals?.auth?.session) {

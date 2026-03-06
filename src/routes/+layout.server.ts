@@ -5,7 +5,6 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	const isAuthenticated = !!locals?.auth?.session;
 
 	return {
-		isAuthenticated:
-			isAuthenticated && !url.pathname.startsWith('/logout') && !url.pathname.startsWith('/login')
+		isAuthenticated
 	};
 };

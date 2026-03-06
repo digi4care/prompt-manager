@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db/client';
 import { snippetTags } from '$lib/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
-import { authenticateRequest } from '$lib/server/auth/jwt';
+import { authenticateRequest } from '$lib/server/auth.helper';
 import { z } from 'zod';
 
 const createTagSchema = z.object({

@@ -7,7 +7,7 @@ import {
 	type DebateArchetype,
 	type AgentOverride
 } from '$lib/server/services/council-debate.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth/jwt';
+import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 
 /**
  * Request validation schema for council debate endpoint

@@ -1,5 +1,7 @@
+<!-- Context: system-builder-templates/orchestrator-template | Priority: low | Version: 1.0 | Updated: 2026-02-15 -->
+
 ---
-description: 'Template for generating main orchestrator agents for context-aware AI systems'
+description: "Template for generating main orchestrator agents for context-aware AI systems"
 ---
 
 # Orchestrator Agent Template
@@ -10,14 +12,14 @@ This template is used to generate main orchestrator agents for context-aware AI 
 
 ```markdown
 ---
-description: '{domain} orchestrator for {primary_purpose}'
+description: "{domain} orchestrator for {primary_purpose}"
 mode: primary
 temperature: 0.2
 tools:
   read: true
   write: true
   edit: true
-  bash: { based_on_requirements }
+  bash: {based_on_requirements}
   task: true
   glob: true
   grep: true
@@ -51,18 +53,23 @@ tools:
 </task>
 
 <workflow_execution>
-<stage id="1" name="AnalyzeRequest">
-<action>Assess request complexity and requirements</action>
-<prerequisites>User request received and parseable</prerequisites>
-<process> 1. Parse user request for intent and parameters 2. Identify use case category 3. Assess complexity level (simple/moderate/complex) 4. Determine required capabilities 5. Select appropriate workflow
-</process>
-<decision>
-<if test="simple_request">Handle directly or route to single specialist</if>
-<if test="moderate_request">Execute standard workflow</if>
-<if test="complex_request">Coordinate multi-agent workflow</if>
-</decision>
-<checkpoint>Request analyzed and workflow selected</checkpoint>
-</stage>
+  <stage id="1" name="AnalyzeRequest">
+    <action>Assess request complexity and requirements</action>
+    <prerequisites>User request received and parseable</prerequisites>
+    <process>
+      1. Parse user request for intent and parameters
+      2. Identify use case category
+      3. Assess complexity level (simple/moderate/complex)
+      4. Determine required capabilities
+      5. Select appropriate workflow
+    </process>
+    <decision>
+      <if test="simple_request">Handle directly or route to single specialist</if>
+      <if test="moderate_request">Execute standard workflow</if>
+      <if test="complex_request">Coordinate multi-agent workflow</if>
+    </decision>
+    <checkpoint>Request analyzed and workflow selected</checkpoint>
+  </stage>
 
   <stage id="2" name="AllocateContext">
     <action>Determine what context is needed for execution</action>
@@ -136,69 +143,72 @@ tools:
 </workflow_execution>
 
 <routing_intelligence>
-<analyze_request>
-<step_1>Parse request for intent and parameters</step_1>
-<step_2>Identify use case category</step_2>
-<step_3>Assess complexity (simple/moderate/complex)</step_3>
-<step_4>Determine required capabilities</step_4>
-</analyze_request>
-
-<allocate_context>
-<level_1_triggers> - Single domain operation - Clear requirements - Standard workflow - No dependencies
-</level_1_triggers>
-
+  <analyze_request>
+    <step_1>Parse request for intent and parameters</step_1>
+    <step_2>Identify use case category</step_2>
+    <step_3>Assess complexity (simple/moderate/complex)</step_3>
+    <step_4>Determine required capabilities</step_4>
+  </analyze_request>
+  
+  <allocate_context>
+    <level_1_triggers>
+      - Single domain operation
+      - Clear requirements
+      - Standard workflow
+      - No dependencies
+    </level_1_triggers>
+    
     <level_2_triggers>
       - Multi-step process
       - Domain knowledge needed
       - Quality validation required
       - Integration points
     </level_2_triggers>
-
+    
     <level_3_triggers>
       - Complex multi-agent coordination
       - Requires historical context
       - High-stakes decisions
       - Extensive state management
     </level_3_triggers>
-
-</allocate_context>
-
-<execute_routing>
-{Subagent routing patterns based on domain}
-</execute_routing>
+  </allocate_context>
+  
+  <execute_routing>
+    {Subagent routing patterns based on domain}
+  </execute_routing>
 </routing_intelligence>
 
 <context_engineering>
-<determine_context_level>
-function(task_type, complexity, subagent_target) {
-if (task_type === "simple" && no_dependencies) {
-return "Level 1"; // Complete isolation
-}
-if (task_type === "moderate" || requires_domain_knowledge) {
-return "Level 2"; // Filtered context
-}
-if (task_type === "complex" && multi_agent_coordination) {
-return "Level 3"; // Windowed context
-}
-return "Level 1"; // Default to isolation
-}
-</determine_context_level>
-
-<prepare_context>
-<level_1>
-Pass only task description and target output specification
-</level_1>
-<level_2>
-Pass task + relevant context files (domain knowledge, standards, templates)
-</level_2>
-<level_3>
-Pass task + full context + recent history + system state
-</level_3>
-</prepare_context>
+  <determine_context_level>
+    function(task_type, complexity, subagent_target) {
+      if (task_type === "simple" && no_dependencies) {
+        return "Level 1"; // Complete isolation
+      }
+      if (task_type === "moderate" || requires_domain_knowledge) {
+        return "Level 2"; // Filtered context
+      }
+      if (task_type === "complex" && multi_agent_coordination) {
+        return "Level 3"; // Windowed context
+      }
+      return "Level 1"; // Default to isolation
+    }
+  </determine_context_level>
+  
+  <prepare_context>
+    <level_1>
+      Pass only task description and target output specification
+    </level_1>
+    <level_2>
+      Pass task + relevant context files (domain knowledge, standards, templates)
+    </level_2>
+    <level_3>
+      Pass task + full context + recent history + system state
+    </level_3>
+  </prepare_context>
 </context_engineering>
 
 <quality_standards>
-{Domain-specific quality criteria}
+  {Domain-specific quality criteria}
 </quality_standards>
 
 <validation>
@@ -216,9 +226,12 @@ Pass task + full context + recent history + system state
 </validation>
 
 <performance_metrics>
-<efficiency> - 80% of tasks use Level 1 context (isolation) - 20% of tasks use Level 2 context (filtered) - Level 3 context (windowed) is rare
-</efficiency>
-
+  <efficiency>
+    - 80% of tasks use Level 1 context (isolation)
+    - 20% of tasks use Level 2 context (filtered)
+    - Level 3 context (windowed) is rare
+  </efficiency>
+  
   <quality>
     - Routing accuracy: +20% with LLM-based decisions
     - Consistency: +25% with XML structure
@@ -256,7 +269,6 @@ Pass task + full context + recent history + system state
 ## Validation Criteria
 
 Generated orchestrators must:
-
 - Follow optimal component ordering (context→role→task→instructions)
 - Include 5+ workflow stages with checkpoints
 - Implement routing_intelligence section

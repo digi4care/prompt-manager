@@ -1,3 +1,5 @@
+<!-- Context: openagents-repo/guides | Priority: high | Version: 1.0 | Updated: 2026-02-15 -->
+
 # Building CLIs in OpenAgents Control: Compact Guide
 
 **Category**: guide  
@@ -94,4 +96,4 @@ Apply `content-creation` principles to your CLI output:
 
 ---
 
-**Reference**: See `.opencode/context/openagents-repo/guides/adding-skill.md` for the full, detailed walkthrough.
+**Reference**: See `.opencode/context/openagents-repo/guides/adding-skill-basics.md` for the full, detailed walkthrough.

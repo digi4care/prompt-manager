@@ -1,5 +1,7 @@
+<!-- Context: system-builder-templates/SYSTEM-BUILDER-GUIDE | Priority: low | Version: 1.0 | Updated: 2026-02-15 -->
+
 ---
-description: 'Complete guide for using the /build-context-system command to create custom context-aware AI systems'
+description: "Complete guide for using the /build-context-system command to create custom context-aware AI systems"
 ---
 
 # System Builder Guide
@@ -8,7 +10,8 @@ Complete guide for using the `/build-context-system` command to create custom co
 
 ## Overview
 
-## The system builder creates complete `.opencode` folder architectures tailored to your domain and use cases. It follows research-backed patterns from Stanford and Anthropic for optimal AI agent performance.
+The system builder creates complete `.opencode` folder architectures tailored to your domain and use cases. It follows research-backed patterns from Stanford and Anthropic for optimal AI agent performance.
+---
 
 ## Quick Start
 
@@ -17,7 +20,6 @@ Complete guide for using the `/build-context-system` command to create custom co
 ```
 
 This launches an interactive interview that guides you through:
-
 1. Domain & Purpose (2-3 questions)
 2. Use Cases & Workflows (3-4 questions)
 3. Complexity & Scale (2-3 questions)
@@ -27,7 +29,6 @@ This launches an interactive interview that guides you through:
 ## What You Get
 
 ### Complete .opencode Structure
-
 ```
 .opencode/
 ├── agent/
@@ -56,7 +57,6 @@ This launches an interactive interview that guides you through:
 ### Research-Backed Optimizations
 
 All generated agents follow proven patterns:
-
 - **+20% routing accuracy** (LLM-based decisions with @ symbol routing)
 - **+25% consistency** (XML structure with optimal component ordering)
 - **80% context efficiency** (3-level context allocation)
@@ -69,7 +69,6 @@ All generated agents follow proven patterns:
 **Question 1: What is your primary domain or industry?**
 
 Examples:
-
 - E-commerce and online retail
 - Data engineering and analytics
 - Customer support and service
@@ -82,7 +81,6 @@ Examples:
 **Question 2: What is the primary purpose of your AI system?**
 
 Examples:
-
 - Automate repetitive tasks
 - Coordinate complex workflows
 - Generate content or code
@@ -95,7 +93,6 @@ Examples:
 **Question 3: Who are the primary users?**
 
 Examples:
-
 - Developers and engineers
 - Content creators and marketers
 - Data analysts and scientists
@@ -108,7 +105,6 @@ Examples:
 **Question 4: What are your top 3-5 use cases?**
 
 Be specific. Good examples:
-
 - "Process customer orders from multiple channels"
 - "Generate blog posts and social media content"
 - "Analyze sales data and create reports"
@@ -116,7 +112,6 @@ Be specific. Good examples:
 - "Review code for security vulnerabilities"
 
 Bad examples:
-
 - "Do stuff"
 - "Help with work"
 - "Make things better"
@@ -124,7 +119,6 @@ Bad examples:
 **Question 5: What is the typical complexity?**
 
 For each use case:
-
 - **Simple**: Single-step, clear inputs/outputs, no dependencies
 - **Moderate**: Multi-step process, some decision points, basic coordination
 - **Complex**: Multi-agent coordination, many decision points, state management
@@ -132,7 +126,6 @@ For each use case:
 **Question 6: Are there dependencies between use cases?**
 
 Examples:
-
 - "Research must happen before content creation"
 - "Validation happens after processing"
 - "All tasks are independent"
@@ -142,7 +135,6 @@ Examples:
 **Question 7: How many specialized agents do you need?**
 
 Guidance:
-
 - **2-3 agents**: Simple domain with focused tasks
 - **4-6 agents**: Moderate complexity with distinct specializations
 - **7+ agents**: Complex domain with many specialized functions
@@ -150,7 +142,6 @@ Guidance:
 **Question 8: What types of knowledge does your system need?**
 
 Categories:
-
 - **Domain knowledge**: Core concepts, terminology, business rules, data models
 - **Process knowledge**: Workflows, procedures, integration patterns, escalation paths
 - **Standards knowledge**: Quality criteria, validation rules, compliance requirements, error handling
@@ -159,7 +150,6 @@ Categories:
 **Question 9: Will your system need to maintain state or history?**
 
 Options:
-
 - **Stateless**: Each task is independent, no history needed
 - **Project-based**: Track state within projects or sessions
 - **Full history**: Maintain complete history and learn from past interactions
@@ -169,7 +159,6 @@ Options:
 **Question 10: What external tools or platforms will your system integrate with?**
 
 Examples:
-
 - APIs (Stripe, Twilio, SendGrid, etc.)
 - Databases (PostgreSQL, MongoDB, Redis, etc.)
 - Cloud services (AWS, GCP, Azure, etc.)
@@ -180,7 +169,6 @@ Examples:
 **Question 11: What file operations will your system perform?**
 
 Options:
-
 - **Read only**: Only read existing files
 - **Read/write**: Read and create/modify files
 - **Full management**: Complete file lifecycle management
@@ -188,7 +176,6 @@ Options:
 **Question 12: Do you need custom slash commands?**
 
 Examples:
-
 - `/process-order {order_id}`
 - `/generate-report {type} {date_range}`
 - `/analyze-data {source} {destination}`
@@ -196,7 +183,6 @@ Examples:
 ### Phase 5: Review & Confirmation
 
 The system presents a complete architecture summary showing:
-
 - All components to be created
 - Agent specifications
 - Context file organization
@@ -205,7 +191,6 @@ The system presents a complete architecture summary showing:
 - Estimated file counts
 
 You can:
-
 - ✅ **Proceed** - Generate the complete system
 - 🔄 **Revise** - Adjust specific components
 - ❌ **Cancel** - Start over
@@ -227,19 +212,16 @@ Subagent A    Subagent B      Subagent C
 ### 3-Level Context Allocation
 
 **Level 1: Complete Isolation (80% of cases)**
-
 - Context: Task description only
 - Use for: Simple, well-defined operations
 - Performance: 80% reduction in context overhead
 
 **Level 2: Filtered Context (20% of cases)**
-
 - Context: Task + relevant domain knowledge
 - Use for: Operations requiring domain expertise
 - Performance: 60% reduction in context overhead
 
 **Level 3: Windowed Context (Rare)**
-
 - Context: Task + domain knowledge + historical state
 - Use for: Complex multi-step operations
 - Performance: Optimized for accuracy over speed
@@ -247,28 +229,24 @@ Subagent A    Subagent B      Subagent C
 ### Context Organization
 
 **Domain Knowledge** (`context/domain/`)
-
 - Core concepts and definitions
 - Terminology and glossary
 - Business rules and policies
 - Data models and schemas
 
 **Process Knowledge** (`context/processes/`)
-
 - Standard workflows and procedures
 - Integration patterns
 - Edge case handling
 - Escalation paths
 
 **Standards Knowledge** (`context/standards/`)
-
 - Quality criteria and metrics
 - Validation rules
 - Compliance requirements
 - Error handling standards
 
 **Template Knowledge** (`context/templates/`)
-
 - Output format templates
 - Common patterns and structures
 - Reusable components
@@ -279,7 +257,6 @@ Subagent A    Subagent B      Subagent C
 ### Main Orchestrator
 
 The orchestrator is your system's "brain" that:
-
 - Analyzes incoming requests
 - Assesses complexity
 - Allocates appropriate context level
@@ -289,7 +266,6 @@ The orchestrator is your system's "brain" that:
 - Delivers final outputs
 
 Key features:
-
 - Multi-stage workflow execution
 - Routing intelligence (analyze→allocate→execute)
 - Context engineering (3-level allocation)
@@ -299,7 +275,6 @@ Key features:
 ### Specialized Subagents
 
 Each subagent is a specialist that:
-
 - Handles ONE specific task extremely well
 - Receives complete, explicit instructions
 - Operates statelessly (no conversation history)
@@ -307,7 +282,6 @@ Each subagent is a specialist that:
 - Validates inputs and outputs
 
 Common subagent types:
-
 - **Research Agent**: Gathers information from external sources
 - **Validation Agent**: Validates outputs against standards
 - **Processing Agent**: Transforms or processes data
@@ -317,7 +291,6 @@ Common subagent types:
 ### Workflows
 
 Workflows define reusable process patterns:
-
 - Step-by-step procedures
 - Context dependencies
 - Decision points
@@ -325,7 +298,6 @@ Workflows define reusable process patterns:
 - Validation gates
 
 Workflow complexity levels:
-
 - **Simple**: 3-5 linear stages
 - **Moderate**: 5-7 stages with decision trees
 - **Complex**: 7+ stages with multi-agent coordination
@@ -333,7 +305,6 @@ Workflow complexity levels:
 ### Custom Commands
 
 Slash commands provide user-friendly interfaces:
-
 - Clear syntax with parameters
 - Agent routing specification
 - Concrete examples
@@ -396,7 +367,6 @@ Slash commands provide user-friendly interfaces:
 ### Quality Validation
 
 Generated systems should score:
-
 - **Agent Quality**: 8+/10 (XML optimization)
 - **Context Organization**: 8+/10 (modularity)
 - **Workflow Completeness**: 8+/10 (all stages defined)
@@ -416,13 +386,11 @@ After generation, you can customize:
 ## Performance Expectations
 
 ### Context Efficiency
-
 - 80% of tasks use Level 1 context (isolation)
 - 20% of tasks use Level 2 context (filtered)
 - Level 3 context (windowed) is rare
 
 ### Quality Improvements
-
 - **Routing Accuracy**: +20% (LLM-based decisions)
 - **Consistency**: +25% (XML structure)
 - **Context Efficiency**: 80% reduction in overhead
@@ -487,7 +455,7 @@ After your system is generated:
 
 ## Resources
 
-- **Templates**: `system-builder-templates/`
+- **Templates**: `.opencode/context/system-builder-templates/`
 - **Examples**: See generated systems for reference
 - **Documentation**: navigation.md, ARCHITECTURE.md, TESTING.md
 - **Patterns**: Review template files for best practices

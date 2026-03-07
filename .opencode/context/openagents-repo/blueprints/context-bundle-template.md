@@ -1,3 +1,5 @@
+<!-- Context: openagents-repo/context-bundle-template | Priority: low | Version: 1.0 | Updated: 2026-02-15 -->
+
 ---
 description: "Template for creating context bundles when delegating tasks to subagents"
 type: "context"
@@ -58,7 +60,7 @@ Status: in_progress
 - `.opencode/context/openagents-repo/core-concepts/categories.md` → How organization works
 
 **Guides** (Load for specific workflows):
-- `.opencode/context/openagents-repo/guides/adding-agent.md` → Step-by-step agent creation
+- `.opencode/context/openagents-repo/guides/adding-agent-basics.md` → Step-by-step agent creation
 - `.opencode/context/openagents-repo/guides/testing-agent.md` → Testing workflow
 - `.opencode/context/openagents-repo/guides/updating-registry.md` → Registry workflow
 - `.opencode/context/openagents-repo/guides/debugging.md` → Troubleshooting

@@ -1,3 +1,5 @@
+<!-- Context: openagents-repo/guides | Priority: high | Version: 1.0 | Updated: 2026-02-15 -->
+
 # Testing Subagents - Step-by-Step Guide
 
 **Purpose**: How to test subagents in standalone mode
@@ -54,10 +56,10 @@ npm run eval:sdk -- --subagent=contextscout --pattern="01-test.yaml" --debug
 
 ```bash
 # Check agent file
-cat .opencode/agent/ContextScout.md | head -20
+cat .opencode/agent/subagents/core/contextscout.md | head -20
 
 # Verify frontmatter
-grep -A 5 "^id:" .opencode/agent/ContextScout.md
+grep -A 5 "^id:" .opencode/agent/subagents/core/contextscout.md
 ```
 
 **Expected**:

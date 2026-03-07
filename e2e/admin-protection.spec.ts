@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { generateToken } from '$lib/server/auth.helper';
 import { generateTestPrompt } from './helpers';
 
 test.describe('Admin Route Protection', () => {
@@ -41,19 +40,24 @@ test.describe('Admin Route Protection', () => {
 		expect(body.error).toContain('Authentication required');
 	});
 
-	test('should allow API access with valid JWT', async ({ request }) => {
-		// Generate a valid JWT token
-		const token = generateToken({
-			userId: 'admin',
-			email: 'admin@localhost',
-			role: 'admin'
-		});
+	test('should allow API access with valid session', async ({ page, request, context }) => {
+		// Login via Better-Auth to get a session
+		await page.goto('/login');
+		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
+		await page.getByRole('button', { name: 'Login' }).click();
+		await page.waitForURL('/admin');
 
-		// Make request with JWT
+		// Get session cookies from browser context
+		const cookies = await context.cookies();
+		const sessionCookie = cookies.find(
+			(c) => c.name.includes('better-auth') || c.name.includes('session')
+		);
+
+		// Make request with session cookie
 		const testPrompt = generateTestPrompt();
 		const response = await request.post('/api/prompts', {
 			headers: {
-				Authorization: `Bearer ${token}`,
+				Cookie: sessionCookie ? `${sessionCookie.name}=${sessionCookie.value}` : '',
 				'Content-Type': 'application/json'
 			},
 			data: testPrompt

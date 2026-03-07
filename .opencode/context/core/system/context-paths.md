@@ -1,3 +1,5 @@
+<!-- Context: core/context-paths | Priority: low | Version: 1.0 | Updated: 2026-02-15 -->
+
 ---
 id: context-paths
 name: Context File Path Resolution
@@ -7,38 +9,41 @@ name: Context File Path Resolution
 
 ## Resolution Order
 
-This repository is configured as **local-only** context.
+Context files are resolved in this order (later sources override earlier ones for conflicting keys):
 
-1. **Local context** (`.opencode/context/` in project root)
-2. **Global context disabled** (`"global": false` in `.opencode/context/core/config/paths.json`)
+1. **Global context** (`~/.config/opencode/context/`) — user-wide defaults
+2. **Local context** (`.opencode/context/` in project root) — project-specific, highest priority
 
 This mirrors OpenCode's own config merging behavior (see [OpenCode Config Docs](https://opencode.ai/docs/config/)).
 
 ## What Goes Where
 
-| Content Type                                            | Recommended Location                            | Why                                                  |
-| ------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------- |
+| Content Type | Recommended Location | Why |
+|---|---|---|
 | **Project Intelligence** (tech stack, patterns, naming) | Local `.opencode/context/project-intelligence/` | Project-specific, committed to git, shared with team |
-| **Core Standards** (code-quality, docs, tests)          | Local `.opencode/context/core/`                 | Repo-scoped standards, deterministic behavior        |
+| **Core Standards** (code-quality, docs, tests) | Wherever OAC was installed | Universal standards, same across projects |
+| **Personal Defaults** (your preferred patterns) | Global `~/.config/opencode/context/project-intelligence/` | Personal coding style across all projects |
 
-## How Resolution Works (Local-Only)
+## How Merging Works
 
-- Files are loaded from local `.opencode/context/` only.
-- Global fallback is disabled for this repo.
-- Project context is fully repo-scoped and committed with the codebase.
+- If a file exists in **both** local and global, the **local version wins**
+- If a file exists **only** in global, it's still loaded (acts as a fallback)
+- If a file exists **only** in local, it's loaded normally
+
+**Example**: User installs OAC globally (core standards at `~/.config/opencode/context/core/`), then runs `/add-context` in a project (creates `.opencode/context/project-intelligence/` locally). The agent loads both: core standards from global, project intelligence from local.
 
 ## Path Configuration
 
 ```json
 {
-	"paths": {
-		"local": ".opencode/context",
-		"global": false
-	}
+  "paths": {
+    "local": ".opencode/context",
+    "global": "~/.config/opencode/context"
+  }
 }
 ```
 
-This repository uses `"global": false` to enforce local-only context loading.
+Set `"global": false` to disable global context loading.
 
 ## Environment Variable Override
 
@@ -49,16 +54,32 @@ export OPENCODE_INSTALL_DIR=~/custom/path
 bash install.sh developer
 ```
 
-OpenCode itself supports `OPENCODE_CONFIG_DIR` for a custom config directory (see [OpenCode docs](https://opencode.ai/docs/config/)). For this repository, keep context resolution local-only.
+OpenCode itself supports `OPENCODE_CONFIG_DIR` for a custom config directory (see [OpenCode docs](https://opencode.ai/docs/config/)). If set, context files in that directory are loaded alongside global and local configs.
 
 ## Migrating Global to Local
 
-If global context was used previously, run `/context migrate` once to copy needed project-intelligence files into local `.opencode/context/`, then continue local-only.
+If you installed globally but want project-specific context:
 
-## Common Scenario
+```bash
+/context migrate
+```
 
-### Everything Local (Development / Repo Maintainer)
+This copies `project-intelligence/` from global (`~/.config/opencode/context/`) to local (`.opencode/context/`), so your project patterns are committed to git and shared with your team. See `/context migrate` for details.
 
-- OAC command overrides live in `.opencode/command/`
-- All context lives in `.opencode/context/`
-- Context is committed to git and shared with the team
+## Common Scenarios
+
+### Scenario 1: Everything Local (Development / Repo Maintainer)
+- OAC installed locally via `bash install.sh developer`
+- All context in `.opencode/context/`
+- Committed to git, team shares everything
+
+### Scenario 2: Global Install + Local Project Intelligence
+- OAC installed globally via `bash install.sh developer --install-dir ~/.config/opencode`
+- Core standards at `~/.config/opencode/context/core/`
+- Run `/add-context` in project → creates `.opencode/context/project-intelligence/` locally
+- Project intelligence committed to git, core standards come from global
+
+### Scenario 3: Global Personal Defaults
+- Run `/add-context --global` to save personal coding patterns
+- These apply to ALL projects as fallback
+- Any project can override with local `/add-context`

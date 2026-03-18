@@ -148,3 +148,7 @@ export function getImpactAnalysis(key: string) {
 
 // Re-export types
 export type { SettingsBlock, SettingDefinition };
+
+
+// Re-export createSettingsStore for convenience
+export { createSettingsStore } from '$lib/stores/settings.svelte';

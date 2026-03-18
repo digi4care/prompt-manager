@@ -195,6 +195,14 @@ export function normalizeToProviderGroups(
 }
 
 function normalizeVariants(raw: Record<string, unknown>): ModelVariant[] | undefined {
+	const rawVariants = raw.variants;
+	if (rawVariants && typeof rawVariants === 'object' && !Array.isArray(rawVariants)) {
+		const variantKeys = Object.keys(rawVariants);
+		if (variantKeys.length > 0) {
+			return variantKeys.map((key) => ({ id: key, label: key }));
+		}
+	}
+
 	const variants =
 		(raw.variants as ModelVariant[] | undefined) ||
 		(raw.variantOptions as string[] | undefined) ||

@@ -1,311 +1,129 @@
-# Project Voortgang
+# Project Progress - Settings Schema Registry
 
-## Laatste Update: 2026-03-06
+## Last Update: 2026-03-18
 
-### Huidige Taak: Provider Disconnect UI Fix
+## Current Status: AI Policy Modal Issue
 
-**Status**: 🟡 In Progress
+### What Was Fixed
 
-**Doel**: Provider disconnect functionaliteit verbeteren in Settings pagina
+✅ **Settings Schema Registry Architecture (Phase 10)**
+- Core registry with dependency graph
+- Cascade resolution (run > prompt > default)
+- Svelte 5 reactive store integration
+- Backward compatibility layer
+- All 177 unit tests passing
 
----
+✅ **Separate Route for New System**
+- Created `/settings-new` route for testing new registry
+- Original `/settings` route remains untouched (756 lines)
+- Feature flag approach with `?new=true` no longer needed
 
-## Wat Werkt
+✅ **AI Policy Fixes Applied**
 
-✅ Login met Better-Auth (traag maar werkt)
-✅ Provider listing in Settings
-✅ Provider connect flow (API key + OAuth)
-✅ Regressie tests voor auth (31 E2E tests)
+**Problem 1**: PolicyEditor loaded ALL models via API, ignoring selected providers
+**Fix**: Added `models` prop to PolicyEditor, passed filtered models from settings page
 
----
+**Problem 2**: Variants not showing (ModelVariant[] vs variantOptions[] mismatch)  
+**Fix**: Added mapping in resolveModelById(): `model.variants?.map(v => v.id) || []`
 
-## Bug: Provider Disconnect UI
+### Files Changed
 
-**Probleem**:
+1. **src/lib/components/admin/ai-settings/policy-editor.svelte**
+   - Added `models?: unknown[]` to Props interface
+   - Updated destructuring to include `models: propModels`
+   - Modified loadCatalog() to use propModels if available
+   - Added variantOptions mapping in both resolveModelById() return statements
 
-1. Connected providers tonen "Connected" badge + ❌ kruisje button
-2. Kruisje button is onduidelijk (geen tekst)
-3. Geen bevestiging voor disconnect
-4. Geen toast feedback na disconnect
-5. Disconnect functionaliteit werkt niet (gebruiker klikte maar gebeurde niets)
+2. **src/routes/settings/+page.svelte**
+   - Changed `<PolicyEditor />` to `<PolicyEditor models={data.models} />`
 
-**Gevraagde Oplossing**:
+### Current Issue
 
-1. ❌ Verwijder "Connected" badge (onnodig - als provider in lijst staat is het connected)
-2. ✅ Vervang kruisje button met tekst button "Disconnect"
-3. ✅ Voeg bevestiging modal toe ("Weet je het zeker? Ja/Cancel")
-4. ✅ Toast notification na succesvolle disconnect
-5. ✅ Zorg dat disconnect API call correct werkt
+**Status**: Model picker modal NOT opening when clicking "Select models"
 
----
+**Symptoms**:
+- Settings page loads correctly
+- AI Policy section displays correctly  
+- "Select models" button is visible
+- Clicking button does nothing (modal doesn't open)
 
-## Relevante Bestanden
+**Suspected Causes**:
+1. groupedModels is empty (no connected providers → no models returned)
+2. JavaScript error blocking click handler
+3. Svelte rendering issue with ModelPickerModal
 
-### Frontend
+**What We Know**:
+- isPickerOpen state exists and is set to true on click
+- ModelPickerModal uses `{#if open}` conditional rendering
+- bind:open={isPickerOpen} should work with Svelte 5
+- No console errors visible
 
-- `src/lib/components/admin/ai-settings/providers-block.svelte` - Provider UI component
-  - Lines 186-204: `handleDisconnectProvider()` functie
-  - Lines 237-266: Connected providers lijst UI
-  - Lines 250-262: Badge + kruisje button (MOET VERVANGEN WORDEN)
+### Next Steps for Handoff
 
-### Backend
+1. **Debug why modal doesn't open**:
+   - Add console.log in onclick handler to verify click registers
+   - Check if groupedModels is populated (length > 0)
+   - Verify isPickerOpen changes from false to true
+   - Check if ModelPickerModal template renders at all
 
-- `src/routes/api/opencode/providers/auth/[providerId]/+server.ts` - Disconnect API
-  - Lines 71-116: DELETE endpoint (werkt correct)
-  - Roept OpenCode DELETE /auth/:providerId aan
-  - Clear providers cache
-  - Roept /global/dispose aan
+2. **Test with connected providers**:
+   - First connect some providers in Providers section
+   - Then open AI Policy - models should appear
+   - Modal should open with available models
 
-### State Management
+3. **Alternative approach if needed**:
+   - Make PolicyEditor fetch ALL models from API if propModels is empty
+   - Don't filter by connected providers in settings page
+   - Let users see all available models in policy editor
 
-- `src/lib/stores/providers.svelte.ts` - Provider store
-  - `connectedIds`: Array van connected provider IDs
-  - `setConnected()`: Update connected list
-  - `removeConnected()`: Verwijder provider uit connected list
+### Testing
 
-### UI Components
-
-- `src/lib/stores/toast.ts` - Toast notifications
-  - `showSuccess()`: Succes toast
-  - `showError()`: Error toast
-
----
-
-## Te Implementeren
-
-### 1. UI Wijzigingen in providers-block.svelte
-
-**Nieuwe state variabelen** (toevoegen na line 13):
-
-```typescript
-let showConfirmDisconnect = $state(false);
-let disconnectProviderId = $state('');
-let disconnectProviderName = $state('');
-let isDisconnecting = $state(false);
+**Unit Tests**: All 177 tests passing
+```bash
+bun run test tests/unit/settings/
 ```
 
-**Toast import** (toevoegen aan imports line 1):
+**Manual Test**:
+1. Start server: `bun run dev`
+2. Login: http://127.0.0.1:45678/login
+3. Go to Settings: http://127.0.0.1:45678/settings
+4. Click "AI Policy" section
+5. Click "Select models" button
+6. **Expected**: Modal opens with model list
+7. **Actual**: Nothing happens
 
-```typescript
-import { showSuccess, showError } from '$lib/stores/toast';
-```
+### Related Files
 
-**Nieuwe helper functie** (toevoegen na line 185):
+- `/src/lib/components/admin/ai-settings/policy-editor.svelte` - Main component
+- `/src/lib/components/shared/model-selection/model-picker-modal.svelte` - Modal component
+- `/src/routes/settings/+page.svelte` - Settings page
+- `/src/routes/settings/+page.server.ts` - Server data loading
+- `/src/lib/types/model.types.ts` - Type definitions
 
-```typescript
-function askDisconnectProvider(provider: Provider) {
-	disconnectProviderId = provider.id;
-	disconnectProviderName = provider.name;
-	showConfirmDisconnect = true;
-}
+### New Route for Testing
 
-function cancelDisconnect() {
-	showConfirmDisconnect = false;
-	disconnectProviderId = '';
-	disconnectProviderName = '';
-}
+The new Settings Schema Registry is available at:
+- http://127.0.0.1:45678/settings-new (experimental)
 
-async function confirmDisconnect() {
-	if (!disconnectProviderId) return;
+Original settings remains at:
+- http://127.0.0.1:45678/settings (stable)
 
-	isDisconnecting = true;
+### Notes for Next Developer
 
-	try {
-		const response = await fetch(`/api/opencode/providers/auth/${disconnectProviderId}`, {
-			method: 'DELETE'
-		});
+1. The PolicyEditor fixes are correct and should work
+2. The issue is likely related to empty groupedModels state
+3. Check if models are being passed correctly from server to client
+4. ModelPickerModal might need debugging to see why it doesn't render
+5. Consider adding a "no models available" message when groupedModels is empty
 
-		if (!response.ok) {
-			const error = await response.json();
-			showError(
-				`Failed to disconnect ${disconnectProviderName}: ${error.message || 'Unknown error'}`
-			);
-			return;
-		}
+### Git Status
 
-		const result = await response.json();
-		providers.setConnected(result.connected);
-		showSuccess(`${disconnectProviderName} disconnected successfully`);
-		showConfirmDisconnect = false;
-	} catch (err) {
-		console.error('Error disconnecting provider:', err);
-		showError(`Failed to disconnect ${disconnectProviderName}`);
-	} finally {
-		isDisconnecting = false;
-		disconnectProviderId = '';
-		disconnectProviderName = '';
-	}
-}
-```
+Branch: `feature/settings-schema-registry`
+Changes:
+- `src/lib/components/admin/ai-settings/policy-editor.svelte` - Modified
+- `src/routes/settings/+page.svelte` - Modified  
+- `src/routes/settings-new/` - New directory (experimental)
 
-**UI aanpassing** (vervang lines 250-262):
-
-```svelte
-<Button
-	variant="outline"
-	size="sm"
-	onclick={() => askDisconnectProvider(provider)}
-	disabled={isDisconnecting}
->
-	Disconnect
-</Button>
-```
-
-**Bevestiging modal** (toevoegen na line 480):
-
-```svelte
-{#if showConfirmDisconnect}
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-		role="dialog"
-		aria-modal="true"
-	>
-		<div class="w-full max-w-md rounded-xl border bg-background p-6 shadow-xl">
-			<h3 class="text-lg font-semibold">Disconnect Provider</h3>
-			<p class="mt-2 text-sm text-muted-foreground">
-				Are you sure you want to disconnect <strong>{disconnectProviderName}</strong>? You'll need
-				to reconnect it to use it again.
-			</p>
-			<div class="mt-4 flex justify-end gap-2">
-				<Button variant="outline" onclick={cancelDisconnect} disabled={isDisconnecting}>
-					Cancel
-				</Button>
-				<Button variant="destructive" onclick={confirmDisconnect} disabled={isDisconnecting}>
-					{isDisconnecting ? 'Disconnecting...' : 'Yes, Disconnect'}
-				</Button>
-			</div>
-		</div>
-	</div>
-{/if}
-```
-
-### 2. Regressie Test
-
-**Nieuwe test**: `e2e/provider-disconnect.spec.ts`
-
-```typescript
-import { test, expect } from '@playwright/test';
-
-test.describe('Provider Disconnect', () => {
-	test.beforeEach(async ({ page }) => {
-		// Login first
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'password');
-		await page.getByRole('button', { name: 'Login' }).click();
-		await page.waitForURL('/settings');
-	});
-
-	test('should show disconnect button for connected providers', async ({ page }) => {
-		await page.goto('/settings');
-
-		// Check if connected providers section exists
-		const connectedSection = page.locator('text=connected');
-		await expect(connectedSection).toBeVisible();
-
-		// Check if disconnect button exists
-		const disconnectButton = page.getByRole('button', { name: 'Disconnect' });
-		await expect(disconnectButton.first()).toBeVisible();
-	});
-
-	test('should show confirmation modal when clicking disconnect', async ({ page }) => {
-		await page.goto('/settings');
-
-		// Click first disconnect button
-		await page.getByRole('button', { name: 'Disconnect' }).first().click();
-
-		// Check confirmation modal appears
-		await expect(page.getByRole('dialog')).toBeVisible();
-		await expect(page.getByText('Are you sure you want to disconnect')).toBeVisible();
-	});
-
-	test('should cancel disconnect when clicking cancel', async ({ page }) => {
-		await page.goto('/settings');
-
-		const disconnectButton = page.getByRole('button', { name: 'Disconnect' }).first();
-		await disconnectButton.click();
-
-		// Click cancel
-		await page.getByRole('button', { name: 'Cancel' }).click();
-
-		// Modal should disappear
-		await expect(page.getByRole('dialog')).not.toBeVisible();
-	});
-
-	test('should disconnect provider successfully', async ({ page }) => {
-		await page.goto('/settings');
-
-		// Get provider name before disconnect
-		const providerName = await page.locator('.font-medium').first().textContent();
-
-		// Click disconnect
-		await page.getByRole('button', { name: 'Disconnect' }).first().click();
-
-		// Confirm disconnect
-		await page.getByRole('button', { name: 'Yes, Disconnect' }).click();
-
-		// Check for success toast
-		await expect(page.getByText('disconnected successfully')).toBeVisible({ timeout: 5000 });
-
-		// Provider should be removed from list
-		await expect(page.getByText(providerName || '')).not.toBeVisible();
-	});
-});
-```
-
----
-
-## OpenCode SDK Referentie
-
-**Repositories**:
-
-- https://github.com/anomalyco/opencode-sdk-js - JavaScript/TypeScript SDK
-- https://github.com/anomalyco/opencode - Core OpenCode server
-
-**Disconnect Flow** (van opencode-desktop):
-
-1. User klikt disconnect
-2. API call naar DELETE /auth/:providerId
-3. 1-2 seconden vertraging (async processing)
-4. Toast: "Provider disconnected successfully"
-5. UI update (provider verwijderd uit lijst)
-
----
-
-## Volgende Stappen
-
-1. ✅ UI wijzigingen implementeren (zoals hierboven beschreven)
-2. ✅ Browser test - handmatig testen in dev mode
-3. ✅ Regressie test schrijven (provider-disconnect.spec.ts)
-4. ✅ Regressie test runnen
-5. ✅ Commit + push
-6. ⬜ User acceptance test
-
----
-
-## Notities
-
-- Better-Auth login is traag (~3-5 seconden) - kan later geoptimaliseerd worden
-- Provider state wordt NIET in database opgeslagen, maar in OpenCode server memory
-- Disconnect werkt via OpenCode SDK, niet direct in database
-- Toast notifications gebruiken shadcn-svelte toast systeem
-
----
-
-## Eerdere Commits
-
-- `53fc409` - ♻️ refactor: migrate from JWT to Better-Auth
-  - Verwijderde JWT authenticatie
-  - Nieuwe auth.helper.ts met Better-Auth
-  - Update alle API endpoints
-  - Verwijderde auth.svelte.ts store
-  - Clean up test-workflow-generator
-
----
-
-## Context Index
-
-Zie ook:
-
-- `.planning/ROADMAP.md` - Project roadmap (Phase 1-8 compleet)
-- `docs/testing/TODO.md` - Testing taken (allemaal completed)
-- `AGENTS.md` - Project instructies en commands
+Ready for handoff to new chat session.
+</content>
+</invoke>

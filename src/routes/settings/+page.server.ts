@@ -10,9 +10,6 @@ import {
 import { getFunctionDefaults } from '$lib/server/services/function-defaults.service';
 import { error, json } from '@sveltejs/kit';
 
-// New Settings Schema Registry
-import { settingsRegistry, getDefaultValues } from './settings-schema';
-
 const SETTINGS_KEY = 'function_defaults';
 const SETTINGS_CATEGORY = 'opencode';
 
@@ -100,51 +97,6 @@ const DEFAULT_SETTINGS: FunctionDefaultsSettings = {
 	improve: { type: 'improve', modelId: null, temperature: 0.5, maxTokens: 4096 },
 	councilAgents: []
 };
-
-/**
- * Transform legacy settings to registry format
- */
-function transformToRegistrySettings(
-	functionDefaults: FunctionDefaultsSettings,
-	connection: unknown,
-	allowedModels: string[]
-): Record<string, unknown> {
-	const registrySettings: Record<string, unknown> = {};
-
-	// Connection settings
-	if (connection) {
-		const conn = connection as { mode?: string; hostname?: string; port?: number; host?: string };
-		registrySettings['connection.mode'] = conn.mode ?? 'local';
-		registrySettings['connection.local.hostname'] = conn.hostname ?? '127.0.0.1';
-		registrySettings['connection.local.port'] = conn.port ?? 3000;
-		if (conn.host) {
-			registrySettings['connection.remote.host'] = conn.host;
-		}
-	}
-
-	// Function defaults
-	if (functionDefaults.executor) {
-		registrySettings['defaults.executor.modelId'] = functionDefaults.executor.modelId;
-		registrySettings['defaults.executor.temperature'] = functionDefaults.executor.temperature;
-	}
-	if (functionDefaults.judge) {
-		registrySettings['defaults.judge.modelId'] = functionDefaults.judge.modelId;
-		registrySettings['defaults.judge.temperature'] = functionDefaults.judge.temperature;
-	}
-	if (functionDefaults.improve) {
-		registrySettings['defaults.improve.modelId'] = functionDefaults.improve.modelId;
-		registrySettings['defaults.improve.temperature'] = functionDefaults.improve.temperature;
-	}
-
-	// Policy settings
-	registrySettings['policy.allowedModels'] = allowedModels;
-
-	// Council settings
-	registrySettings['council.enabled'] = functionDefaults.councilAgents.length > 0;
-	registrySettings['council.members'] = functionDefaults.councilAgents.map((a) => a.modelId);
-
-	return registrySettings;
-}
 
 export const load: PageServerLoad = async ({ url }) => {
 	// Check for force refresh parameter
@@ -412,15 +364,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		console.error('[Settings] Error loading review agents:', err);
 	}
 
-	// Transform legacy settings to registry format for new system
-	const registrySettings = transformToRegistrySettings(settings, connection, allowedModels);
-
-	// Merge with default values from registry
-	const defaultValues = getDefaultValues();
-	const mergedRegistrySettings = { ...defaultValues, ...registrySettings };
-
 	return {
-		// Legacy data (backward compatibility)
 		settings,
 		connection,
 		models,
@@ -429,10 +373,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		allowedModels,
 		prompts: promptsList,
 		councilAgents: councilAgentsList,
-		reviewAgents: reviewAgentsList,
-		// New registry data
-		registrySettings: mergedRegistrySettings,
-		registryBlocks: settingsRegistry.getAllBlocks()
+		reviewAgents: reviewAgentsList
 	};
 };
 
@@ -458,22 +399,6 @@ export const actions: Actions = {
 					updatedBy: 'admin'
 				}
 			});
-
-		return json({ success: true });
-	},
-
-	// New action for registry-based settings
-	saveRegistrySettings: async ({ request }) => {
-		const data = await request.json();
-
-		// Validate settings against registry
-		const errors = settingsRegistry.validateAll(data);
-		if (Object.keys(errors).length > 0) {
-			return json({ success: false, errors }, { status: 400 });
-		}
-
-		// TODO: Transform registry settings back to legacy format for storage
-		// This is where the migration bridge would convert settings
 
 		return json({ success: true });
 	}

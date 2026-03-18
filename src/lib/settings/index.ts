@@ -68,11 +68,10 @@ export {
 export type SettingsRegistry = SettingsSchemaRegistry;
 export type SettingsDependencyGraph = DependencyGraph;
 
-// Resolver
 export {
-SettingsResolver,
-ResolutionError,
-createResolver
+	SettingsResolver,
+	ResolutionError,
+	createResolver
 } from './resolver';
 
 // Cascade utilities
@@ -94,3 +93,16 @@ emptyContext,
 runContext,
 promptContext
 } from './utils/cascade';
+
+// Backward compatibility
+export {
+	legacyToRegistry,
+	registryToLegacy,
+	extractBlockSettings,
+	mergeBlockSettings,
+	isSettingChanged,
+	createMigrationReport,
+	validateLegacySettings,
+	SettingsStorageCompat,
+	type LegacySettings
+} from './compat';

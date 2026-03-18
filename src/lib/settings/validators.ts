@@ -168,7 +168,7 @@ export const modelValidators = {
 	selectedModel: z.string().min(1, 'Model selection is required'),
 
 	/** Model catalog */
-	catalog: z.record(z.unknown())
+	catalog: z.object({}).passthrough()
 };
 
 /**

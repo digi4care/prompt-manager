@@ -12,8 +12,8 @@ export const defaultsBlock: SettingsBlock = {
 	label: 'Function Defaults',
 	description: 'Default settings for AI functions',
 	order: 5,
-	visibleWhen: (values) =>
-		values['models.selected'] && String(values['models.selected']).length > 0,
+	visibleWhen: (values): boolean =>
+		!!values['models.selected'] && String(values['models.selected']).length > 0,
 	settings: [
 		// Executor defaults
 		{
@@ -35,8 +35,8 @@ export const defaultsBlock: SettingsBlock = {
 			defaultValue: 0.7,
 			schema: numberValidators.temperature,
 			requires: ['executor.modelId'],
-			visibleWhen: (values) =>
-				values['defaults.executor.modelId'] &&
+			visibleWhen: (values): boolean =>
+				!!values['defaults.executor.modelId'] &&
 				String(values['defaults.executor.modelId']).length > 0,
 			order: 11,
 			category: 'Executor'
@@ -62,8 +62,8 @@ export const defaultsBlock: SettingsBlock = {
 			defaultValue: 0.3,
 			schema: numberValidators.temperature,
 			requires: ['judge.modelId'],
-			visibleWhen: (values) =>
-				values['defaults.judge.modelId'] &&
+			visibleWhen: (values): boolean =>
+				!!values['defaults.judge.modelId'] &&
 				String(values['defaults.judge.modelId']).length > 0,
 			order: 21,
 			category: 'Judge'
@@ -89,8 +89,8 @@ export const defaultsBlock: SettingsBlock = {
 			defaultValue: 0.5,
 			schema: numberValidators.temperature,
 			requires: ['improve.modelId'],
-			visibleWhen: (values) =>
-				values['defaults.improve.modelId'] &&
+			visibleWhen: (values): boolean =>
+				!!values['defaults.improve.modelId'] &&
 				String(values['defaults.improve.modelId']).length > 0,
 			order: 31,
 			category: 'Improve'

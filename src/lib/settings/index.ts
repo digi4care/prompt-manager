@@ -67,3 +67,30 @@ export {
 // Utility types for convenience
 export type SettingsRegistry = SettingsSchemaRegistry;
 export type SettingsDependencyGraph = DependencyGraph;
+
+// Resolver
+export {
+SettingsResolver,
+ResolutionError,
+createResolver
+} from './resolver';
+
+// Cascade utilities
+export {
+createResolutionContext,
+mergeContexts,
+getValueAtLevel,
+hasValueAtLevel,
+compareLevels,
+getHighestPriorityLevel,
+createCascadeLevel,
+filterDefinedLevels,
+getFirstDefinedValue,
+formatCascadePath,
+buildCascadeLevels,
+getAllKeysFromContext,
+areContextsEqual,
+emptyContext,
+runContext,
+promptContext
+} from './utils/cascade';

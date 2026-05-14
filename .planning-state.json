@@ -1,0 +1,14 @@
+{
+  "version": 8,
+  "locked": false,
+  "beadsPolling": false,
+  "beadsAutoNudge": true,
+  "beadsClaimedIssue": null,
+  "nudgeCount": 0,
+  "lastNudgeTime": 0,
+  "lastNudgeIssue": null,
+  "nudgePausedNotified": false,
+  "currentPhase": 1,
+  "phaseEnteredAt": "2026-05-14T08:23:41.434Z",
+  "phaseAdvanceOverridden": false
+}

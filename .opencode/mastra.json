@@ -1,0 +1,11 @@
+{
+  "$schema": "https://mastra.ai/schema/mastra-om.json",
+  "model": "zai-coding-plan/glm-4.7-flash",
+  "observation": {
+    "messageTokens": 20000
+  },
+  "reflection": {
+    "observationTokens": 90000
+  },
+  "storagePath": ".opencode/memory/observations.db"
+}

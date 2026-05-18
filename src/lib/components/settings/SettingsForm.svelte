@@ -44,12 +44,9 @@
 
 	// Handle save
 	async function handleSave() {
-		if (onSave) {
-			await store.save();
-			if (!store.saveError) {
-				onSave(store.values);
-			}
-		}
+		await store.save();
+		if (!store.saveError && onSave) {
+			onSave(store.values);
 	}
 
 	// Handle reset
@@ -129,7 +126,7 @@
 				{resetLabel}
 			</button>
 		{/if}
-		{#if showSaveButton && onSave}
+		{#if showSaveButton}
 			<button
 				type="submit"
 				class="button primary"

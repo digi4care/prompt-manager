@@ -133,19 +133,18 @@ export const load: PageServerLoad = async ({ url }) => {
 	try {
 		const agents = await db
 			.select()
-			.from(councilAgents)
-			.where(isNull(councilAgents.deletedAt));
+			.from(councilAgents);
 
 		councilAgentsList = agents.map((agent) => {
 			const modelParts = agent.modelId.split('/');
 			const providerId = modelParts.length > 1 ? modelParts[0] : undefined;
 			const modelId = modelParts.length > 1 ? modelParts.slice(1).join('/') : agent.modelId;
 
-			const model = models.find((m: any) => m.id === agent.modelId);
+			const model = (models as any[]).find((m) => m.id === agent.modelId);
 
 			return {
 				id: String(agent.id),
-				name: agent.name,
+				name: agent.modelName || '',
 				modelId: modelId,
 				modelProvider: providerId,
 				modelLogo: agent.modelLogo || model?.logo,

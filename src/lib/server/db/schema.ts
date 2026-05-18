@@ -474,6 +474,7 @@ export const councilRuns = sqliteTable('council_runs', {
 });
 
 // Council agents for council repeater pattern
+export type ParentType = 'function_defaults' | 'prompt_function_settings' | 'review_defaults';
 export const councilAgents = sqliteTable('council_agents', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	parentType: text('parent_type')

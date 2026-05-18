@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAdmin } from './auth-helper';
 
 /**
  * Setup console error monitoring
@@ -27,19 +28,6 @@ function setupConsoleErrorCheck(page: any): () => Promise<void> {
 	};
 }
 
-/**
- * Authenticate as admin for E2E tests
- * In development mode, uses the bypass password
- */
-async function authenticateAdmin(page: any): Promise<void> {
-	const response = await page.request.post('/api/admin/login', {
-		data: { password: 'bypass' }
-	});
-
-	if (!response.ok()) {
-		throw new Error(`Failed to authenticate: ${response.statusText()}`);
-	}
-}
 
 test.describe('Settings Page - Function Defaults', () => {
 	test.beforeEach(async ({ page }) => {

@@ -8,15 +8,14 @@
  * - E2E-FDEF-002: Function defaults reject disallowed model/variant and preserve prior state
  * - E2E-COUNC-002: Council agents reject forbidden model/variant updates
  * - E2E-PRESET-002: Improve presets reject invalid modelVariant/payload with clear errors
- *
- * NOTE: In development mode without ADMIN_PASSWORD set, admin routes have bypass access.
  */
 
 import { expect, test } from '@playwright/test';
+import { authenticateAdmin } from './auth-helper';
 
 test.describe('AI Settings Error Interactions', () => {
 	test.beforeEach(async ({ page }) => {
-		// In dev mode without ADMIN_PASSWORD, admin routes allow bypass access
+		await authenticateAdmin(page);
 		await page.goto('/admin/ai-settings');
 		await page.waitForLoadState('networkidle');
 	});
@@ -92,6 +91,7 @@ test.describe('AI Settings Error Interactions', () => {
 
 test.describe('AI Settings Network Failure Recovery', () => {
 	test.beforeEach(async ({ page }) => {
+		await authenticateAdmin(page);
 		await page.goto('/admin/ai-settings');
 		await page.waitForLoadState('networkidle');
 	});

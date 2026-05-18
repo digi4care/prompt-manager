@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAdmin } from './auth-helper';
 
 test.describe('Real Browser Console Monitoring', () => {
 	const consoleErrors: string[] = [];
@@ -19,7 +20,7 @@ test.describe('Real Browser Console Monitoring', () => {
 
 	test('Home page - check console', async ({ page }) => {
 		console.log('\n=== TESTING HOME PAGE ===');
-		await page.goto('http://localhost:5173');
+		await page.goto('http://localhost:45678');
 		await page.waitForLoadState('networkidle');
 
 		// Check page loads
@@ -37,7 +38,7 @@ test.describe('Real Browser Console Monitoring', () => {
 
 	test('Login page - check console', async ({ page }) => {
 		console.log('\n=== TESTING LOGIN PAGE ===');
-		await page.goto('http://localhost:5173/login');
+		await page.goto('http://localhost:45678/login');
 		await page.waitForLoadState('networkidle');
 
 		// Check login form exists
@@ -52,20 +53,8 @@ test.describe('Real Browser Console Monitoring', () => {
 
 	test('Login flow - real test', async ({ page }) => {
 		console.log('\n=== TESTING LOGIN FLOW ===');
-		await page.goto('http://localhost:5173/login');
-		await page.waitForLoadState('networkidle');
 
-		// Fill login form
-		const passwordField = page.locator('input[type="password"]');
-		await passwordField.fill('admin123');
-
-		// Click login
-		await page.getByRole('button', { name: 'Login' }).click();
-
-		// Wait for navigation
-		await page.waitForURL(/.*\/admin.*/, { timeout: 10000 }).catch(() => {
-			console.log('Did not redirect to admin - current URL:', page.url());
-		});
+		await authenticateAdmin(page);
 
 		console.log(`Current URL: ${page.url()}`);
 		console.log(`Console errors: ${consoleErrors.length}`);
@@ -77,7 +66,9 @@ test.describe('Real Browser Console Monitoring', () => {
 
 	test('Admin page - check console', async ({ page }) => {
 		console.log('\n=== TESTING ADMIN PAGE ===');
-		await page.goto('http://localhost:5173/admin');
+
+		await authenticateAdmin(page);
+		await page.goto('http://localhost:45678/admin');
 		await page.waitForLoadState('networkidle');
 
 		console.log(`Current URL: ${page.url()}`);
@@ -91,7 +82,9 @@ test.describe('Real Browser Console Monitoring', () => {
 
 	test('Prompts page - check console', async ({ page }) => {
 		console.log('\n=== TESTING PROMPTS PAGE ===');
-		await page.goto('http://localhost:5173/prompts');
+
+		await authenticateAdmin(page);
+		await page.goto('http://localhost:45678/prompts');
 		await page.waitForLoadState('networkidle');
 
 		console.log(`Current URL: ${page.url()}`);

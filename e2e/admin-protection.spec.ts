@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAdmin } from './auth-helper';
 import { generateTestPrompt } from './helpers';
 
 test.describe('Admin Route Protection', () => {
@@ -14,10 +15,7 @@ test.describe('Admin Route Protection', () => {
 	});
 
 	test('should allow authenticated users to access admin', async ({ page }) => {
-		// Login first
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
-		await page.getByRole('button', { name: 'Login' }).click();
+		await authenticateAdmin(page);
 
 		// Should be redirected to admin
 		await expect(page).toHaveURL('/admin');
@@ -41,11 +39,7 @@ test.describe('Admin Route Protection', () => {
 	});
 
 	test('should allow API access with valid session', async ({ page, request, context }) => {
-		// Login via Better-Auth to get a session
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
-		await page.getByRole('button', { name: 'Login' }).click();
-		await page.waitForURL('/admin');
+		await authenticateAdmin(page);
 
 		// Get session cookies from browser context
 		const cookies = await context.cookies();
@@ -72,11 +66,7 @@ test.describe('Admin Route Protection', () => {
 		await page.goto('/');
 		await expect(page.getByRole('link', { name: 'Login' })).toBeVisible();
 
-		// Login
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
-		await page.getByRole('button', { name: 'Login' }).click();
-		await page.waitForURL('/admin');
+		await authenticateAdmin(page);
 
 		// After login - should show logout button
 		await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
@@ -84,11 +74,7 @@ test.describe('Admin Route Protection', () => {
 	});
 
 	test('should clear session on logout', async ({ page }) => {
-		// Login first
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
-		await page.getByRole('button', { name: 'Login' }).click();
-		await page.waitForURL('/admin');
+		await authenticateAdmin(page);
 
 		// Logout
 		await page.getByRole('button', { name: 'Logout' }).click();

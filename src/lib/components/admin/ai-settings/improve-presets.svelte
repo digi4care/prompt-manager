@@ -152,8 +152,9 @@
 			// Try cache first
 			const cached = getCachedModelCatalog();
 			if (cached) {
-				catalog = cached;
-				groupedModels = normalizeToProviderGroups(cached.providers as Record<string, unknown>[]);
+				const cat = cached as CatalogResponse;
+				catalog = cat;
+				groupedModels = normalizeToProviderGroups(cat.providers as unknown as Record<string, unknown>[]);
 				return;
 			}
 
@@ -161,9 +162,12 @@
 			if (!response.ok) {
 				throw new Error('Failed to load model catalog');
 			}
-			catalog = await response.json();
-			setCachedModelCatalog(catalog);
-			groupedModels = normalizeToProviderGroups(catalog.providers as Record<string, unknown>[]);
+			const data = await response.json();
+			catalog = data;
+			setCachedModelCatalog(data);
+			if (data) {
+				groupedModels = normalizeToProviderGroups(data.providers as unknown as Record<string, unknown>[]);
+			}
 		} catch (err) {
 			console.error('Failed to load catalog:', err);
 			error = err instanceof Error ? err.message : String(err);
@@ -229,7 +233,7 @@
 		formName = preset.name;
 		formDescription = preset.description ?? '';
 		formInstruction = preset.instruction ?? '';
-		formModel = preset.modelId ?? '';
+		formModel = preset.model ?? '';
 		formVariant = preset.modelVariant ?? '';
 		formTemperature = preset.temperature ?? 0.5;
 		formAllowedModels = preset.allowedModels ? JSON.parse(preset.allowedModels) : [];
@@ -276,7 +280,7 @@
 			};
 
 			if (formModel) {
-				payload.modelId = formModel;
+				payload.model = formModel;
 				payload.modelVariant = formVariant || null;
 			}
 
@@ -390,10 +394,10 @@
 												</div>
 											{/if}
 											<div class="mt-1 flex gap-2 text-xs text-muted-foreground">
-												{#if preset.modelId}
-													<span class="rounded bg-muted px-1.5">{preset.modelId}</span>
-												{/if}
-												<span>Temp: {preset.temperature}</span>
+									{#if preset.model}
+										<span class="rounded bg-muted px-1.5">{preset.model}</span>
+									{/if}
+									<span>Temp: {preset.temperature}</span>
 												{#if preset.isDefault}
 													<span class="text-primary">Default</span>
 												{/if}
@@ -425,7 +429,7 @@
 									id="preset-name"
 									value={formName}
 									placeholder="e.g., Content Polish"
-									oninput={(e) => (formName = e.currentTarget.value)}
+								oninput={(e: Event & { currentTarget: HTMLInputElement }) => (formName = e.currentTarget.value)}
 								/>
 							</div>
 
@@ -435,7 +439,7 @@
 									id="preset-description"
 									value={formDescription}
 									placeholder="Optional description"
-									oninput={(e) => (formDescription = e.currentTarget.value)}
+								oninput={(e: Event & { currentTarget: HTMLInputElement }) => (formDescription = e.currentTarget.value)}
 								/>
 							</div>
 
@@ -445,9 +449,9 @@
 									id="preset-instruction"
 									rows="6"
 									value={formInstruction}
-									placeholder="Instruction template (use {content} placeholder)"
-									class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-									oninput={(e) => (formInstruction = e.currentTarget.value)}
+								placeholder="Instruction template (use {'{'}content{'}'} placeholder)"
+								class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								oninput={(e: Event & { currentTarget: HTMLTextAreaElement }) => (formInstruction = e.currentTarget.value)}
 								></textarea>
 								<p class="mt-1 text-xs text-muted-foreground">
 									Use <code class="rounded bg-muted px-1">{'{'}content{'}'}</code> as placeholder for
@@ -456,7 +460,7 @@
 							</div>
 
 							<!-- Advanced Settings -->
-							<Collapsible title="Advanced Settings" open={showAdvanced}>
+							<Collapsible title="Advanced Settings" defaultOpen={showAdvanced}>
 								<div class="space-y-4">
 									<!-- Model Override -->
 									<div>
@@ -533,7 +537,7 @@
 							</Collapsible>
 
 							<!-- Allowed Models (Allowlist) -->
-							<Collapsible title="Allowed Models (Allowlist)" open={showAdvanced}>
+							<Collapsible title="Allowed Models (Allowlist)" defaultOpen={showAdvanced}>
 								<div class="space-y-3">
 									<div class="rounded-md border bg-muted/30 p-3">
 										<span class="text-sm font-medium">
@@ -570,7 +574,7 @@
 							</Collapsible>
 
 							<!-- Example Presets -->
-							<Collapsible title="Example Presets" open={false}>
+							<Collapsible title="Example Presets" defaultOpen={false}>
 								<div class="grid gap-2 sm:grid-cols-2">
 									{#each presetExamples as example}
 										<button
@@ -622,7 +626,7 @@
 	title="Select Allowed Models"
 	{groupedModels}
 	selectedModelIds={formAllowedModels}
-	config={{ multiSelect: true, showVariants: false, showThinkingLevel: false }}
+						config={{ multiSelect: true, showVariants: false, showThinkingLevel: false, showTemperature: false, showMaxTokens: false, showPromptLink: false, enableWhitelist: false }}
 	onSaveMultiple={(modelIds: string[]) => {
 		formAllowedModels = modelIds;
 		isAllowedModelsModalOpen = false;

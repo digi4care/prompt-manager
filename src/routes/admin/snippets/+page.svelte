@@ -108,14 +108,15 @@
 	async function confirmDelete() {
 		if (!deleteTarget) return;
 
+		const target = deleteTarget;
 		isDeleting = true;
 
 		const formData = new FormData();
-		formData.append('id', String(deleteTarget.id));
+		formData.append('id', String(target.id));
 
 		try {
 			const response = await fetch(
-				`/admin/snippets?/delete${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)}`,
+				`/admin/snippets?/delete${target.type.charAt(0).toUpperCase() + target.type.slice(1)}`,
 				{
 					method: 'POST',
 					body: formData
@@ -125,22 +126,22 @@
 			if (response.ok) {
 				const result = await response.json();
 				if (result.type === 'success') {
-					if (deleteTarget.type === 'category') {
-						categories = categories.filter((c) => c.id !== deleteTarget.id);
+					if (target.type === 'category') {
+						categories = categories.filter((c) => c.id !== target.id);
 					} else {
-						tags = tags.filter((t) => t.id !== deleteTarget.id);
+						tags = tags.filter((t) => t.id !== target.id);
 					}
 					showSuccess(
-						`${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)} deleted!`
+						`${target.type.charAt(0).toUpperCase() + target.type.slice(1)} deleted!`
 					);
 				} else if (result.type === 'failure') {
-					showError(result.data?.error || `Failed to delete ${deleteTarget.type}`);
+					showError(result.data?.error || `Failed to delete ${target.type}`);
 				}
 			} else {
-				showError(`Failed to delete ${deleteTarget.type}`);
+				showError(`Failed to delete ${target.type}`);
 			}
 		} catch (err) {
-			showError(err instanceof Error ? err.message : `Failed to delete ${deleteTarget?.type}`);
+			showError(err instanceof Error ? err.message : `Failed to delete ${target.type}`);
 		} finally {
 			isDeleting = false;
 			deleteTarget = null;

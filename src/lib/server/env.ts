@@ -21,10 +21,11 @@ export function validateEnvironment(): void {
 	}
 
 	// BETTER_AUTH_SECRET is required in ALL environments
-	if (!process.env.BETTER_AUTH_SECRET) {
+	const secret = process.env.BETTER_AUTH_SECRET;
+	if (!secret || secret.length < 32) {
 		throw new Error(
-			'Missing required environment variable: BETTER_AUTH_SECRET\n\n' +
-				'Set a strong secret for session encryption:\n' +
+			'Missing or weak required environment variable: BETTER_AUTH_SECRET\n\n' +
+				'Set a strong secret for session encryption (min 32 chars):\n' +
 				'  BETTER_AUTH_SECRET=$(openssl rand -base64 32)\n\n' +
 				'Secret must be at least 32 characters for security.'
 		);

@@ -47,6 +47,7 @@
 		await store.save();
 		if (!store.saveError && onSave) {
 			onSave(store.values);
+		}
 	}
 
 	// Handle reset

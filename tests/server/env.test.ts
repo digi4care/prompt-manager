@@ -29,6 +29,7 @@ describe('Environment Validation', () => {
 		it('should not throw error if DATABASE_URL is set', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
 			process.env.ADMIN_PASSWORD = 'test-password';
+			process.env.BETTER_AUTH_SECRET = 'test-secret-key-at-least-32-characters-long';
 
 			const { validateEnvironment } = await import('$lib/server/env');
 
@@ -39,6 +40,7 @@ describe('Environment Validation', () => {
 	describe('ADMIN_PASSWORD validation', () => {
 		it('should throw error if ADMIN_PASSWORD is missing', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
+			process.env.BETTER_AUTH_SECRET = 'test-secret';
 			delete process.env.ADMIN_PASSWORD;
 
 			const { validateEnvironment } = await import('$lib/server/env');
@@ -48,6 +50,7 @@ describe('Environment Validation', () => {
 
 		it('should throw error if ADMIN_PASSWORD is empty', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
+			process.env.BETTER_AUTH_SECRET = 'test-secret';
 			process.env.ADMIN_PASSWORD = '';
 
 			const { validateEnvironment } = await import('$lib/server/env');
@@ -58,6 +61,39 @@ describe('Environment Validation', () => {
 		it('should not throw error if ADMIN_PASSWORD is set', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
 			process.env.ADMIN_PASSWORD = 'secure-password';
+			process.env.BETTER_AUTH_SECRET = 'test-secret';
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).not.toThrow();
+		});
+	});
+
+	describe('BETTER_AUTH_SECRET validation', () => {
+		it('should throw error if BETTER_AUTH_SECRET is missing', async () => {
+			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'test-password';
+			delete process.env.BETTER_AUTH_SECRET;
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).toThrow(/BETTER_AUTH_SECRET/);
+		});
+
+		it('should throw error if BETTER_AUTH_SECRET is empty', async () => {
+			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'test-password';
+			process.env.BETTER_AUTH_SECRET = '';
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).toThrow(/BETTER_AUTH_SECRET/);
+		});
+
+		it('should not throw error if BETTER_AUTH_SECRET is set', async () => {
+			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'test-password';
+			process.env.BETTER_AUTH_SECRET = 'test-secret-key-at-least-32-characters-long';
 
 			const { validateEnvironment } = await import('$lib/server/env');
 
@@ -73,6 +109,7 @@ describe('Environment Validation', () => {
 		it('should throw error if OPENCODE_URL is missing in production', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
 			process.env.ADMIN_PASSWORD = 'secure-password';
+			process.env.BETTER_AUTH_SECRET = 'test-secret';
 			delete process.env.OPENCODE_URL;
 
 			const { validateEnvironment } = await import('$lib/server/env');
@@ -83,6 +120,7 @@ describe('Environment Validation', () => {
 		it('should throw error if ADMIN_PASSWORD is missing in production', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
 			process.env.OPENCODE_URL = 'http://opencode:4096';
+			process.env.BETTER_AUTH_SECRET = 'test-secret';
 			delete process.env.ADMIN_PASSWORD;
 
 			const { validateEnvironment } = await import('$lib/server/env');
@@ -90,10 +128,22 @@ describe('Environment Validation', () => {
 			expect(() => validateEnvironment()).toThrow(/ADMIN_PASSWORD/);
 		});
 
+		it('should throw error if BETTER_AUTH_SECRET is missing in production', async () => {
+			process.env.DATABASE_URL = 'file:test.db';
+			process.env.OPENCODE_URL = 'http://opencode:4096';
+			process.env.ADMIN_PASSWORD = 'secure-password';
+			delete process.env.BETTER_AUTH_SECRET;
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).toThrow(/BETTER_AUTH_SECRET/);
+		});
+
 		it('should not throw error if all production vars are set', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
 			process.env.OPENCODE_URL = 'http://opencode:4096';
 			process.env.ADMIN_PASSWORD = 'secure-password';
+			process.env.BETTER_AUTH_SECRET = 'test-secret';
 
 			const { validateEnvironment } = await import('$lib/server/env');
 
@@ -103,6 +153,7 @@ describe('Environment Validation', () => {
 		it('should include helpful error message for missing production vars', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
 			process.env.ADMIN_PASSWORD = 'secure-password';
+			process.env.BETTER_AUTH_SECRET = 'test-secret';
 			delete process.env.OPENCODE_URL;
 
 			const { validateEnvironment } = await import('$lib/server/env');
@@ -123,6 +174,7 @@ describe('Environment Validation', () => {
 			process.env.NODE_ENV = 'development';
 			process.env.DATABASE_URL = 'file:test.db';
 			process.env.ADMIN_PASSWORD = 'dev-password';
+			process.env.BETTER_AUTH_SECRET = 'dev-secret';
 		});
 
 		it('should set default OPENCODE_URL if not provided in development', async () => {
@@ -158,6 +210,14 @@ describe('Environment Validation', () => {
 			const { validateEnvironment } = await import('$lib/server/env');
 
 			expect(() => validateEnvironment()).toThrow(/ADMIN_PASSWORD/);
+		});
+
+		it('should throw error if BETTER_AUTH_SECRET is missing in development', async () => {
+			delete process.env.BETTER_AUTH_SECRET;
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).toThrow(/BETTER_AUTH_SECRET/);
 		});
 
 		it('should not throw error when OPENCODE_URL is missing in development', async () => {

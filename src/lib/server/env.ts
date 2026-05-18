@@ -20,9 +20,19 @@ export function validateEnvironment(): void {
 		);
 	}
 
+	// BETTER_AUTH_SECRET is required in ALL environments
+	if (!process.env.BETTER_AUTH_SECRET) {
+		throw new Error(
+			'Missing required environment variable: BETTER_AUTH_SECRET\n\n' +
+				'Set a strong secret for session encryption:\n' +
+				'  BETTER_AUTH_SECRET=$(openssl rand -base64 32)\n\n' +
+				'Secret must be at least 32 characters for security.'
+		);
+	}
+
 	// Production-specific validation
 	if (process.env.NODE_ENV === 'production') {
-		const productionRequiredVars = ['OPENCODE_URL', 'ADMIN_PASSWORD'];
+		const productionRequiredVars = ['OPENCODE_URL', 'ADMIN_PASSWORD', 'BETTER_AUTH_SECRET'];
 		const productionMissing = productionRequiredVars.filter((key) => !process.env[key]);
 
 		if (productionMissing.length > 0) {

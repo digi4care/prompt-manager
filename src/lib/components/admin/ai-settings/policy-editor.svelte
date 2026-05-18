@@ -710,7 +710,6 @@
 					<Button
 						variant="outline"
 						size="sm"
-						disabled={groupedModels.length === 0}
 						onclick={() => {
 							isPickerOpen = true;
 						}}

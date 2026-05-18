@@ -9,6 +9,17 @@ export function validateEnvironment(): void {
 		);
 	}
 
+	// ADMIN_PASSWORD is required in ALL environments - never allow bypass
+	if (!process.env.ADMIN_PASSWORD) {
+		throw new Error(
+			'Missing required environment variable: ADMIN_PASSWORD\n\n' +
+				'Admin password must be set in all environments for security.\n' +
+				'Add to your .env file:\n' +
+				'  ADMIN_PASSWORD=your-secure-password\n\n' +
+				'Development mode does not disable authentication.'
+		);
+	}
+
 	// Production-specific validation
 	if (process.env.NODE_ENV === 'production') {
 		const productionRequiredVars = ['OPENCODE_URL', 'ADMIN_PASSWORD'];
@@ -38,13 +49,6 @@ export function validateEnvironment(): void {
 			);
 			// Set default for development convenience
 			process.env.OPENCODE_URL = 'http://localhost:4096';
-		}
-
-		if (!process.env.ADMIN_PASSWORD) {
-			console.warn(
-				'WARNING: ADMIN_PASSWORD not set in development mode.\n' +
-					'Admin routes will allow bypass access. Set ADMIN_PASSWORD for testing auth flows.'
-			);
 		}
 	}
 }

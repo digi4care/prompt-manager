@@ -28,6 +28,36 @@ describe('Environment Validation', () => {
 
 		it('should not throw error if DATABASE_URL is set', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'test-password';
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).not.toThrow();
+		});
+	});
+
+	describe('ADMIN_PASSWORD validation', () => {
+		it('should throw error if ADMIN_PASSWORD is missing', async () => {
+			process.env.DATABASE_URL = 'file:test.db';
+			delete process.env.ADMIN_PASSWORD;
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).toThrow(/ADMIN_PASSWORD/);
+		});
+
+		it('should throw error if ADMIN_PASSWORD is empty', async () => {
+			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = '';
+
+			const { validateEnvironment } = await import('$lib/server/env');
+
+			expect(() => validateEnvironment()).toThrow(/ADMIN_PASSWORD/);
+		});
+
+		it('should not throw error if ADMIN_PASSWORD is set', async () => {
+			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'secure-password';
 
 			const { validateEnvironment } = await import('$lib/server/env');
 
@@ -42,6 +72,7 @@ describe('Environment Validation', () => {
 
 		it('should throw error if OPENCODE_URL is missing in production', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'secure-password';
 			delete process.env.OPENCODE_URL;
 
 			const { validateEnvironment } = await import('$lib/server/env');
@@ -71,6 +102,7 @@ describe('Environment Validation', () => {
 
 		it('should include helpful error message for missing production vars', async () => {
 			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'secure-password';
 			delete process.env.OPENCODE_URL;
 
 			const { validateEnvironment } = await import('$lib/server/env');
@@ -90,6 +122,7 @@ describe('Environment Validation', () => {
 		beforeEach(() => {
 			process.env.NODE_ENV = 'development';
 			process.env.DATABASE_URL = 'file:test.db';
+			process.env.ADMIN_PASSWORD = 'dev-password';
 		});
 
 		it('should set default OPENCODE_URL if not provided in development', async () => {
@@ -119,22 +152,16 @@ describe('Environment Validation', () => {
 			consoleSpy.mockRestore();
 		});
 
-		it('should warn about missing ADMIN_PASSWORD in development', async () => {
+		it('should throw error if ADMIN_PASSWORD is missing in development', async () => {
 			delete process.env.ADMIN_PASSWORD;
 
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 			const { validateEnvironment } = await import('$lib/server/env');
 
-			validateEnvironment();
-
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('ADMIN_PASSWORD not set'));
-
-			consoleSpy.mockRestore();
+			expect(() => validateEnvironment()).toThrow(/ADMIN_PASSWORD/);
 		});
 
 		it('should not throw error when OPENCODE_URL is missing in development', async () => {
 			delete process.env.OPENCODE_URL;
-			delete process.env.ADMIN_PASSWORD;
 
 			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 			const { validateEnvironment } = await import('$lib/server/env');

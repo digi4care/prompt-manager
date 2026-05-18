@@ -220,7 +220,7 @@ export function when<T>(
 /**
  * Create a nullable schema with default
  */
-export function withDefault<T>(schema: z.ZodType<T>, defaultValue: T): z.ZodDefault<z.ZodType<T>> {
+export function withDefault<T>(schema: z.ZodType<T>, defaultValue: T extends undefined ? never : T): z.ZodDefault<z.ZodType<T>> {
 	return schema.default(defaultValue);
 }
 

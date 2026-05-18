@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { settingsRegistry, getDefaultValues } from '../../settings/settings-schema';
+import { settingsRegistry, getDefaultValues } from '$lib/settings/settings-schema';
 
 /**
  * GET /api/settings

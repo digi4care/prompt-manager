@@ -25,16 +25,25 @@ export type {
 } from './types';
 
 // Core classes
-export {
+import {
 	SettingsSchemaRegistry,
 	SettingNotFoundError,
 	BlockNotFoundError
 } from './schema-registry';
-
 export {
+	SettingsSchemaRegistry,
+	SettingNotFoundError,
+	BlockNotFoundError
+};
+
+import {
 	DependencyGraph,
 	CircularDependencyError
 } from './dependency-graph';
+export {
+	DependencyGraph,
+	CircularDependencyError
+};
 
 // Validators
 export {

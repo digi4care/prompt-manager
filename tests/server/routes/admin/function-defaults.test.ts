@@ -80,7 +80,7 @@ describe('function-defaults API routes', () => {
 			const event = {
 				locals: { auth: mockAuth() },
 				url: new URL('http://localhost/api/admin/function-defaults')
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await GET(event);
 			const json = await response.json();
@@ -111,7 +111,7 @@ describe('function-defaults API routes', () => {
 				locals: { auth: mockAuth() },
 				params: { type: 'executor' },
 				url: new URL('http://localhost/api/admin/function-defaults/executor')
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await GET(event);
 			const json = await response.json();
@@ -129,7 +129,7 @@ describe('function-defaults API routes', () => {
 				locals: { auth: mockAuth() },
 				params: { type: 'invalid-type' },
 				url: new URL('http://localhost/api/admin/function-defaults/invalid-type')
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await GET(event);
@@ -186,7 +186,7 @@ describe('function-defaults API routes', () => {
 					body
 				}),
 				url: new URL('http://localhost/api/admin/function-defaults/executor')
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await PUT(event);
 			const json = await response.json();
@@ -231,7 +231,7 @@ describe('function-defaults API routes', () => {
 					body
 				}),
 				url: new URL('http://localhost/api/admin/function-defaults/executor')
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await PUT(event);
@@ -280,7 +280,7 @@ describe('function-defaults API routes', () => {
 					body
 				}),
 				url: new URL('http://localhost/api/admin/function-defaults/executor')
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await PUT(event);

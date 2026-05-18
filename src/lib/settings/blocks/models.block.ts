@@ -28,7 +28,8 @@ export const modelsBlock: SettingsBlock = {
 			visibleWhen: (values) =>
 				Array.isArray(values['providers.selected']) &&
 				values['providers.selected'].length > 0,
-			order: 1
+			order: 1,
+			impactedFeatures: ['catalog', 'executor', 'judge', 'improve'],
 		},
 		{
 			key: 'catalog',
@@ -39,7 +40,8 @@ export const modelsBlock: SettingsBlock = {
 			schema: modelValidators.catalog,
 			requires: ['providers.selected'],
 			order: 2,
-			advanced: true
+			advanced: true,
+			impactedFeatures: ['catalog'],
 		},
 		{
 			key: 'favorites',
@@ -50,7 +52,8 @@ export const modelsBlock: SettingsBlock = {
 			schema: z.array(z.string()),
 			requires: ['catalog'],
 			order: 3,
-			advanced: true
+			advanced: true,
+			impactedFeatures: ['catalog'],
 		}
 	]
 };

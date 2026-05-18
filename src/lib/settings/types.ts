@@ -88,10 +88,32 @@ export interface SettingDefinition {
 	 */
 	onChange?: SideEffectHandler;
 
-	/**
-	 * Enum options (only for type: 'enum')
-	 */
-	options?: Array<{ value: string; label: string }>;
+    /**
+     * Custom Svelte component for rendering this setting
+     * If not provided, a default input is used based on type
+     */
+    component?: Component;
+
+    /**
+     * Features affected by this setting (e.g., 'judge', 'improve', 'executor')
+     * Used to show impact badges in the UI
+     */
+    impactedFeatures?: string[];
+
+    /**
+     * Placeholder text for text/number inputs
+     */
+    placeholder?: string;
+
+    /**
+     * Additional props to pass to the input component
+     */
+    inputProps?: Record<string, unknown>;
+
+    /**
+     * Enum options (only for type: 'enum')
+     */
+    options?: Array<{ value: string; label: string }>;
 }
 
 /**

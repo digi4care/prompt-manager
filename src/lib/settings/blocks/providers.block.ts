@@ -23,6 +23,7 @@ export const providersBlock: SettingsBlock = {
 			schema: providerValidators.selectedProviders,
 			requires: ['connection.status'],
 			visibleWhen: (values) => values['connection.status'] === 'connected',
+			impactedFeatures: ['providers', 'catalog'],
 			order: 1
 		},
 		{
@@ -36,6 +37,7 @@ export const providersBlock: SettingsBlock = {
 			visibleWhen: (values) =>
 				Array.isArray(values['providers.selected']) &&
 				values['providers.selected'].includes('openai'),
+			impactedFeatures: ['providers'],
 			order: 2,
 			category: 'OpenAI'
 		},
@@ -50,6 +52,7 @@ export const providersBlock: SettingsBlock = {
 			visibleWhen: (values) =>
 				Array.isArray(values['providers.selected']) &&
 				values['providers.selected'].includes('anthropic'),
+			impactedFeatures: ['providers'],
 			order: 3,
 			category: 'Anthropic'
 		},
@@ -64,6 +67,7 @@ export const providersBlock: SettingsBlock = {
 			visibleWhen: (values) =>
 				Array.isArray(values['providers.selected']) &&
 				values['providers.selected'].includes('ollama'),
+			impactedFeatures: ['providers'],
 			order: 4,
 			category: 'Ollama'
 		}

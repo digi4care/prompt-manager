@@ -1,7 +1,20 @@
-
 <script lang="ts">
 	import type { SettingDefinition, SettingsBlock } from '$lib/settings';
 	import type { SettingsStore } from '$lib/stores/settings.svelte';
+	import TagInput from '$lib/components/ui/tag-input.svelte';
+	import KeyValueEditor from '$lib/components/ui/key-value-editor.svelte';
+	import {
+		Play,
+		Gavel,
+		Sparkles,
+		Users,
+		Eye,
+		Shield,
+		Plug,
+		Server,
+		Database,
+		type Icon
+	} from 'lucide-svelte';
 
 	interface Props {
 		block: SettingsBlock;
@@ -28,6 +41,40 @@
 
 	// Whether this field has an error
 	let hasError = $derived(store.hasFieldError(fullKey));
+
+	// Feature badge colors
+	const featureColors: Record<string, string> = {
+		executor: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+		judge: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+		improve: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+		council: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+		review: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+		policy: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+		connection: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
+		providers: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+		catalog: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
+	};
+
+	// Feature icon mapping
+	const featureIcons: Record<string, typeof Icon> = {
+		executor: Play,
+		judge: Gavel,
+		improve: Sparkles,
+		council: Users,
+		review: Eye,
+		policy: Shield,
+		connection: Plug,
+		providers: Server,
+		catalog: Database
+	};
+
+	function getFeatureClass(feature: string): string {
+		return featureColors[feature] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+	}
+
+	function getFeatureIcon(feature: string): typeof Icon {
+		return featureIcons[feature] ?? Database;
+	}
 
 	// Handle value changes
 	function handleChange(newValue: unknown) {
@@ -104,14 +151,34 @@
 		<p class="field-description">{setting.description}</p>
 	{/if}
 
+	{#if setting.impactedFeatures && setting.impactedFeatures.length > 0}
+		<div class="feature-badges">
+			{#each setting.impactedFeatures as feature}
+				{@const IconComponent = getFeatureIcon(feature)}
+				<span class="feature-badge {getFeatureClass(feature)}">
+					<IconComponent class="h-3 w-3" />
+					{feature}
+				</span>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="field-input">
-		{#if setting.type === 'string'}
+		{#if setting.component}
+			<setting.component
+				value={value}
+				onchange={handleChange}
+				placeholder={setting.placeholder}
+				{...setting.inputProps}
+			/>
+		{:else if setting.type === 'string'}
 			<input
 				id={fullKey}
 				type="text"
 				value={value as string}
 				oninput={handleInput}
 				onblur={handleBlur}
+				placeholder={setting.placeholder}
 				class="input"
 				class:error={hasError}
 			/>
@@ -122,6 +189,7 @@
 				value={value as number}
 				oninput={handleNumberInput}
 				onblur={handleBlur}
+				placeholder={setting.placeholder}
 				class="input"
 				class:error={hasError}
 			/>
@@ -150,39 +218,17 @@
 				{/each}
 			</select>
 		{:else if setting.type === 'array'}
-			<!-- Array input - simple text area with comma separation for now -->
-			{@const arrayValue = Array.isArray(value) ? value.join(', ') : ''}
-			<input
-				id={fullKey}
-				type="text"
-				value={arrayValue}
-				oninput={(e) => {
-					const val = (e.target as HTMLInputElement).value;
-					handleChange(val.split(',').map(s => s.trim()).filter(Boolean));
-				}}
-				onblur={handleBlur}
-				class="input"
-				class:error={hasError}
-				placeholder="Enter values separated by commas"
+			<TagInput
+				value={Array.isArray(value) ? value : []}
+				onchange={handleChange}
+				placeholder={setting.placeholder ?? 'Add tag...'}
 			/>
 		{:else if setting.type === 'object'}
-			<!-- Object input - simple text area with JSON for now -->
-			{@const objectValue = typeof value === 'object' ? JSON.stringify(value, null, 2) : '{}'}
-			<textarea
-				id={fullKey}
-				value={objectValue}
-				oninput={(e) => {
-					try {
-						const val = (e.target as HTMLTextAreaElement).value;
-						handleChange(JSON.parse(val));
-					} catch {
-						// Invalid JSON, don't update
-					}
-				}}
-				onblur={handleBlur}
-				class="textarea"
-				class:error={hasError}
-				rows="4"
+			<KeyValueEditor
+				value={typeof value === 'object' && value !== null ? value as Record<string, string> : {}}
+				onchange={handleChange}
+				keyPlaceholder={setting.placeholder ?? 'Key'}
+				valuePlaceholder="Value"
 			/>
 		{/if}
 	</div>
@@ -250,6 +296,25 @@
 		color: var(--badge-advanced-color, #1e40af);
 	}
 
+	.feature-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.feature-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.125rem 0.5rem;
+		font-size: 0.625rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.025em;
+		border-radius: 9999px;
+	}
+
 	.field-description {
 		margin: 0 0 0.5rem 0;
 		font-size: 0.75rem;
@@ -297,6 +362,12 @@
 		border: 1px solid var(--input-border, #d1d5db);
 		border-radius: 0.375rem;
 		transition: all 0.15s;
+	}
+
+	.input::placeholder,
+	.select::placeholder,
+	.textarea::placeholder {
+		color: var(--text-secondary, #9ca3af);
 	}
 
 	.input:focus,

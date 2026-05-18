@@ -20,7 +20,8 @@ export const policyBlock: SettingsBlock = {
 			defaultValue: [],
 			schema: z.array(z.string()),
 			requires: ['models.catalog'],
-			order: 1
+			order: 1,
+			impactedFeatures: ['policy', 'executor', 'judge', 'improve', 'council']
 		},
 		{
 			key: 'blockedModels',
@@ -29,7 +30,8 @@ export const policyBlock: SettingsBlock = {
 			description: 'Models explicitly blocked from use',
 			defaultValue: [],
 			schema: z.array(z.string()),
-			order: 2
+			order: 2,
+			impactedFeatures: ['policy', 'executor', 'judge', 'improve', 'council']
 		},
 		{
 			key: 'requireApproval',
@@ -39,7 +41,8 @@ export const policyBlock: SettingsBlock = {
 			defaultValue: false,
 			schema: z.boolean(),
 			order: 3,
-			advanced: true
+			advanced: true,
+			impactedFeatures: ['policy']
 		},
 		{
 			key: 'maxTokens',
@@ -49,7 +52,8 @@ export const policyBlock: SettingsBlock = {
 			defaultValue: 4096,
 			schema: z.number().int().positive(),
 			order: 4,
-			advanced: true
+			advanced: true,
+			impactedFeatures: ['policy', 'executor', 'judge', 'improve']
 		}
 	]
 };

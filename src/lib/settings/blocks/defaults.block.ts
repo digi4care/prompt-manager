@@ -24,6 +24,8 @@ export const defaultsBlock: SettingsBlock = {
 			defaultValue: '',
 			schema: z.string(),
 			requires: ['models.selected', 'policy.allowedModels'],
+			placeholder: 'e.g. gpt-4o',
+			impactedFeatures: ['executor'],
 			order: 10,
 			category: 'Executor'
 		},
@@ -39,7 +41,8 @@ export const defaultsBlock: SettingsBlock = {
 				!!values['defaults.executor.modelId'] &&
 				String(values['defaults.executor.modelId']).length > 0,
 			order: 11,
-			category: 'Executor'
+			category: 'Executor',
+			impactedFeatures: ['executor'],
 		},
 
 		// Judge defaults
@@ -51,6 +54,8 @@ export const defaultsBlock: SettingsBlock = {
 			defaultValue: '',
 			schema: z.string(),
 			requires: ['models.selected', 'policy.allowedModels'],
+			placeholder: 'e.g. claude-3-opus',
+			impactedFeatures: ['judge'],
 			order: 20,
 			category: 'Judge'
 		},
@@ -66,7 +71,8 @@ export const defaultsBlock: SettingsBlock = {
 				!!values['defaults.judge.modelId'] &&
 				String(values['defaults.judge.modelId']).length > 0,
 			order: 21,
-			category: 'Judge'
+			category: 'Judge',
+			impactedFeatures: ['judge'],
 		},
 
 		// Improve defaults
@@ -78,6 +84,8 @@ export const defaultsBlock: SettingsBlock = {
 			defaultValue: '',
 			schema: z.string(),
 			requires: ['models.selected', 'policy.allowedModels'],
+			placeholder: 'e.g. gpt-4o-mini',
+			impactedFeatures: ['improve'],
 			order: 30,
 			category: 'Improve'
 		},
@@ -93,7 +101,8 @@ export const defaultsBlock: SettingsBlock = {
 				!!values['defaults.improve.modelId'] &&
 				String(values['defaults.improve.modelId']).length > 0,
 			order: 31,
-			category: 'Improve'
+			category: 'Improve',
+			impactedFeatures: ['improve'],
 		}
 	]
 };

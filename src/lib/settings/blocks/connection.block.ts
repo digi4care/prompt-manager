@@ -24,6 +24,7 @@ export const connectionBlock: SettingsBlock = {
 				{ value: 'local', label: 'Local' },
 				{ value: 'remote', label: 'Remote' }
 			],
+			impactedFeatures: ['connection'],
 			order: 1
 		},
 		{
@@ -35,6 +36,7 @@ export const connectionBlock: SettingsBlock = {
 			schema: stringValidators.hostname,
 			requires: ['mode'],
 			visibleWhen: (values) => values['connection.mode'] === 'local',
+			impactedFeatures: ['connection'],
 			order: 2,
 			category: 'Local Connection'
 		},
@@ -47,6 +49,7 @@ export const connectionBlock: SettingsBlock = {
 			schema: numberValidators.port,
 			requires: ['mode'],
 			visibleWhen: (values) => values['connection.mode'] === 'local',
+			impactedFeatures: ['connection'],
 			order: 3,
 			category: 'Local Connection'
 		},
@@ -59,6 +62,7 @@ export const connectionBlock: SettingsBlock = {
 			schema: stringValidators.url,
 			requires: ['mode'],
 			visibleWhen: (values) => values['connection.mode'] === 'remote',
+			impactedFeatures: ['connection'],
 			order: 4,
 			category: 'Remote Connection'
 		},
@@ -73,6 +77,7 @@ export const connectionBlock: SettingsBlock = {
 			visibleWhen: (values) => values['connection.mode'] === 'remote',
 			order: 5,
 			category: 'Remote Connection',
+			impactedFeatures: ['connection'],
 			advanced: true
 		},
 		{
@@ -89,6 +94,7 @@ export const connectionBlock: SettingsBlock = {
 				{ value: 'error', label: 'Error' }
 			],
 			requires: ['mode'],
+			impactedFeatures: ['connection', 'providers', 'catalog'],
 			order: 6,
 			affects: ['providers.selected', 'models.catalog']
 		}

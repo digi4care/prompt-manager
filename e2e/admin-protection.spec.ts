@@ -106,7 +106,8 @@ test.describe('Admin Route Protection', () => {
 		// Make request to protected admin endpoint with invalid token
 		const response = await request.get('/api/admin/settings', {
 			headers: {
-				Authorization: 'Bearer invalid-token-123'
+				Authorization: 'Bearer invalid-token-123',
+				Accept: 'application/json'
 			}
 		});
 
@@ -121,7 +122,8 @@ test.describe('Admin Route Protection', () => {
 
 		const response = await request.get('/api/admin/settings', {
 			headers: {
-				Authorization: `Bearer ${expiredToken}`
+				Authorization: `Bearer ${expiredToken}`,
+				Accept: 'application/json'
 			}
 		});
 

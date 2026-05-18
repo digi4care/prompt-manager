@@ -215,7 +215,7 @@ test.describe('Admin Settings Page', () => {
 
 test.describe('Admin Settings - Interaction Tests', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/admin');
+		await authenticateAdmin(page, '/admin');
 		// Wait for loading spinner to disappear and settings to load
 		await page.waitForSelector('.settings-panel:not(:has(.animate-spin))', { timeout: 15000 });
 	});

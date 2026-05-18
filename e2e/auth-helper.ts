@@ -1,9 +1,3 @@
-/**
- * Authentication helper for E2E tests
- * Uses Better Auth login form with environment credentials
- * No bypass mechanisms - always authenticates properly
- */
-
 import type { Page } from '@playwright/test';
 
 /**
@@ -28,8 +22,9 @@ function getCredentials(): { email: string; password: string } {
 /**
  * Authenticate as admin using the login form
  * This uses the real Better Auth login flow - no bypasses
+ * @param targetUrl - Optional URL to navigate to after successful login
  */
-export async function authenticateAdmin(page: Page): Promise<void> {
+export async function authenticateAdmin(page: Page, targetUrl?: string): Promise<void> {
 	const { email, password } = getCredentials();
 
 	// Navigate to login page
@@ -45,6 +40,11 @@ export async function authenticateAdmin(page: Page): Promise<void> {
 
 	// Wait for redirect to settings (successful login)
 	await page.waitForURL('/settings', { timeout: 15000 });
+
+	// Navigate to target URL if specified (tests may need a specific page)
+	if (targetUrl) {
+		await page.goto(targetUrl);
+	}
 }
 
 /**

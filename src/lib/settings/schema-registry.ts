@@ -82,7 +82,7 @@ export class SettingsSchemaRegistry {
 			if (setting.requires?.length) {
 				for (const dep of setting.requires) {
 					// Dependencies can be in same block (relative) or other blocks (absolute)
-					const depKey = dep.includes('.') ? dep : `${block.id}.${dep}`;
+					const depKey = this.resolveDepKey(dep, block.id);
 					this.dependencyGraph.addDependency(fullKey, depKey);
 				}
 			}
@@ -90,7 +90,7 @@ export class SettingsSchemaRegistry {
 			// Add affects relationships (reverse dependencies)
 			if (setting.affects?.length) {
 				for (const affected of setting.affects) {
-					const affectedKey = affected.includes('.') ? affected : `${block.id}.${affected}`;
+				const affectedKey = this.resolveDepKey(affected, block.id);
 					this.dependencyGraph.addDependency(affectedKey, fullKey);
 				}
 			}
@@ -340,12 +340,23 @@ export class SettingsSchemaRegistry {
 		this.blocks.delete(id);
 	}
 
+
+	/**
+	 * Resolve a dependency reference to a full setting key.
+	 * Handles same-block (no dot or dotted local key) vs absolute (cross-block) references.
+	 */
+	private resolveDepKey(dep: string, blockId: string): string {
+		if (!dep.includes('.')) return `${blockId}.${dep}`;
+		const firstSegment = dep.split('.')[0];
+		return this.blocks.has(firstSegment) ? dep : `${blockId}.${dep}`;
+	}
 	/**
 	 * Get registry statistics
 	 */
 	getStats(): {
 		blocks: number;
 		settings: number;
+
 		dependencies: { nodes: number; edges: number };
 	} {
 		return {

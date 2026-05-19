@@ -38,6 +38,21 @@
 		Object.entries(value).map(([k, v]) => ({ id: createId(), key: k, value: v }))
 	);
 
+	// Sync internal state when parent resets / changes the prop externally
+	$effect(() => {
+		const propEntries = Object.entries(value).map(([k, v]) => ({ id: createId(), key: k, value: v }));
+		// Only overwrite if lengths differ or keys/values changed, to avoid wiping user input
+		const currentMap = new Map(entries.map(e => [e.key, e.value]));
+		const propMap = new Map(propEntries.map(e => [e.key, e.value]));
+		if (
+			entries.length !== propEntries.length ||
+			!entries.every(e => propMap.get(e.key) === e.value) ||
+			!propEntries.every(e => currentMap.get(e.key) === e.value)
+		) {
+			entries = propEntries;
+		}
+	});
+
 	function commit() {
 		const result: Record<string, string> = {};
 		for (const entry of entries) {

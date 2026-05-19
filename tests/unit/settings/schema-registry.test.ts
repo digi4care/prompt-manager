@@ -315,6 +315,69 @@ describe('SettingsSchemaRegistry', () => {
 			const impact = registry.getImpactAnalysis('deps.base');
 			expect(impact.directlyAffected).toContain('deps.dependent');
 		});
+		it('should resolve dotted same-block dependencies correctly', () => {
+			const dottedBlock: SettingsBlock = {
+				id: 'dotted',
+				label: 'Dotted',
+				settings: [
+					{
+						key: 'remote.host',
+						type: 'string',
+						label: 'Host',
+						defaultValue: '',
+						schema: z.string()
+					},
+					{
+						key: 'apiKey',
+						type: 'string',
+						label: 'API Key',
+						defaultValue: '',
+						schema: z.string(),
+						requires: ['remote.host']
+					}
+				]
+			};
+			registry.registerBlock(dottedBlock);
+
+			const graph = registry.getDependencyGraph();
+			// 'dotted.apiKey' depends on 'dotted.remote.host', not bare 'remote.host'
+			expect(graph.getDependencies('dotted.apiKey')).toContain('dotted.remote.host');
+		});
+
+		it('should keep cross-block absolute references intact', () => {
+			const crossA: SettingsBlock = {
+				id: 'crossA',
+				label: 'Cross A',
+				settings: [
+					{
+						key: 'ref',
+						type: 'string',
+						label: 'Ref',
+						defaultValue: '',
+						schema: z.string(),
+						requires: ['crossB.target']
+					}
+				]
+			};
+			const crossB: SettingsBlock = {
+				id: 'crossB',
+				label: 'Cross B',
+				settings: [
+					{
+						key: 'target',
+						type: 'string',
+						label: 'Target',
+						defaultValue: '',
+						schema: z.string()
+					}
+				]
+			};
+			registry.registerBlock(crossB);
+			registry.registerBlock(crossA);
+
+			const graph = registry.getDependencyGraph();
+			expect(graph.getDependencies('crossA.ref')).toContain('crossB.target');
+		});
 	});
 
 	describe('default values', () => {

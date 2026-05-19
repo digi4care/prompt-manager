@@ -108,10 +108,13 @@ export function legacyToRegistry(legacy: LegacySettings): SettingsValues {
 	if (legacy.defaults) {
 		registry['defaults.executor.modelId'] = legacy.defaults.executor?.modelId ?? '';
 		registry['defaults.executor.temperature'] = legacy.defaults.executor?.temperature ?? 0.7;
+		registry['defaults.executor.maxTokens'] = legacy.defaults.executor?.maxTokens ?? 4096;
 		registry['defaults.judge.modelId'] = legacy.defaults.judge?.modelId ?? '';
 		registry['defaults.judge.temperature'] = legacy.defaults.judge?.temperature ?? 0.3;
+		registry['defaults.judge.maxTokens'] = legacy.defaults.judge?.maxTokens ?? 4096;
 		registry['defaults.improve.modelId'] = legacy.defaults.improve?.modelId ?? '';
 		registry['defaults.improve.temperature'] = legacy.defaults.improve?.temperature ?? 0.5;
+		registry['defaults.improve.maxTokens'] = legacy.defaults.improve?.maxTokens ?? 4096;
 	}
 
 	// Council

@@ -138,6 +138,10 @@ export function validateAll(values: Record<string, unknown>) {
 	return settingsRegistry.validateAll(values);
 }
 
+export function validateVisible(values: Record<string, unknown>) {
+	return settingsRegistry.validateVisible(values);
+}
+
 export function getVisibleBlocks(values: Record<string, unknown>) {
 	return settingsRegistry.getVisibleBlocks(values);
 }

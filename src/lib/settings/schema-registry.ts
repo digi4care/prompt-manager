@@ -226,6 +226,22 @@ export class SettingsSchemaRegistry {
 
 		return errors;
 	}
+	/**
+	 * Validate all visible settings for given values context
+	 */
+	validateVisible(values: SettingsValues): Record<string, string | undefined> {
+		const errors: Record<string, string | undefined> = {};
+
+		for (const [key, value] of Object.entries(values)) {
+			if (!this.isSettingVisible(key, values)) continue;
+			const result = this.validateSetting(key, value);
+			if (!result.valid) {
+				errors[key] = result.error;
+			}
+		}
+
+		return errors;
+	}
 
 	/**
 	 * Get the dependency graph

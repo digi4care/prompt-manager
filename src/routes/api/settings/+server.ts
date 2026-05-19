@@ -126,8 +126,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		const data = await request.json();
 		const validateOnly = data.validate === true;
 
-		// Validate all settings
-		const errors = settingsRegistry.validateAll(data.settings ?? data);
+		// Validate visible settings only
+		const errors = settingsRegistry.validateVisible(data.settings ?? data);
 		const errorList = Object.entries(errors).filter(([, error]) => error);
 
 		if (errorList.length > 0) {

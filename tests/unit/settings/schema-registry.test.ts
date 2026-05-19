@@ -221,6 +221,44 @@ describe('SettingsSchemaRegistry', () => {
 			});
 			expect(errors['test.setting2']).toBeDefined();
 		});
+		it('should validate only visible settings in validateVisible', () => {
+			// Register a block with a hidden required setting
+			registry.registerBlock({
+				id: 'hidden',
+				label: 'Hidden Test',
+				settings: [
+					{
+						key: 'master',
+						type: 'boolean',
+						label: 'Master',
+						defaultValue: false,
+						schema: z.boolean()
+					},
+					{
+						key: 'required',
+						type: 'string',
+						label: 'Required',
+						defaultValue: '',
+						schema: z.string().min(1),
+						visibleWhen: (values) => values['hidden.master'] === true
+					}
+				]
+			});
+
+			// When hidden, invalid value should not cause error
+			const hiddenErrors = registry.validateVisible({
+				'hidden.master': false,
+				'hidden.required': ''
+			});
+			expect(Object.keys(hiddenErrors)).toHaveLength(0);
+
+			// When visible, invalid value should cause error
+			const visibleErrors = registry.validateVisible({
+				'hidden.master': true,
+				'hidden.required': ''
+			});
+			expect(visibleErrors['hidden.required']).toBeDefined();
+		});
 	});
 
 	describe('dependency graph', () => {

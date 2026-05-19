@@ -1,10 +1,28 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { settingsRegistry, getDefaultValues } from '$lib/settings/settings-schema';
+import { updateSetting, getSetting } from '$lib/server/services/admin-settings.service';
+
+const REGISTRY_SETTINGS_KEY = 'registry_settings';
+
+/**
+ * Load persisted registry settings from database
+ */
+async function loadPersistedSettings(): Promise<Record<string, unknown>> {
+	try {
+		const stored = await getSetting(REGISTRY_SETTINGS_KEY);
+		if (stored) {
+			return JSON.parse(stored);
+		}
+	} catch (err) {
+		console.error('[API Settings] Error loading persisted settings:', err);
+	}
+	return {};
+}
 
 /**
  * GET /api/settings
- * 
+ *
  * Returns all settings with their current values, defaults, and metadata.
  * Query parameters:
  * - ?new=true - Return settings in registry format
@@ -37,12 +55,12 @@ export const GET: RequestHandler = async ({ url }) => {
 
 		return json({
 			version: '1.0.0',
-			blocks: blocks.map(block => ({
+			blocks: blocks.map((block) => ({
 				id: block.id,
 				label: block.label,
 				description: block.description,
 				order: block.order,
-				settings: block.settings.map(s => ({
+				settings: block.settings.map((s) => ({
 					key: s.key,
 					type: s.type,
 					label: s.label,
@@ -60,18 +78,22 @@ export const GET: RequestHandler = async ({ url }) => {
 		});
 	}
 
+	// Load persisted settings and merge with defaults
+	const persisted = await loadPersistedSettings();
+	const defaults = getDefaultValues();
+	const merged = { ...defaults, ...persisted };
+
 	// Return settings in registry format
 	if (useNewFormat) {
 		const blocks = settingsRegistry.getAllBlocks();
-		const defaults = getDefaultValues();
-		
+
 		return json({
-			blocks: blocks.map(block => ({
+			blocks: blocks.map((block) => ({
 				id: block.id,
 				label: block.label,
 				description: block.description,
 				order: block.order,
-				settings: block.settings.map(setting => ({
+				settings: block.settings.map((setting) => ({
 					key: `${block.id}.${setting.key}`,
 					type: setting.type,
 					label: setting.label,
@@ -82,20 +104,20 @@ export const GET: RequestHandler = async ({ url }) => {
 					options: setting.options
 				}))
 			})),
-			defaults,
+			defaults: merged,
 			stats: settingsRegistry.getStats()
 		});
 	}
 
-	// Legacy format - return flat settings object with defaults
+	// Legacy format - return flat settings object with merged values
 	return json({
-		settings: getDefaultValues()
+		settings: merged
 	});
 };
 
 /**
  * POST /api/settings
- * 
+ *
  * Save settings. Validates against registry schema.
  * Body: { validate?: boolean, settings: Record<string, unknown> }
  */
@@ -126,17 +148,50 @@ export const POST: RequestHandler = async ({ request }) => {
 			});
 		}
 
-		// TODO: Persist settings to database
-		// This would transform registry format back to legacy DB schema
-		// For now, just return success
+		// Persist settings to database
+		const settingsToSave = data.settings ?? data;
+		await updateSetting({
+			key: REGISTRY_SETTINGS_KEY,
+			value: JSON.stringify(settingsToSave),
+			updatedBy: 'registry-api'
+		});
 
 		return json({
 			success: true,
 			message: 'Settings saved successfully',
-			saved: Object.keys(data.settings ?? data)
+			saved: Object.keys(settingsToSave)
 		});
 	} catch (err) {
 		console.error('[API Settings] Error saving settings:', err);
+		return json(
+			{
+				success: false,
+				error: err instanceof Error ? err.message : 'Unknown error'
+			},
+			{ status: 500 }
+		);
+	}
+};
+
+/**
+ * DELETE /api/settings
+ *
+ * Reset settings to defaults by clearing persisted registry settings.
+ */
+export const DELETE: RequestHandler = async () => {
+	try {
+		await updateSetting({
+			key: REGISTRY_SETTINGS_KEY,
+			value: '{}',
+			updatedBy: 'registry-api'
+		});
+
+		return json({
+			success: true,
+			message: 'Settings reset to defaults'
+		});
+	} catch (err) {
+		console.error('[API Settings] Error resetting settings:', err);
 		return json(
 			{
 				success: false,

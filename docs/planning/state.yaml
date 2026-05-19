@@ -4,11 +4,11 @@ metadata:
   name: planning-state
   lastUpdated: "2026-05-19"
 spec:
-  currentState: draft
+  currentState: requirements_ready
   scaleProfile: Large
   complete: false
-  nextAction: "Complete YAML migration and validate canonical structure"
-  primaryBlocker: "Numbered index.md directories need replacement with YAML files"
+  nextAction: "Create renderable Mermaid diagrams for architecture gate"
+  primaryBlocker: "diagram_ready gate: renderable Mermaid diagrams pending"
   requiresHumanIntervention: false
   gateTable:
     - state: draft
@@ -43,9 +43,9 @@ spec:
       missing: null
     - state: iteration_ready
       lifecycleStage: Execute
-      pass: false
-      evidence: "YAML migration in progress"
-      missing: "Complete YAML conversion"
+      pass: true
+      evidence: "YAML migration complete; canonical structure validated"
+      missing: null
     - state: implementation_ready
       lifecycleStage: Execute
       pass: false
@@ -90,6 +90,7 @@ spec:
       status: active
       lastUpdated: "2026-05-19"
   openQuestions:
-    - question: "Should legacy numbered dirs be removed after YAML migration?"
+    - question: "Should reports/ and modules/ be integrated into YAML or left as supplemental?"
       owner: dev
-      decisionNeeded: true
+      decisionNeeded: false
+      resolution: "Left as supplemental reference per user decision 2026-05-19"

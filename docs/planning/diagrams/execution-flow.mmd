@@ -1,0 +1,35 @@
+sequenceDiagram
+    participant U as User/Browser
+    participant R as SvelteKit Route
+    participant V as Zod Validator
+    participant S as Service Layer
+    participant SC as Settings Cascade
+    participant Sn as Snippet Service
+    participant Ex as Execution Service
+    participant OC as OpenCode SDK
+    participant DB as SQLite
+
+    U->>R: POST /api/prompts/:id/execute
+    R->>V: Validate request body
+    V-->>R: Validated payload
+
+    R->>S: executePrompt(id, options)
+    S->>SC: resolveModel(scope, overrides)
+    SC->>DB: Query settings cascade
+    SC-->>S: Resolved config (model, temp, tokens)
+
+    S->>Sn: renderSnippets(promptId, values)
+    Sn->>DB: Get snippet values
+    Sn-->>S: Final prompt text
+
+    S->>Ex: run(resolvedPrompt, config)
+    Ex->>OC: createSession(prompt, model)
+    OC-->>Ex: Stream response
+    Ex-->>S: Execution result + metrics
+
+    par Async logging
+        S->>DB: Save executionLog
+    end
+
+    S-->>R: Structured result
+    R-->>U: JSON response

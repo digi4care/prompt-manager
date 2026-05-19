@@ -1,0 +1,133 @@
+erDiagram
+    prompts ||--o{ promptVersions : has
+    prompts ||--o{ snippetValues : uses
+    prompts ||--o{ executionLogs : runs
+    prompts ||--o{ councilSessions : orchestrates
+    snippets ||--o{ snippetValues : "values for"
+    promptVersions ||--o{ executionLogs : tracked
+    councilSessions ||--o{ councilSteps : steps
+    adminSettings ||--o{ improvePresets : presets
+
+    prompts {
+        int id PK
+        string title
+        text content
+        text frontmatter
+        int userId FK
+        datetime createdAt
+        datetime updatedAt
+        datetime deletedAt
+    }
+
+    promptVersions {
+        int id PK
+        int promptId FK
+        int versionNumber
+        text content
+        text frontmatter
+        text commitMessage
+        datetime createdAt
+    }
+
+    snippets {
+        int id PK
+        string name UK
+        string type
+        text defaultValue
+        text description
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    snippetValues {
+        int id PK
+        int promptId FK
+        int snippetId FK
+        text value
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    executionLogs {
+        int id PK
+        int promptId FK
+        int promptVersionId FK
+        string model
+        float temperature
+        text resolvedPrompt
+        text response
+        boolean success
+        string errorCode
+        text errorMessage
+        int inputTokens
+        int outputTokens
+        int durationMs
+        datetime createdAt
+    }
+
+    judgeEvaluations {
+        int id PK
+        int promptId FK
+        int versionId FK
+        string model
+        text rubric
+        text result
+        float score
+        datetime createdAt
+    }
+
+    improvementLoops {
+        int id PK
+        int promptId FK
+        int originalVersionId FK
+        string model
+        text originalPrompt
+        text improvedPrompt
+        text reasoning
+        datetime createdAt
+    }
+
+    councilSessions {
+        int id PK
+        int promptId FK
+        string mode
+        text configJson
+        string status
+        text result
+        int totalTokens
+        int durationMs
+        datetime createdAt
+        datetime completedAt
+    }
+
+    councilSteps {
+        int id PK
+        int sessionId FK
+        int stepIndex
+        string role
+        string model
+        text input
+        text output
+        int tokens
+        int durationMs
+        string status
+        string errorCode
+        datetime createdAt
+    }
+
+    adminSettings {
+        int id PK
+        string key UK
+        text value
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    improvePresets {
+        int id PK
+        string name UK
+        text instructions
+        text modelConfig
+        datetime createdAt
+        datetime updatedAt
+    }

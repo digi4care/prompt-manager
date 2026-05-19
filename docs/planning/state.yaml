@@ -7,8 +7,8 @@ spec:
   currentState: requirements_ready
   scaleProfile: Large
   complete: false
-  nextAction: "Create renderable Mermaid diagrams for architecture gate"
-  primaryBlocker: "diagram_ready gate: renderable Mermaid diagrams pending"
+  nextAction: "All Plan gates pass; ready to begin iteration planning"
+  primaryBlocker: null
   requiresHumanIntervention: false
   gateTable:
     - state: draft
@@ -28,9 +28,9 @@ spec:
       missing: null
     - state: diagram_ready
       lifecycleStage: Plan
-      pass: false
-      evidence: "Architecture descriptions exist"
-      missing: "Renderable Mermaid diagrams pending"
+      pass: true
+      evidence: "4 Mermaid diagrams created (context, modules, ERD, execution flow)"
+      missing: null
     - state: backlog_ready
       lifecycleStage: Plan
       pass: true

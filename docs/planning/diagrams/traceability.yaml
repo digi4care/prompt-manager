@@ -8,19 +8,19 @@ spec:
     - type: context
       name: System Context
       file: diagrams/context.mmd
-      status: missing
+      status: created
     - type: component
       name: Module Boundaries
       file: diagrams/modules.mmd
-      status: missing
+      status: created
     - type: er
       name: Data Model ERD
       file: diagrams/data-model.mmd
-      status: missing
+      status: created
     - type: behavior
       name: Execution Flow
       file: diagrams/execution-flow.mmd
-      status: missing
+      status: created
   architectureDescriptions:
     - id: ARC-001
       name: System Context
@@ -136,19 +136,19 @@ spec:
   requiredDiagrams:
     - type: context
       description: C4 Level 1
-      status: missing
+      status: created
     - type: container
       description: C4 Level 2
-      status: missing
+      status: created
     - type: component
       description: C4 Level 3
-      status: missing
+      status: created
     - type: er
       description: Data model / ERD
-      status: missing
+      status: created
     - type: behavior
       description: Key user flows
-      status: missing
+      status: created
   traceabilityMatrix:
     - sourceId: FR-01
       diagramName: System Context
@@ -161,8 +161,8 @@ spec:
       status: done
   validationEvidence:
     - Legacy architecture docs contain partial diagram descriptions (ARC-001 through ARC-006)
-    - Mermaid renderable diagrams not yet created
-    - Architecture descriptions documented in 12-diagram-driven-design/index.md
+    - All 4 Mermaid diagrams created and renderable
+    - context.mmd, modules.mmd, data-model.mmd, execution-flow.mmd
   legacyContent:
     - |
       Source: docs/planning/12-diagram-driven-design/index.md

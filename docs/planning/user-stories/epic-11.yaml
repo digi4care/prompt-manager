@@ -1,0 +1,40 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-11
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-11.1
+      title: Create standalone snippet templates separate from prompts
+      status: done
+      description: Create reusable snippet templates that exist independently of prompt definitions.
+      acceptanceCriteria: ["Snippet templates can be created and stored separately"]
+      evidence: []
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-07]
+      epicId: epic-11
+    - id: US-11.2
+      title: Browse and search snippet library
+      status: done
+      description: Provide a browsable and searchable interface for the snippet library.
+      acceptanceCriteria: ["Snippets searchable and browsable in UI"]
+      evidence: []
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-07]
+      epicId: epic-11
+    - id: US-11.3
+      title: Insert snippets into prompts
+      status: done
+      description: Allow inserting snippet templates into prompts during editing or execution.
+      acceptanceCriteria: ["Snippets can be inserted into prompts"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-07]
+      epicId: epic-11

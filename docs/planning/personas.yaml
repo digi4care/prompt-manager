@@ -1,0 +1,40 @@
+apiVersion: planning/v1
+kind: Personas
+metadata:
+  name: personas
+  lastUpdated: "2026-05-19"
+spec:
+  personas:
+    - name: Alex
+      role: Admin / Prompt Engineer
+      needs:
+        - Create prompts with predictable execution outcomes
+        - Version and iterate on prompts with diff visualization
+        - Execute prompts with settings-first model resolution
+        - Use AI-powered improvement loops and judging
+      painPoints:
+        - Prompt engineering is ad-hoc with no centralized management
+        - No deterministic model/parameter resolution
+        - Manual error-prone improvement process
+      constraints:
+        - Needs deterministic auditable execution
+        - Settings cascade must be transparent
+        - Must trust the model selection logic
+    - name: Riley
+      role: Reviewer
+      needs:
+        - Evaluate prompt outputs with consistent criteria
+        - Provide structured feedback for improvement
+      painPoints: []
+      constraints: []
+    - name: Devin
+      role: Developer / Maintainer
+      needs:
+        - Understand the architecture and conventions
+        - Add new features without breaking existing flows
+        - Debug issues with clear error codes
+      painPoints: []
+      constraints: []
+  constraints:
+    - Single admin user for P1
+    - Technical users comfortable with AI tooling

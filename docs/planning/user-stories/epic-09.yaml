@@ -1,0 +1,40 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-09
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-9.1
+      title: Stream execution results in real-time via SSE
+      status: done
+      description: Stream AI execution results to the client in real-time using Server-Sent Events.
+      acceptanceCriteria: ["Results stream in real-time without polling"]
+      evidence: []
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-02, NFR-01]
+      epicId: epic-09
+    - id: US-9.2
+      title: Abort streaming execution mid-response
+      status: done
+      description: Allow users to cancel an in-progress streaming execution.
+      acceptanceCriteria: ["Stream can be aborted by user action"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-02]
+      epicId: epic-09
+    - id: US-9.3
+      title: Handle heartbeat and automatic reconnection for SSE connection
+      status: done
+      description: Maintain SSE connection health with heartbeats and automatic reconnection on failure.
+      acceptanceCriteria: ["SSE reconnects automatically after disconnect"]
+      evidence: []
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-02, NFR-01, REL-01]
+      epicId: epic-09

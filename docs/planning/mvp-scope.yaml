@@ -1,0 +1,126 @@
+apiVersion: planning/v1
+kind: MvpScope
+metadata:
+  name: mvp-scope
+  lastUpdated: "2026-05-19"
+spec:
+  mvpStatus: DELIVERED
+  mvpVersion: "0.0.1"
+  baseline:
+    - id: AUTH
+      title: Auth (Better Auth + JWT)
+      status: COMPLETE
+    - id: PROMPTS
+      title: Prompts CRUD with versioning
+      status: COMPLETE
+    - id: EXECUTION
+      title: Prompt execution via OpenCode SDK
+      status: COMPLETE
+    - id: IMPROVEMENT
+      title: AI-powered improvement loop
+      status: COMPLETE
+    - id: JUDGING
+      title: Rubric-based judging
+      status: COMPLETE
+    - id: SNIPPETS
+      title: Snippet variables with preview
+      status: COMPLETE
+    - id: COUNCIL
+      title: Council correct and debate modes
+      status: COMPLETE
+    - id: ADMIN
+      title: Admin dashboard and settings
+      status: COMPLETE
+    - id: OPENCODE
+      title: OpenCode connection and health check
+      status: COMPLETE
+    - id: SETTINGS
+      title: Settings schema registry
+      status: PARTIAL
+  inScope:
+    - id: US-3.1
+      title: API route persists settings to DB
+      status: DONE
+    - id: US-3.2
+      title: Hidden settings blocking save fix
+      status: DONE
+    - id: US-3.3
+      title: Dotted same-block dependencies fix
+      status: DONE
+    - id: US-3.4
+      title: KeyValueEditor sync bug fix
+      status: DONE
+    - id: US-3.5
+      title: maxTokens lost in legacy migration fix
+      status: DONE
+    - id: US-5.1
+      title: Execute prompt via OpenCode SDK
+      status: VERIFIED
+    - id: US-6.1
+      title: Execution logging with model_id, tokens, duration
+      status: VERIFIED
+    - id: US-7.1
+      title: Snippet variables with live preview
+      status: VERIFIED
+    - id: US-8.1
+      title: Test runner UI
+      status: VERIFIED
+    - id: US-9.1
+      title: Streaming execution via SSE
+      status: VERIFIED
+    - id: US-10.1
+      title: Council correct mode
+      status: VERIFIED
+    - id: US-11.1
+      title: Snippet library CRUD
+      status: VERIFIED
+  outOfScope:
+    - Cost optimization engine
+    - Full enterprise RBAC
+    - Background queue workers
+    - JavaScript snippet sandboxing
+    - Mobile app
+    - Council consensus mode (P3)
+  deferredScope:
+    - id: STREAM-ENHANCE
+      title: Enhanced streaming with reconnection UX
+      rationale: P2 priority, basic SSE works
+    - id: COUNCIL-CONSENSUS
+      title: Council consensus mode
+      rationale: P3 priority
+  assumptions:
+    - Existing codebase is the baseline
+    - Settings registry will replace legacy settings
+    - All tests pass before merge to master
+  successCriteria:
+    - criterion: All prompt executions resolve model via cascade
+      met: true
+      evidence: Implementation complete, tested
+    - criterion: 100% of executions create audit log
+      met: true
+      evidence: Execution logging implemented
+    - criterion: Settings changes take effect immediately
+      met: true
+      evidence: Schema registry with 177+ tests
+    - criterion: Zero auth bypass incidents
+      met: true
+      evidence: Security review completed, issues fixed
+  postMvpWork:
+    - title: Settings route cleanup (merge /settings-new into /settings)
+      rationale: Dual settings system needs consolidation
+      priority: P1
+    - title: Council debate mode UI
+      rationale: Backend done, frontend pending
+      priority: P2
+    - title: Council consensus mode
+      rationale: P3 priority
+      priority: P3
+  legacyContent:
+    spec01Scope: |
+      SCP-001 In Scope (P1): Settings-first PoC for OpenCode integration, function defaults for executor/judge/improve/council, prompt execution endpoint and UI test runner, snippet variable replacement ({{VAR}}) and preview panel, execution logging.
+      SCP-002 In Scope (P2): Council mode correct (producer → reviewer → fix), streaming execution (SSE), snippet library CRUD.
+      SCP-003 In Scope (P3): Council debate and consensus modes, JavaScript snippet type with sandbox.
+      SCP-004 Out Of Scope (Current Cycle): Cost optimization engine across providers, full enterprise RBAC redesign, background queue workers and distributed execution.
+      SCP-005 Delivery Phases: PH-001 Settings refactor, PH-002 Prompt execute PoC, PH-003 Snippets + preview, PH-004 Streaming + logs UX, PH-005 Council modes.
+      SCP-006 Priority Rules: P1 blockers pause lower-priority work. No P2 feature ships before P1 acceptance criteria pass.
+      SCP-007 Resolution Source Of Truth: Canonical resolution rules live in SPEC-06-rules-and-policies.md (POL-002, POL-003, POL-004). Other specs must reference policy IDs and must not redefine precedence logic.

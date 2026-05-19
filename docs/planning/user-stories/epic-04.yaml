@@ -1,0 +1,117 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-04
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-4.1
+      title: Inventory all planning artifacts
+      status: done
+      description: Create INVENTORY.md mapping all existing planning artifacts.
+      acceptanceCriteria: ["INVENTORY.md complete with 101 artifacts mapped"]
+      evidence: [prompt-management-65j]
+      priority: P1
+      estimate: M
+      workType: enable
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.2
+      title: Create canonical directory structure
+      status: done
+      description: Create the 12-directory canonical structure under docs/planning/.
+      acceptanceCriteria: ["All 12 directories exist with index.md"]
+      evidence: [prompt-management-2a1]
+      priority: P1
+      estimate: S
+      workType: enable
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.3
+      title: Port legacy .planning/ content
+      status: done
+      description: Port 85 .planning/ artifacts to canonical directories.
+      acceptanceCriteria: ["All .planning/ content ported"]
+      evidence: [prompt-management-k8q]
+      priority: P1
+      estimate: L
+      workType: build
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.4
+      title: Port docs/spec/ content
+      status: done
+      description: Port 17 docs/spec/ artifacts to canonical directories.
+      acceptanceCriteria: ["All spec content ported"]
+      evidence: [prompt-management-116]
+      priority: P1
+      estimate: M
+      workType: build
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.5
+      title: Port docs/plans/ content
+      status: done
+      description: Port docs/plans/ artifacts to canonical directories.
+      acceptanceCriteria: ["All plans content ported"]
+      evidence: [prompt-management-416]
+      priority: P1
+      estimate: S
+      workType: build
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.6
+      title: Create index.md with state machine
+      status: done
+      description: Create docs/planning/index.md with YAML frontmatter state machine.
+      acceptanceCriteria: ["index.md has currentState, scaleProfile, gateTable"]
+      evidence: [prompt-management-4l5]
+      priority: P1
+      estimate: S
+      workType: build
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.7
+      title: Map Beads issues to planning docs
+      status: done
+      description: Create BEADS_MAP.md cross-reference.
+      acceptanceCriteria: ["BEADS_MAP.md complete"]
+      evidence: [prompt-management-m8m]
+      priority: P1
+      estimate: S
+      workType: enable
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.8
+      title: Document brownfield baseline
+      status: done
+      description: Document brownfield baseline in 07-mvp-scope/index.md.
+      acceptanceCriteria: ["Brownfield baseline documented"]
+      evidence: [prompt-management-9dw]
+      priority: P1
+      estimate: S
+      workType: enable
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.9
+      title: Validate canonical structure
+      status: done
+      description: Validate all 12 canonical dirs have index.md, bun run check passes.
+      acceptanceCriteria: ["0 errors in bun run check"]
+      evidence: [prompt-management-j9a]
+      priority: P1
+      estimate: S
+      workType: verify
+      linkedRequirements: []
+      epicId: epic-04
+    - id: US-4.10
+      title: Archive legacy directories
+      status: done
+      description: Archive legacy dirs to docs/planning/archive/.
+      acceptanceCriteria: ["Legacy dirs moved to archive/"]
+      evidence: [prompt-management-1il]
+      priority: P1
+      estimate: S
+      workType: build
+      linkedRequirements: []
+      epicId: epic-04

@@ -1,0 +1,49 @@
+apiVersion: planning/v1
+kind: ReleaseChecklist
+metadata:
+  name: release-checklist
+  lastUpdated: "2026-05-19"
+spec:
+  releases:
+    - version: "0.0.1"
+      changeType: none
+      date: "2026-05-19"
+      changes: Planning-only migration to canonical YAML structure
+      artifacts: []
+  branchStrategy:
+    featureBranches: feature/*
+    mainBranch: master
+    mergeMethod: squash commit with PR review
+  rollback:
+    description: |
+      Planning migration is revertable via git revert.
+      No database migrations involved.
+  supplyChainReview:
+    - item: Publishing path
+      status: N/A
+      notes: Not a published package
+    - item: Token scope
+      status: N/A
+    - item: 2FA
+      status: enabled
+      notes: GitHub 2FA enabled
+    - item: Tag/release integrity
+      status: planned
+      notes: Signed tags planned for v1.0.0
+  releaseProcess:
+    - step: Feature branches from master
+      responsible: developer
+      status: active
+    - step: Squash merge via PR review
+      responsible: reviewer
+      status: active
+    - step: Run bun run check before merge
+      responsible: CI
+      status: active
+    - step: Verify no database migrations in planning-only changes
+      responsible: developer
+      status: active
+  legacyContent:
+    - |
+      Source: docs/planning/10-release/index.md
+      Original release strategy content preserved in archive.

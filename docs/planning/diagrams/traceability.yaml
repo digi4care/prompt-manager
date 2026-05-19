@@ -1,0 +1,170 @@
+apiVersion: planning/v1
+kind: DiagramDesign
+metadata:
+  name: diagram-traceability
+  lastUpdated: "2026-05-19"
+spec:
+  diagramLayers:
+    - type: context
+      name: System Context
+      file: diagrams/context.mmd
+      status: missing
+    - type: component
+      name: Module Boundaries
+      file: diagrams/modules.mmd
+      status: missing
+    - type: er
+      name: Data Model ERD
+      file: diagrams/data-model.mmd
+      status: missing
+    - type: behavior
+      name: Execution Flow
+      file: diagrams/execution-flow.mmd
+      status: missing
+  architectureDescriptions:
+    - id: ARC-001
+      name: System Context
+      description: |
+        Frontend: SvelteKit UI for settings, prompt editing, testing.
+        Backend: SvelteKit server routes + service layer.
+        AI Engine: OpenCode server via @opencode-ai/sdk.
+        Storage: SQLite/libsql via Drizzle.
+    - id: ARC-002
+      name: Module Boundaries
+      modules:
+        - id: MOD-001
+          name: Settings Module
+          responsibility: Policy/defaults/provider config
+        - id: MOD-002
+          name: Prompt Module
+          responsibility: CRUD/versioning/snippet rendering
+        - id: MOD-003
+          name: Execution Module
+          responsibility: Run prompt, stream, log
+        - id: MOD-004
+          name: Judge Module
+          responsibility: Rubric scoring
+        - id: MOD-005
+          name: Council Module
+          responsibility: Multi-model orchestration
+    - id: ARC-003
+      name: Data Flow - Execution
+      steps: |
+        1. UI submits prompt run request.
+        2. API resolves model by precedence (run > prompt > default).
+        3. Snippets are rendered to final prompt text.
+        4. Execution service calls OpenCode SDK.
+        5. Response + metrics saved in execution log.
+        6. API returns structured result to UI.
+    - id: ARC-004
+      name: Operational Constraints
+      constraints: |
+        - Do not call OpenCode directly from browser; always via server routes.
+        - Keep SDK errors mapped to stable app error codes.
+        - All settings writes must be auditable by key + timestamp.
+    - id: ARC-005
+      name: Reliability Rules
+      rules: |
+        - Retry transient OpenCode failures up to configured limit.
+        - Do not retry validation errors.
+        - Timeout requests based on settings value.
+    - id: ARC-006
+      name: Explicit Behaviors
+      behaviors: |
+        - Resolution behavior must follow SPEC-06-rules-and-policies.md (POL-002, POL-003, POL-004).
+        - Architecture and API documents must reference policy IDs instead of re-defining precedence.
+        - Error payloads must include stable app code and user action hint for UI rendering.
+  dataModelDescriptions:
+    existingTables:
+      id: DB-001
+      tables: [prompts, promptVersions, judgeEvaluations, improvementLoops, adminSettings, improvePresets]
+    newTables:
+      id: DB-002
+      tables: [snippets, snippetValues, executionLogs, councilSessions, councilSteps]
+    tableDefinitions:
+      - id: DB-003
+        name: snippets
+        columns: [id, name, type, defaultValue, description, createdAt, updatedAt]
+        notes: |
+          name is unique.
+          type enum: text | select | javascript | date
+      - id: DB-004
+        name: snippetValues
+        columns: [id, promptId, snippetId, value, createdAt, updatedAt]
+        notes: Unique (promptId, snippetId)
+      - id: DB-005
+        name: executionLogs
+        columns: [id, promptId, promptVersionId, model, temperature, resolvedPrompt, response, success, errorCode, errorMessage, inputTokens, outputTokens, durationMs, createdAt]
+      - id: DB-006
+        name: councilSessions
+        columns: [id, promptId, mode, configJson, status, result, totalTokens, durationMs, createdAt, completedAt]
+      - id: DB-007
+        name: councilSteps
+        columns: [id, sessionId, stepIndex, role, model, input, output, tokens, durationMs, status, errorCode, createdAt]
+    migrationOrder:
+      id: DB-008
+      steps: |
+        1. Create snippets and snippetValues.
+        2. Create executionLogs.
+        3. Create councilSessions and councilSteps.
+        4. Add new settings keys defaults in seed/init flow.
+    backfillRules:
+      id: DB-008A
+      rules: |
+        - For existing prompts, do not create snippet rows automatically.
+        - Create snippet values lazily on first save from prompt editor.
+        - Existing execution history remains unchanged and unlinked when no prompt version is available.
+    rollbackRules:
+      id: DB-008B
+      rules: |
+        - Migrations must include down scripts for all new tables.
+        - Rollback must not touch existing tables and data.
+        - If rollback occurs after production writes, export affected new-table data before rollback.
+    backwardCompatibility:
+      id: DB-009
+      rules: |
+        - Additive changes only in PoC cycle.
+        - No drop/rename of existing columns in same cycle.
+        - Existing prompt CRUD behavior must remain unchanged.
+    snippetRules:
+      id: DB-010
+      rules: |
+        - Default snippet value from snippets.defaultValue.
+        - Override snippet value from snippetValues or runtime payload.
+        - Fallback to raw placeholder only when strict mode is off.
+        - Error SNIPPET_VALUE_MISSING when strict mode on and unresolved placeholder exists.
+  requiredDiagrams:
+    - type: context
+      description: C4 Level 1
+      status: missing
+    - type: container
+      description: C4 Level 2
+      status: missing
+    - type: component
+      description: C4 Level 3
+      status: missing
+    - type: er
+      description: Data model / ERD
+      status: missing
+    - type: behavior
+      description: Key user flows
+      status: missing
+  traceabilityMatrix:
+    - sourceId: FR-01
+      diagramName: System Context
+      status: done
+    - sourceId: FR-04
+      diagramName: Module Boundaries
+      status: done
+    - sourceId: FR-02
+      diagramName: Data Model ERD
+      status: done
+  validationEvidence:
+    - Legacy architecture docs contain partial diagram descriptions (ARC-001 through ARC-006)
+    - Mermaid renderable diagrams not yet created
+    - Architecture descriptions documented in 12-diagram-driven-design/index.md
+  legacyContent:
+    - |
+      Source: docs/planning/12-diagram-driven-design/index.md
+      Legacy architecture spec: docs/spec/SPEC-02-architecture.md
+      Legacy data model spec: docs/spec/SPEC-03-data-model.md

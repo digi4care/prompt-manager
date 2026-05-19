@@ -1,0 +1,62 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-07
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-7.1
+      title: Define {{VAR}} placeholders in prompt frontmatter
+      status: done
+      description: Support defining variable placeholders in prompt frontmatter using {{VAR}} syntax.
+      acceptanceCriteria: ["Variables parsed from frontmatter correctly"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-07]
+      epicId: epic-07
+    - id: US-7.2
+      title: Live preview of resolved prompt as user types variable values
+      status: done
+      description: Display a live preview of the resolved prompt while the user enters variable values.
+      acceptanceCriteria: ["Preview updates as variable values change"]
+      evidence: []
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-07]
+      epicId: epic-07
+    - id: US-7.3
+      title: Reactive preview update on every keystroke
+      status: done
+      description: Ensure prompt preview reacts and updates on every keystroke in variable inputs.
+      acceptanceCriteria: ["Preview updates on each keystroke without delay"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-07]
+      epicId: epic-07
+    - id: US-7.4
+      title: Clear error message in preview for missing required variables
+      status: done
+      description: Show a clear error in the preview when required variables are missing or empty.
+      acceptanceCriteria: ["Error shown for missing required variables"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-07, NFR-02]
+      epicId: epic-07
+    - id: US-7.5
+      title: Safe escaping of variable values containing {{ or }}
+      status: done
+      description: Escape variable values that contain {{ or }} to prevent injection or parsing errors.
+      acceptanceCriteria: ["Variables with braces render safely"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-07, SEC-01]
+      epicId: epic-07

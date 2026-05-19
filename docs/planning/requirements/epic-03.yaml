@@ -1,0 +1,84 @@
+apiVersion: planning/v1
+kind: Requirements
+metadata:
+  name: epic-03
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: FR-08
+      title: Settings defaults per function
+      status: delivered
+      description: SETTINGS-01 through SETTINGS-05. User can configure default model, temperature, max_tokens per function type. Settings cascade with 4 levels.
+      evidence: [schema registry, 177+ tests]
+      linkedStories: [US-3.1]
+      priority: Must
+    - id: FR-09
+      title: Prompt execution via OpenCode
+      status: delivered
+      description: EXEC-01 through EXEC-05. User can execute prompt, see model used, override per-execution, see duration and tokens.
+      evidence: [execution.service.ts]
+      linkedStories: [US-5.1, US-5.2, US-5.3, US-5.4, US-5.5]
+      priority: Must
+    - id: FR-10
+      title: Execution logging
+      status: delivered
+      description: LOG-01 through LOG-04. Every execution creates log entry with full context.
+      evidence: [execution logs implemented]
+      linkedStories: [US-6.1, US-6.2, US-6.3, US-6.4]
+      priority: Must
+    - id: FR-11
+      title: Snippet variables
+      status: delivered
+      description: SNIPPET-01 through SNIPPET-05. {{VAR}} syntax with live preview and escaping.
+      evidence: [snippet rendering]
+      linkedStories: [US-7.1, US-7.2, US-7.3, US-7.4, US-7.5]
+      priority: Must
+    - id: FR-12
+      title: Test runner UI
+      status: delivered
+      description: UI-01 through UI-04. Test runner panel with variable inputs and execution.
+      evidence: [test runner implemented]
+      linkedStories: [US-8.1, US-8.2, US-8.3, US-8.4]
+      priority: Must
+    - id: FR-13
+      title: Council correct mode
+      status: delivered
+      description: COUNCIL-01 through COUNCIL-06. Producer/reviewer/fix workflow with parallel agents.
+      evidence: [council services]
+      linkedStories: [US-10.1, US-10.2, US-10.3, US-10.4, US-10.5, US-10.6]
+      priority: Should
+    - id: FR-14
+      title: Streaming execution
+      status: delivered
+      description: STREAM-01 through STREAM-03. SSE streaming with abort and reconnection.
+      evidence: [SSE implemented]
+      linkedStories: [US-9.1, US-9.2, US-9.3]
+      priority: Should
+    - id: FR-15
+      title: Snippet library
+      status: delivered
+      description: SNIPPET-LIB-01 through SNIPPET-LIB-03. Standalone snippet templates with browsing.
+      evidence: [snippets.service.ts]
+      linkedStories: [US-11.1, US-11.2, US-11.3]
+      priority: Should
+    - id: FR-16
+      title: Council debate mode
+      status: proposed
+      description: DEBATE-01 through DEBATE-03. Multi-perspective debate with synthesis.
+      evidence: []
+      linkedStories: []
+      priority: Could
+    - id: FR-17
+      title: Council consensus mode
+      status: proposed
+      description: CONSENSUS-01 through CONSENSUS-03. Parallel agent voting.
+      evidence: []
+      linkedStories: []
+      priority: Could
+    - id: FR-18
+      title: JavaScript snippets
+      status: proposed
+      description: JS-SNIPPET-01 through JS-SNIPPET-02. Dynamic snippets with sandboxed execution.
+      evidence: []
+      linkedStories: []
+      priority: Could

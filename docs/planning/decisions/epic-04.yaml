@@ -1,0 +1,33 @@
+apiVersion: planning/v1
+kind: Decisions
+metadata:
+  name: epic-04
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: DEC-008
+      title: AI Settings Contract v1 (Variant-Aware)
+      status: active
+      decision: Make model + variant first-class through admin, DB, cascade, and runtime with hard-fail behavior.
+      rationale: Model variants are policy-scoped and must not silently fallback.
+      alternatives: []
+      tradeoffs:
+        - More validation overhead but prevents silent quality degradation
+    - id: DEC-009
+      title: SOLID/DRY/Security Refactor Blueprint
+      status: active
+      decision: Execute a 6-phase refactor to enforce policy constraints by scope with hard-fail behavior.
+      rationale: Admin mutation auth checks are inconsistent; variant is not first-class in defaults/council storage.
+      alternatives: []
+      tradeoffs:
+        - Significant refactor but eliminates security and consistency gaps
+    - id: DEC-010
+      title: Database Architecture - Option A Hardening
+      status: active
+      decision: Harden existing schema by adding variant columns to existing tables.
+      rationale: Minimal migration risk; fastest delivery for required feature set.
+      alternatives:
+        - Option B: Typed policy domain tables
+        - Option C: Typed policy + revision timeline
+      tradeoffs:
+        - Policy remains JSON-text based but faster delivery

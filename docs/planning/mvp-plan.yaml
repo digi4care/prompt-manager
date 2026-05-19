@@ -1,0 +1,246 @@
+apiVersion: planning/v1
+kind: MvpPlan
+metadata:
+  name: mvp-plan
+  lastUpdated: "2026-05-19"
+spec:
+  planningHorizon:
+    start: "2026-02-14"
+    end: "2026-06-30"
+  currentIterationGoal: Complete YAML planning migration to canonical structure
+  wipLimit: 3
+  gateSequence: draft -> problem_validated -> requirements_ready -> diagram_ready -> backlog_ready -> mvp_scoped -> iteration_ready -> implementation_ready
+  mvpScope:
+    reference: mvp-scope.yaml
+  milestones:
+    - name: v1.0 (P1)
+      description: Core execution foundation
+      phases: [1, 2, 3, 4, 5]
+    - name: v2.0 (P2)
+      description: Enhanced capabilities
+      phases: [6, 7, 8]
+    - name: v3.0 (P3)
+      description: Advanced council modes
+      phases: [9, 10, 11]
+  beadsMapping:
+    - backlogId: US-4.1
+      beadsIssue: prompt-management-65j
+      status: done
+      blockers: []
+    - backlogId: US-4.2
+      beadsIssue: prompt-management-2a1
+      status: in_progress
+      blockers: []
+    - backlogId: US-4.3
+      beadsIssue: prompt-management-k8q
+      status: pending
+      blockers: [US-4.2]
+    - backlogId: US-4.4
+      beadsIssue: prompt-management-116
+      status: pending
+      blockers: [US-4.2]
+    - backlogId: US-4.5
+      beadsIssue: prompt-management-416
+      status: pending
+      blockers: [US-4.2]
+    - backlogId: US-4.6
+      beadsIssue: prompt-management-4l5
+      status: pending
+      blockers: [US-4.3, US-4.4, US-4.5]
+    - backlogId: US-4.7
+      beadsIssue: prompt-management-m8m
+      status: pending
+      blockers: [US-4.6]
+    - backlogId: US-4.8
+      beadsIssue: prompt-management-9dw
+      status: pending
+      blockers: [US-4.7]
+    - backlogId: US-4.9
+      beadsIssue: prompt-management-j9a
+      status: pending
+      blockers: [US-4.8]
+    - backlogId: US-4.10
+      beadsIssue: prompt-management-1il
+      status: pending
+      blockers: [US-4.9]
+  iterations:
+    - name: Phase 1 - Settings Foundation
+      status: COMPLETE
+      items: [US-3.1, US-3.2, US-3.3, US-3.4, US-3.5]
+      goal: Users can configure per-function model defaults with deterministic resolution cascade
+      dependsOn: []
+      requirements: [SETTINGS-01, SETTINGS-02, SETTINGS-03, SETTINGS-04, SETTINGS-05]
+      successCriteria: |
+        1. User can set default model for each function type (executor, judge, improve, council)
+        2. User can configure temperature and max_tokens per function type
+        3. Settings cascade deterministically: Run > Prompt > Global Default (3 levels)
+        4. Every model resolution logs which source provided the value (model_source field)
+        5. Invalid settings show clear validation errors
+      plans:
+        - 01-01-PLAN.md — Database schema (function_defaults, prompt_function_settings, council_agents, opencode_connection) and service layer with 3-level cascade resolution
+        - 01-02-PLAN.md — API endpoints for function defaults CRUD, OpenCode connection status, and prompt-specific overrides
+        - 01-03-PLAN.md — Settings Admin UI with table layout, model pickers, council repeater, and validation (inline + summary)
+    - name: Phase 2 - Prompt Execution
+      status: COMPLETE
+      items: [US-5.1, US-5.2, US-5.3, US-5.4, US-5.5]
+      goal: Users can execute prompts via OpenCode SDK with resolved settings
+      dependsOn: [Phase 1]
+      requirements: [EXEC-01, EXEC-02, EXEC-03, EXEC-04, EXEC-05]
+      successCriteria: |
+        1. User can execute prompt and receive AI response via OpenCode SDK
+        2. User sees which model was used for each execution
+        3. User can override model, temperature, and max_tokens per-execution
+        4. Failed executions show clear error with context (model unavailable, rate limit, etc.)
+        5. User sees execution duration and token counts in response
+      plans:
+        - 02-01-PLAN.md — Execution backend service and API endpoint with settings cascade
+        - 02-02-PLAN.md — Result display components (markdown renderer + execution result)
+        - 02-03-PLAN.md — Execution panel UI with overrides, state machine, and verification
+    - name: Phase 3 - Execution Logging
+      status: COMPLETE
+      items: [US-6.1, US-6.2, US-6.3, US-6.4]
+      goal: Users can audit all prompt executions with full context
+      dependsOn: [Phase 2]
+      requirements: [LOG-01, LOG-02, LOG-03, LOG-04]
+      successCriteria: |
+        1. Every execution creates log entry with model_id, model_source, tokens, duration
+        2. User can view execution history for any prompt
+        3. Logs show resolved input prompt (with variables substituted)
+        4. Logs include output or error with context
+      plans:
+        - 03-01-PLAN.md — Execution log schema, async logging service, and API endpoints for history
+        - 03-02-PLAN.md — Execution history UI components and prompt detail page integration
+    - name: Phase 4 - Snippet Variables
+      status: COMPLETE
+      items: [US-7.1, US-7.2, US-7.3, US-7.4, US-7.5]
+      goal: Users can create reusable prompt templates with {{VAR}} placeholders
+      dependsOn: [Phase 1]
+      requirements: [SNIPPET-01, SNIPPET-02, SNIPPET-03, SNIPPET-04, SNIPPET-05]
+      successCriteria: |
+        1. User can define {{VAR}} placeholders in prompt frontmatter
+        2. User sees live preview of resolved prompt as they type variable values
+        3. Preview updates on every keystroke (reactive)
+        4. Missing required variables show clear error message in preview
+        5. Variable values containing {{ or }} are safely escaped (injection prevention)
+      plans:
+        - 04-01-PLAN.md — Variable extraction types, Zod schema, and frontmatter parsing extension
+        - 04-02-PLAN.md — Variable resolution with escaping and missing variable tracking
+        - 04-03-PLAN.md — Live preview component with reactive updates
+    - name: Phase 5 - Test Runner UI
+      status: COMPLETE
+      items: [US-8.1, US-8.2, US-8.3, US-8.4]
+      goal: Users have a unified interface for testing prompts with variables
+      dependsOn: [Phase 2, Phase 4]
+      requirements: [UI-01, UI-02, UI-03, UI-04]
+      successCriteria: |
+        1. User can access test runner panel from prompt editor
+        2. User can fill variable inputs and see resolved preview before execution
+        3. User can run execution and see results inline in the panel
+        4. User sees execution metrics (model, tokens, duration) in results
+      plans:
+        - 05-01-PLAN.md — TestRunnerPanel component composing variable inputs + execution + results
+        - 05-02-PLAN.md — Edit page integration with collapsible test runner section
+    - name: Phase 6 - Streaming Execution
+      status: COMPLETE
+      items: [US-9.1, US-9.2, US-9.3]
+      goal: Users see AI output in real-time as it generates
+      dependsOn: [Phase 2]
+      requirements: [STREAM-01, STREAM-02, STREAM-03]
+      successCriteria: |
+        1. Execution results stream in real-time via SSE
+        2. User can abort streaming execution mid-response
+        3. Connection handles heartbeat and automatic reconnection
+      plans:
+        - 06-01-PLAN.md — SSE streaming backend (service + endpoint with sveltekit-sse)
+        - 06-02-PLAN.md — Client streaming component with abort/reconnection + ExecutionPanel integration
+    - name: Phase 7 - Council Correct Mode
+      status: COMPLETE
+      items: [US-10.1, US-10.2, US-10.3, US-10.4, US-10.5, US-10.6]
+      goal: Users can run parallel council review with multiple AI agents
+      dependsOn: [Phase 1, Phase 2]
+      requirements: [COUNCIL-01, COUNCIL-02, COUNCIL-03, COUNCIL-04, COUNCIL-05, COUNCIL-06]
+      successCriteria: |
+        1. User can trigger parallel council review with 3 AI agents
+        2. Each agent reviews the user's prompt from their unique perspective
+        3. Agents use their configured system prompts and models
+        4. User can override agent prompts per-session
+        5. Results stream in real-time via SSE
+        6. User sees all agent feedback with clear agent identification
+      plans:
+        - 07-01-PLAN.md — Council backend: schema, orchestrator service, SSE streaming API
+        - 07-02-PLAN.md — Council UI: panel component with parallel agent display, test runner integration
+    - name: Phase 8 - Snippet Library
+      status: COMPLETE
+      items: [US-11.1, US-11.2, US-11.3]
+      goal: Users can manage and reuse standalone snippet templates
+      dependsOn: [Phase 4]
+      requirements: [SNIPPET-LIB-01, SNIPPET-LIB-02, SNIPPET-LIB-03]
+      successCriteria: |
+        1. User can create standalone snippet templates (separate from prompts)
+        2. User can browse and search snippet library
+        3. User can insert snippets into prompts
+      plans:
+        - 08-01-PLAN.md — Snippet library CRUD: schema, service, REST API endpoints
+        - 08-02-PLAN.md — Snippet browser UI: list page with search/filter, create/edit forms, detail view
+        - 08-03-PLAN.md — Snippet picker: dialog component with search, category filter, cursor-position insertion
+    - name: Phase 9 - Council Debate Mode
+      status: PROPOSED
+      items: [DEBATE-01, DEBATE-02, DEBATE-03]
+      goal: Users can run multi-perspective debate analysis with synthesis
+      dependsOn: [Phase 7]
+      requirements: [DEBATE-01, DEBATE-02, DEBATE-03]
+      successCriteria: |
+        1. User can trigger debate mode with multiple agent perspectives
+        2. System synthesizes conclusion from agent arguments
+        3. User sees full debate history with each agent's position
+      plans:
+        - 09-01-PLAN.md — Backend: council-debate.service.ts orchestrator with 3-round parallel execution + synthesis, SSE streaming API endpoint
+        - 09-02-PLAN.md — Frontend: timeline UI with collapsible rounds, agent cards, synthesis card, test runner integration with mode toggle
+    - name: Phase 10 - Council Consensus Mode
+      status: PROPOSED
+      items: [CONSENSUS-01, CONSENSUS-02, CONSENSUS-03]
+      goal: Users can run parallel agent voting for consensus decisions
+      dependsOn: [Phase 7]
+      requirements: [CONSENSUS-01, CONSENSUS-02, CONSENSUS-03]
+      successCriteria: |
+        1. User can trigger consensus mode with parallel agents
+        2. System aggregates votes and returns consensus result
+        3. User sees vote breakdown with individual agent responses
+      plans:
+        - 10-01: Parallel voting execution
+        - 10-02: Vote aggregation service
+        - 10-03: Consensus UI with vote breakdown
+    - name: Phase 11 - JavaScript Snippets
+      status: PROPOSED
+      items: [JS-SNIPPET-01, JS-SNIPPET-02]
+      goal: Users can create dynamic snippets with JavaScript execution
+      dependsOn: [Phase 4]
+      requirements: [JS-SNIPPET-01, JS-SNIPPET-02]
+      successCriteria: |
+        1. User can create JavaScript snippets with code blocks
+        2. JS snippets execute in sandboxed environment (isolated from main app)
+      plans:
+        - 11-01: JS snippet schema and parsing
+        - 11-02: Sandbox execution environment
+  progress: |
+    Phases execute in numeric order. Decimal phases (if inserted) execute between their surrounding integers.
+  definitionOfReady:
+    - Acceptance criteria are objective
+    - Dependencies and blockers are known
+    - Required diagrams cover the story
+    - Test or verification method is defined
+    - Beads issue exists
+  definitionOfDone:
+    - All legacy content ported to YAML
+    - Validation passes
+    - bun run check passes
+    - Beads issues closed
+  mvpDoneCriteria:
+    - All P1 stories verified
+    - Settings cascade tested end-to-end
+    - No auth bypass incidents
+    - Security review passed
+  legacyContent:
+    - |
+      Source: docs/planning/08-mvp-plan/index.md
+      Original ROADMAP.md content preserved in archive.

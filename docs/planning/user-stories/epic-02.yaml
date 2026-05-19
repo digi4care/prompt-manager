@@ -1,0 +1,73 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-02
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-2.1
+      title: Implement server action with Zod validation
+      status: done
+      description: Server action with Zod schema for login form.
+      acceptanceCriteria: ["Server action validates input"]
+      evidence: [prompt-management-tu7]
+      priority: P1
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-02
+    - id: US-2.2
+      title: Refactor login form to use SvelteKit enhance
+      status: done
+      description: Migrate login form to use form actions with enhance.
+      acceptanceCriteria: ["Login works via form action"]
+      evidence: [prompt-management-rot]
+      priority: P1
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-02
+    - id: US-2.3
+      title: Test login flow success/error paths
+      status: done
+      description: Test both successful and failed login scenarios.
+      acceptanceCriteria: ["Tests cover success and error paths"]
+      evidence: [prompt-management-ut3]
+      priority: P1
+      estimate: M
+      workType: verify
+      linkedRequirements: [FR-01]
+      epicId: epic-02
+    - id: US-2.4
+      title: Remove obsolete API endpoint
+      status: done
+      description: Remove old REST login endpoint after migration to server actions.
+      acceptanceCriteria: ["Old endpoint removed"]
+      evidence: [prompt-management-8zd]
+      priority: P1
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-02
+    - id: US-2.5
+      title: Refactor admin login to Server Actions
+      status: done
+      description: Migrate admin login to SvelteKit server actions.
+      acceptanceCriteria: ["Admin login uses server actions"]
+      evidence: [prompt-management-ssv]
+      priority: P1
+      estimate: M
+      workType: build
+      linkedRequirements: [SEC-02]
+      epicId: epic-02
+    - id: US-2.6
+      title: Update SECURITY-REVIEW.md
+      status: done
+      description: Update security documentation after login refactor.
+      acceptanceCriteria: ["Security docs updated"]
+      evidence: [prompt-management-ibn]
+      priority: P1
+      estimate: S
+      workType: build
+      linkedRequirements: [SEC-01]
+      epicId: epic-02

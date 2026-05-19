@@ -1,0 +1,28 @@
+apiVersion: planning/v1
+kind: Decisions
+metadata:
+  name: epic-05
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: DEC-011
+      title: Codebase Conventions
+      status: active
+      decision: Enforce consistent naming, code style, import organization, error handling, validation, logging, and Svelte 5 patterns.
+      rationale: Brownfield project with multiple contributors; conventions reduce cognitive load.
+      alternatives: []
+      tradeoffs: []
+    - id: DEC-012
+      title: Risk Register Baseline
+      status: active
+      decision: Maintain explicit risk register tracking tech debt, security, performance, scaling, and test coverage.
+      rationale: Defense/finance/healthcare adjacent domain; bugs have material impact.
+      alternatives: []
+      tradeoffs: []
+    - id: DEC-013
+      title: Pitfall Prevention
+      status: active
+      decision: Document and actively prevent domain-specific pitfalls in prompt management with AI execution.
+      rationale: Domain has critical pitfalls that cause rewrites.
+      alternatives: []
+      tradeoffs: []

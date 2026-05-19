@@ -1,0 +1,33 @@
+apiVersion: planning/v1
+kind: Decisions
+metadata:
+  name: epic-03
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: DEC-002
+      title: Settings-first execution
+      status: active
+      decision: Every execution resolves model via deterministic cascade (run > prompt > default).
+      rationale: Deterministic, auditable, testable.
+      alternatives:
+        - Per-request configuration only
+      tradeoffs:
+        - More complex settings but predictable behavior
+    - id: DEC-005
+      title: Settings Schema Registry
+      status: active
+      decision: Build new registry with dependency graph, cascade resolution, visibility conditions.
+      rationale: Legacy 756-line monolithic settings page is unmaintainable.
+      alternatives:
+        - Incremental refactor of legacy page
+      tradeoffs:
+        - Dual system during migration but cleaner long-term
+    - id: DEC-007
+      title: Settings Schema Registry v1
+      status: active
+      decision: Define all settings keys, types, defaults, and validation in a shared registry.
+      rationale: Prevents drift between frontend forms and backend persistence; enables programmatic validation.
+      alternatives: []
+      tradeoffs:
+        - More upfront investment but eliminates an entire class of bugs

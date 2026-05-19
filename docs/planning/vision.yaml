@@ -1,0 +1,100 @@
+apiVersion: planning/v1
+kind: Vision
+metadata:
+  name: vision
+  lastUpdated: "2026-05-19"
+spec:
+  overallGoal: Build a spec-driven prompt management platform where every execution is deterministic, auditable, and improvable through AI-powered workflows.
+  visionStatement: A spec-driven prompt management application where every execution is deterministic, auditable, and improvable through AI-powered workflows.
+  valueProposition:
+    - stakeholder: Admin / Prompt Engineer
+      value: Settings-first execution — every prompt execution resolves model/temperature/parameters through a deterministic precedence chain (run > prompt > default)
+    - stakeholder: Reviewer
+      value: Rubric-based judging with score and feedback for consistent evaluation
+    - stakeholder: Developer
+      value: Clear architecture with service layer pattern and stable error codes
+  strategicGoals:
+    - goal: Prompt CRUD with metadata and versioning
+      metric: Feature completeness
+      target: Complete
+    - goal: Diff visualization for version comparison
+      metric: Feature completeness
+      target: Complete
+    - goal: AI-powered improvement loop with variant generation
+      metric: Feature completeness
+      target: Complete
+    - goal: Rubric-based judging with score and feedback
+      metric: Feature completeness
+      target: Complete
+    - goal: Admin settings with model catalog and policies
+      metric: Feature completeness
+      target: Complete
+    - goal: Better Auth authentication with admin protection
+      metric: Feature completeness
+      target: Complete
+    - goal: Rate limiting and security headers
+      metric: Feature completeness
+      target: Complete
+    - goal: Settings refactor for function defaults
+      metric: Registry tests passing
+      target: 177+ tests
+    - goal: Execution logging with tokens, duration, model source
+      metric: Feature completeness
+      target: Complete
+    - goal: Snippet variables with rendering
+      metric: Feature completeness
+      target: Complete
+    - goal: Streaming execution via SSE
+      metric: Feature completeness
+      target: Complete
+    - goal: Council modes (correct, debate, consensus)
+      metric: Feature completeness
+      target: correct complete, debate/consensus pending
+  nonGoals:
+    - Cost optimization engine
+    - Full enterprise RBAC
+    - Background queue workers
+    - JavaScript snippet sandboxing
+    - Mobile app
+  successMetrics:
+    - All prompt executions resolve model via cascade
+    - 100% of executions create audit log
+    - Settings changes take effect immediately
+    - Zero auth bypass incidents
+  postMvpDirection:
+    - Council consensus mode
+    - JavaScript snippet sandbox
+    - Advanced analytics dashboard
+    - Cost optimization across providers
+  legacyContent:
+    projectRequirements: |
+      Validated:
+        - Prompt CRUD with metadata — existing
+        - Version history with diff visualization — existing
+        - AI-powered improvement loop — existing
+        - Rubric-based judging — existing
+        - Admin settings management — existing
+        - Better Auth + JWT authentication — existing
+        - Rate limiting and security headers — existing
+      Active:
+        - Settings refactor for function defaults (executor, judge, improve, council)
+        - Prompt execution endpoint with model resolution
+        - Execution logging with tokens, duration, model source
+        - Snippet variables ({{VAR}}) with rendering service
+        - Preview panel in prompt editor
+        - Test runner UI for prompt execution
+        - Streaming execution (SSE)
+        - Council mode 'correct' (producer → reviewer → fix)
+        - Council modes 'debate' and 'consensus' (P3)
+      Out of Scope:
+        - Cost optimization engine — deferred, not core to P1 value
+        - Full enterprise RBAC — admin auth sufficient for P1
+        - Background queue workers — synchronous execution acceptable for P1
+        - JavaScript snippet sandboxing — P3 feature, security review needed
+    spec00Vision: |
+      VSN-001: Build a prompt-management platform where teams can create, version, test, evaluate, and improve prompts using OpenCode SDK as execution engine.
+      VSN-002: Deliver a working website flow where a user configures AI defaults in Settings, opens a prompt, fills variables/snippets, runs execution, and sees result + metrics.
+      VSN-003: Users can set provider/model defaults per function, override model per prompt and per run, and test prompts safely and repeatedly.
+      VSN-004 Non-Goals For PoC: No production-grade billing dashboard, no multi-tenant org permissions redesign, no full workflow automation engine.
+      VSN-005 Success Criteria: Settings save/load roundtrip works, prompt execution returns response within 30s, snippet replacement works for at least 5 placeholders, execution log is persisted with model/duration/tokens, error states are visible and actionable.
+      VSN-006 Key Constraints: Use Bun tooling only, keep existing DB data compatible (additive migrations only), reuse existing project conventions and component patterns.

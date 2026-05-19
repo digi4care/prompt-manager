@@ -1,0 +1,62 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-03
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-3.1
+      title: API route persists settings to DB
+      status: done
+      description: Settings API route validates and persists settings to the admin_settings table.
+      acceptanceCriteria: ["Settings save and load roundtrip works"]
+      evidence: [prompt-management-8d3]
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-04, FR-08]
+      epicId: epic-03
+    - id: US-3.2
+      title: Hidden settings blocking save fix
+      status: done
+      description: Fix validateVisible in schema-registry.ts to not block saves for hidden settings.
+      acceptanceCriteria: ["Hidden settings don't prevent save"]
+      evidence: [prompt-management-e50]
+      priority: P0
+      estimate: S
+      workType: fix
+      linkedRequirements: [FR-04]
+      epicId: epic-03
+    - id: US-3.3
+      title: Dotted same-block dependencies fix
+      status: done
+      description: Fix resolveDepKey helper for dotted same-block dependencies.
+      acceptanceCriteria: ["Dotted dependencies resolve correctly"]
+      evidence: [prompt-management-dyb]
+      priority: P1
+      estimate: S
+      workType: fix
+      linkedRequirements: [FR-04]
+      epicId: epic-03
+    - id: US-3.4
+      title: KeyValueEditor sync bug fix
+      status: done
+      description: Fix $effect sync in key-value-editor.svelte component.
+      acceptanceCriteria: ["KeyValueEditor syncs correctly on reset"]
+      evidence: [prompt-management-r48]
+      priority: P1
+      estimate: S
+      workType: fix
+      linkedRequirements: [FR-04]
+      epicId: epic-03
+    - id: US-3.5
+      title: maxTokens lost in legacy migration fix
+      status: done
+      description: Fix compat.ts to preserve maxTokens during legacy settings migration.
+      acceptanceCriteria: ["maxTokens preserved after migration"]
+      evidence: [prompt-management-d30]
+      priority: P1
+      estimate: S
+      workType: fix
+      linkedRequirements: [FR-04]
+      epicId: epic-03

@@ -1,0 +1,56 @@
+apiVersion: planning/v1
+kind: Requirements
+metadata:
+  name: epic-02
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: NFR-01
+      title: Security
+      status: delivered
+      description: All errors mapped to stable app error codes (ERR-*). Rate limiting active.
+      evidence: [hooks.server.ts]
+      linkedStories: []
+      priority: Must
+    - id: NFR-02
+      title: Database Migrations
+      status: delivered
+      description: Additive changes only -- no drop/rename of existing columns.
+      evidence: [schema.ts]
+      linkedStories: []
+      priority: Must
+    - id: NFR-03
+      title: OpenCode Integration
+      status: delivered
+      description: Always via server routes, never from browser.
+      evidence: [opencode.service.ts]
+      linkedStories: []
+      priority: Must
+    - id: SEC-01
+      title: Auth Bypass Prevention
+      status: delivered
+      description: No JWT auth bypass. Constant-time comparison for sensitive data.
+      evidence: [security review completed]
+      linkedStories: []
+      priority: Must
+    - id: SEC-02
+      title: Admin Protection
+      status: delivered
+      description: Admin routes protected via hooks.server.ts role check.
+      evidence: [hooks.server.ts]
+      linkedStories: []
+      priority: Must
+    - id: REL-01
+      title: Graceful Degradation
+      status: delivered
+      description: Execution fails gracefully with clear error when model unavailable.
+      evidence: [error handling in execution service]
+      linkedStories: []
+      priority: Must
+    - id: REL-02
+      title: Audit Logging
+      status: delivered
+      description: All security events logged (rate limits, auth failures).
+      evidence: [audit.ts]
+      linkedStories: []
+      priority: Must

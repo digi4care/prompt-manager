@@ -1,0 +1,56 @@
+apiVersion: planning/v1
+kind: Requirements
+metadata:
+  name: epic-01
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: FR-01
+      title: User Authentication
+      status: delivered
+      description: The system shall authenticate users via Better Auth sessions before granting access to protected resources.
+      evidence: [Better Auth integrated, hooks.server.ts]
+      linkedStories: [US-1.1, US-1.2, US-1.3, US-1.4, US-1.5, US-1.6, US-1.7, US-1.8, US-1.9, US-1.10, US-1.11, US-1.12, US-1.13]
+      priority: Must
+    - id: FR-02
+      title: Prompt CRUD
+      status: delivered
+      description: The system shall allow users to create, read, update, and delete prompts with metadata.
+      evidence: [prompts.service.ts]
+      linkedStories: []
+      priority: Must
+    - id: FR-03
+      title: Version History
+      status: delivered
+      description: The system shall maintain version history with diff visualization.
+      evidence: [versions.service.ts]
+      linkedStories: []
+      priority: Must
+    - id: FR-04
+      title: Settings Cascade
+      status: delivered
+      description: The system shall resolve model/temperature/parameters via deterministic precedence: run > prompt > default.
+      evidence: [settings registry, 177+ tests]
+      linkedStories: [US-3.1]
+      priority: Must
+    - id: FR-05
+      title: Execution Logging
+      status: delivered
+      description: The system shall log every execution with model_id, model_source, tokens, duration.
+      evidence: [execution.service.ts]
+      linkedStories: [US-6.1]
+      priority: Must
+    - id: FR-06
+      title: Snippet Variables
+      status: delivered
+      description: The system shall support {{VAR}} syntax with live preview and injection escaping.
+      evidence: [snippet rendering]
+      linkedStories: [US-7.1]
+      priority: Must
+    - id: FR-07
+      title: Council Modes
+      status: delivered
+      description: The system shall support correct, debate, and consensus council modes.
+      evidence: [council services]
+      linkedStories: [US-10.1]
+      priority: Should

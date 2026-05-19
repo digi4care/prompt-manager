@@ -1,0 +1,150 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-01
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-1.1
+      title: Install Better Auth library
+      status: done
+      description: Install and configure Better Auth as the authentication framework.
+      acceptanceCriteria: ["Better Auth package installed", "Configuration file created"]
+      evidence: [prompt-management-vtl]
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.2
+      title: Configure Better Auth environment
+      status: done
+      description: Set up environment variables and configuration for Better Auth.
+      acceptanceCriteria: ["Env vars documented in .env.example"]
+      evidence: [prompt-management-1yz]
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.3
+      title: Create Better Auth instance
+      status: done
+      description: Create the Better Auth instance with Drizzle adapter.
+      acceptanceCriteria: ["auth.ts exports working Better Auth instance"]
+      evidence: [prompt-management-3qo]
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.4
+      title: Extend users schema with auth fields
+      status: done
+      description: Add emailVerified and other auth fields to users table.
+      acceptanceCriteria: ["Schema migration runs cleanly"]
+      evidence: [prompt-management-up0]
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.5
+      title: Implement SvelteKit hooks
+      status: done
+      description: Set up hooks.server.ts for auth, rate limiting, security headers.
+      acceptanceCriteria: ["Auth checks work on protected routes"]
+      evidence: [prompt-management-526]
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-01, NFR-01]
+      epicId: epic-01
+    - id: US-1.6
+      title: Set up session management
+      status: done
+      description: Configure session management with Better Auth.
+      acceptanceCriteria: ["Sessions persist across requests"]
+      evidence: [prompt-management-01t]
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.7
+      title: Add admin role check
+      status: done
+      description: Implement admin role verification for protected routes.
+      acceptanceCriteria: ["Admin routes return 403 for non-admin users"]
+      evidence: [prompt-management-7sv]
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [SEC-02]
+      epicId: epic-01
+    - id: US-1.8
+      title: Create /login page
+      status: done
+      description: Build login page with email/password form.
+      acceptanceCriteria: ["Login page renders and authenticates"]
+      evidence: [prompt-management-6mi]
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.9
+      title: Create /register page
+      status: done
+      description: Build registration page with email/password form.
+      acceptanceCriteria: ["Registration creates new user"]
+      evidence: [prompt-management-afy]
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.10
+      title: Add login/logout UI nav
+      status: done
+      description: Add login/logout navigation elements to the layout.
+      acceptanceCriteria: ["Nav shows login/logout based on auth state"]
+      evidence: [prompt-management-2nc]
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.11
+      title: Write auth flow unit tests
+      status: done
+      description: Unit tests for authentication flows.
+      acceptanceCriteria: ["Auth tests pass"]
+      evidence: [prompt-management-yt5]
+      priority: P0
+      estimate: M
+      workType: verify
+      linkedRequirements: [FR-01]
+      epicId: epic-01
+    - id: US-1.12
+      title: Write E2E tests for /admin protection
+      status: done
+      description: E2E tests verifying admin route protection.
+      acceptanceCriteria: ["E2E tests pass for admin protection"]
+      evidence: [prompt-management-rbv]
+      priority: P0
+      estimate: M
+      workType: verify
+      linkedRequirements: [SEC-02]
+      epicId: epic-01
+    - id: US-1.13
+      title: Security review and audit
+      status: done
+      description: Comprehensive security review of auth implementation.
+      acceptanceCriteria: ["Security review document completed"]
+      evidence: [prompt-management-8ji]
+      priority: P0
+      estimate: L
+      workType: verify
+      linkedRequirements: [SEC-01, SEC-02]
+      epicId: epic-01

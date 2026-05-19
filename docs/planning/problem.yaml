@@ -1,0 +1,36 @@
+apiVersion: planning/v1
+kind: ProblemStatement
+metadata:
+  name: problem-statement
+  lastUpdated: "2026-05-19"
+spec:
+  currentSituation: |
+    Prompt engineering is ad-hoc: prompts live in scattered files,
+    execution is non-deterministic, and there's no versioning or
+    improvement workflow.
+  rootCauses:
+    - cause: No centralized prompt management with metadata
+      impact: Prompts scattered across files with no organization
+      evidence: Existing codebase before this project
+    - cause: No deterministic model/parameter resolution
+      impact: Inconsistent execution results
+      evidence: SPEC-00 defines the settings-first execution differentiator
+    - cause: No version history or diff visualization
+      impact: Lost work when prompts change
+      evidence: Version history feature implemented
+    - cause: No structured improvement loop
+      impact: Manual error-prone improvement process
+      evidence: Improvement feature implemented
+  impact:
+    - Inconsistent execution results
+    - Lost work when prompts change
+    - No audit trail for model selection
+    - Manual error-prone improvement process
+  evidence:
+    - source: PROJECT.md
+      description: Validated requirements show existing codebase covers CRUD, versions, judging, improvement
+    - source: SPEC-00
+      description: Defines the settings-first execution differentiator
+    - source: Beads issues
+      description: Active development on execution, logging, streaming, council modes
+  unknowns: []

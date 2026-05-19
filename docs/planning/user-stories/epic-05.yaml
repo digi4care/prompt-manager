@@ -1,0 +1,62 @@
+apiVersion: planning/v1
+kind: UserStories
+metadata:
+  name: epic-05
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: US-5.1
+      title: Execute prompt via OpenCode SDK and receive AI response
+      status: done
+      description: Integrate OpenCode SDK to execute prompts and receive AI responses.
+      acceptanceCriteria: ["Prompt executes and returns AI response"]
+      evidence: []
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-02, FR-03]
+      epicId: epic-05
+    - id: US-5.2
+      title: Display resolved model used for each execution
+      status: done
+      description: Show which model was resolved and used during prompt execution.
+      acceptanceCriteria: ["Resolved model displayed in execution results"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-02]
+      epicId: epic-05
+    - id: US-5.3
+      title: Support per-execution override of model, temperature, and max_tokens
+      status: done
+      description: Allow users to override model, temperature, and max_tokens for individual executions.
+      acceptanceCriteria: ["Overrides applied correctly per execution"]
+      evidence: []
+      priority: P0
+      estimate: M
+      workType: build
+      linkedRequirements: [FR-02, FR-04]
+      epicId: epic-05
+    - id: US-5.4
+      title: Show clear error context for failed executions
+      status: done
+      description: Display actionable error messages when prompt execution fails.
+      acceptanceCriteria: ["Error messages indicate cause and suggested action"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-02, NFR-02]
+      epicId: epic-05
+    - id: US-5.5
+      title: Display execution duration and token counts in response
+      status: done
+      description: Show execution duration and token usage metrics alongside the AI response.
+      acceptanceCriteria: ["Duration and token counts visible in results"]
+      evidence: []
+      priority: P0
+      estimate: S
+      workType: build
+      linkedRequirements: [FR-02, FR-06]
+      epicId: epic-05

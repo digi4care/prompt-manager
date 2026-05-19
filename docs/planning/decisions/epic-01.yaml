@@ -1,0 +1,45 @@
+apiVersion: planning/v1
+kind: Decisions
+metadata:
+  name: epic-01
+  lastUpdated: "2026-05-19"
+spec:
+  items:
+    - id: DEC-001
+      title: OpenCode SDK over direct API
+      status: active
+      decision: Use OpenCode SDK instead of direct HTTP API calls.
+      rationale: SDK provides session management, streaming, error mapping.
+      alternatives:
+        - Direct HTTP API calls
+      tradeoffs:
+        - SDK lock-in vs cleaner integration
+    - id: DEC-003
+      title: Drizzle ORM
+      status: active
+      decision: Use Drizzle ORM with SQLite/libsql.
+      rationale: Type-safe, SQLite-compatible, existing investment.
+      alternatives:
+        - Prisma
+        - Raw SQL
+      tradeoffs:
+        - Less ecosystem than Prisma but better TypeScript integration
+    - id: DEC-004
+      title: Dual Auth (Better Auth + JWT)
+      status: active
+      decision: Better Auth for sessions, legacy JWT for API tokens.
+      rationale: Better Auth handles modern auth; JWT keeps API compatibility.
+      alternatives:
+        - Better Auth only
+        - JWT only
+      tradeoffs:
+        - Dual system complexity but maintains backward compatibility
+      supersededBy: null
+    - id: DEC-006
+      title: Better-Auth Instrumentation Shim
+      status: active
+      decision: Create Vite alias shim for @better-auth/core/instrumentation.
+      rationale: better-auth@1.5.0 dist imports from non-exported subpath.
+      alternatives: []
+      tradeoffs:
+        - Workaround needed until upstream fix

@@ -1,0 +1,95 @@
+apiVersion: planning/v1
+kind: PlanningState
+metadata:
+  name: planning-state
+  lastUpdated: "2026-05-19"
+spec:
+  currentState: draft
+  scaleProfile: Large
+  complete: false
+  nextAction: "Complete YAML migration and validate canonical structure"
+  primaryBlocker: "Numbered index.md directories need replacement with YAML files"
+  requiresHumanIntervention: false
+  gateTable:
+    - state: draft
+      lifecycleStage: Discover
+      pass: true
+      evidence: "Project exists with specs"
+      missing: null
+    - state: problem_validated
+      lifecycleStage: Discover
+      pass: true
+      evidence: "PROJECT.md defines problem"
+      missing: null
+    - state: requirements_ready
+      lifecycleStage: Plan
+      pass: true
+      evidence: "43 requirements in requirements/"
+      missing: null
+    - state: diagram_ready
+      lifecycleStage: Plan
+      pass: false
+      evidence: "Architecture descriptions exist"
+      missing: "Renderable Mermaid diagrams pending"
+    - state: backlog_ready
+      lifecycleStage: Plan
+      pass: true
+      evidence: "Beads has 67+ issues; epics mapped"
+      missing: null
+    - state: mvp_scoped
+      lifecycleStage: Plan
+      pass: true
+      evidence: "MVP scope documented"
+      missing: null
+    - state: iteration_ready
+      lifecycleStage: Execute
+      pass: false
+      evidence: "YAML migration in progress"
+      missing: "Complete YAML conversion"
+    - state: implementation_ready
+      lifecycleStage: Execute
+      pass: false
+      evidence: null
+      missing: "YAML migration must complete first"
+    - state: verification_ready
+      lifecycleStage: Verify
+      pass: false
+      evidence: null
+      missing: "Blocked by migration"
+    - state: release_ready
+      lifecycleStage: Release
+      pass: false
+      evidence: null
+      missing: "Blocked by migration"
+  documentMap:
+    - doc: personas.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: problem.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: vision.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: architecture.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: mvp-scope.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: mvp-plan.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: test-strategy.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: release.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+    - doc: diagrams/traceability.yaml
+      status: active
+      lastUpdated: "2026-05-19"
+  openQuestions:
+    - question: "Should legacy numbered dirs be removed after YAML migration?"
+      owner: dev
+      decisionNeeded: true

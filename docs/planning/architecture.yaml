@@ -1,0 +1,217 @@
+apiVersion: planning/v1
+kind: Architecture
+metadata:
+  name: architecture
+  lastUpdated: "2026-05-19"
+spec:
+  systemOverview: |
+    SvelteKit full-stack application with service layer architecture,
+    Drizzle ORM, and OpenCode SDK integration. SvelteKit 5 with Svelte 5 runes,
+    Bun runtime, SQLite via libsql, Better Auth for sessions, JWT for API tokens,
+    OpenCode SDK for AI execution, Tailwind CSS v4 for styling.
+  modules:
+    - name: Auth
+      responsibility: Better Auth sessions, JWT API tokens, admin protection
+      dependencies: [better-auth, jsonwebtoken]
+    - name: Prompts
+      responsibility: CRUD, Monaco editor, frontmatter, versioning
+      dependencies: [drizzle-orm]
+    - name: Execution
+      responsibility: Prompt execution via OpenCode SDK with model resolution
+      dependencies: [opencode, settings]
+    - name: Versions
+      responsibility: Version history with diff visualization
+      dependencies: [drizzle-orm]
+    - name: Improvement
+      responsibility: AI-powered improvement loop with variant generation
+      dependencies: [opencode, execution]
+    - name: Settings
+      responsibility: Schema registry with dependency graph, cascade resolution
+      dependencies: [drizzle-orm]
+    - name: Snippets
+      responsibility: CRUD, categories, tags, preview
+      dependencies: [drizzle-orm]
+    - name: Council
+      responsibility: Multi-model orchestration (correct, debate, review)
+      dependencies: [opencode, execution]
+    - name: Admin
+      responsibility: Dashboard, AI settings, model catalog
+      dependencies: [settings, auth]
+    - name: OpenCode
+      responsibility: SDK boundary, session management, error mapping
+      dependencies: ["@opencode-ai/sdk"]
+  keyComponents:
+    - name: Route Layer
+      type: layer
+      responsibility: HTTP request handling, validation, response formatting
+    - name: Service Layer
+      type: layer
+      responsibility: Business logic, orchestration, data transformation
+    - name: Data Access Layer
+      type: layer
+      responsibility: Database operations via Drizzle ORM
+    - name: Component Layer
+      type: layer
+      responsibility: Reusable UI components
+    - name: Store Layer
+      type: layer
+      responsibility: Client-side state management with Svelte 5 runes
+  keyTechnicalDecisions:
+    - id: DEC-001
+      title: OpenCode SDK over direct API
+      decision: Use OpenCode SDK instead of direct HTTP API calls
+      rationale: SDK provides session management, streaming, error mapping
+      alternatives:
+        - Direct HTTP API calls
+      tradeoffs:
+        - SDK lock-in vs cleaner integration
+    - id: DEC-002
+      title: Settings-first execution
+      decision: Every execution resolves model via deterministic cascade
+      rationale: Deterministic, auditable, testable
+      alternatives:
+        - Per-request configuration only
+      tradeoffs:
+        - More complex settings but predictable behavior
+    - id: DEC-003
+      title: Drizzle ORM
+      decision: Use Drizzle ORM with SQLite/libsql
+      rationale: Type-safe, SQLite-compatible, existing investment
+      alternatives:
+        - Prisma
+        - Raw SQL
+      tradeoffs:
+        - Less ecosystem than Prisma but better TypeScript integration
+    - id: DEC-004
+      title: Dual Auth
+      decision: Better Auth for sessions, legacy JWT for API tokens
+      rationale: Better Auth handles modern auth; JWT keeps API compatibility
+      alternatives:
+        - Better Auth only
+        - JWT only
+      tradeoffs:
+        - Dual system complexity but maintains backward compatibility
+    - id: DEC-005
+      title: Settings Schema Registry
+      decision: Build new registry with dependency graph and cascade resolution
+      rationale: Legacy 756-line monolithic settings page is unmaintainable
+      alternatives:
+        - Incremental refactor of legacy page
+      tradeoffs:
+        - Dual system during migration but cleaner long-term architecture
+  referenceModels: []
+  scenarios: []
+  versionHistory:
+    - version: "0.0.1"
+      date: "2026-02-14"
+      changes: Initial codebase analysis
+  constraints:
+    - Tech stack locked: SvelteKit 5, Bun, Drizzle ORM, OpenCode SDK
+    - Database: Additive changes only, no drop/rename of existing columns
+    - OpenCode: Always via server routes, never from browser
+    - Error handling: All errors mapped to stable app error codes (ERR-*)
+    - Precedence: Model/parameter resolution defined only in SPEC-06 policies
+  legacyContent:
+    technologyStack: |
+      Framework: SvelteKit 5 with Svelte 5 runes
+      Runtime: Bun; Node.js 20+ for Docker production (node:20-alpine)
+      Database: SQLite via libsql (Drizzle ORM), Turso-compatible
+      Auth: Better Auth (sessions) + legacy JWT (API tokens)
+      AI: OpenCode SDK (@opencode-ai/sdk)
+      Styling: Tailwind CSS v4
+      Testing: Vitest (unit), Playwright (E2E)
+      Build/Dev: TypeScript ESLint 8.54.0, Prettier 3.8.1
+      Core versions: SvelteKit 2.50.2, Vite 7.3.1, Tailwind CSS 4.1.18, Vitest 4.0.18, Playwright 1.58.2
+    keyDependencies: |
+      Critical: @opencode-ai/sdk 1.1.53, drizzle-orm 0.45.1, better-auth 1.4.18
+      UI: bits-ui 2.15.5, @lucide/svelte 0.563.1, monaco-editor 0.55.1, svelte-sonner 1.0.7
+      Data & Validation: zod 4.3.6, yaml 2.8.2, diff 8.0.3
+      Security: jsonwebtoken 9.0.3, bcrypt 6.0.0, @noble/hashes 2.0.1
+      Infrastructure: @libsql/client 0.17.0, winston 3.19.0, dotenv 17.2.4
+    dataFlows: |
+      Page Load Flow: Browser requests page → SvelteKit matches route → Server load calls services → Services query Drizzle → Data returned as props → Svelte renders.
+      API Request Flow: Client sends HTTP request → hooks.server.ts handles rate limiting/auth/headers → Route handler validates with Zod → Service layer processes → Drizzle operations → JSON response.
+      AI Improvement Flow: User initiates improvement → POST /api/prompts/[id]/improve → improvement.service.ts orchestrates policy/model/OpenCode → Variants displayed → User selects variant → New version created.
+    crossCuttingConcerns: |
+      Logging: Console-based with structured prefixes; security events via logSecurityEvent() from src/lib/server/audit.ts. Winston → console (dev) + logs/audit.log (JSON).
+      Validation: Zod schemas for runtime validation at src/lib/validators/ and inline in API routes.
+      Authentication: Dual system — Better Auth (sessions) + JWT (API tokens); both checked in hooks.server.ts.
+      Authorization: Route-level protection in hooks.server.ts; public routes: /login, /api/health, /favicon.ico, /static/; admin via requireAdmin().
+      Rate Limiting: In-memory Map with sliding window; general routes: 100 req/min, auth routes: 30 req/min.
+      Security Headers: CSP (restrictive, allows Monaco), CORS via ALLOWED_ORIGINS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, HSTS (production).
+    codebaseArchitecture: |
+      Pattern Overview: SvelteKit Full-Stack Application with Service Layer Architecture.
+      Key Characteristics: File-based routing, service layer separating business logic from routes, repository pattern via Drizzle ORM, dual authentication, adapter pattern for OpenCode AI integration with domain-specific error handling.
+    directoryLayout: |
+      src/
+        routes/                   # SvelteKit file-based routing
+          api/                    # REST API endpoints
+          prompts/                # Prompt pages
+          admin/                  # Admin pages
+          login/                  # Login page
+          logout/                 # Logout page
+          register/               # Registration page
+          +layout.svelte          # Root layout
+          +layout.server.ts       # Root layout data
+          +page.svelte            # Home page
+        lib/
+          server/                 # Server-only code
+            db/                   # Database layer
+            services/             # Business logic services
+            auth/                 # Authentication modules
+            opencode/             # OpenCode integration
+            config/               # Server configuration
+            utils/                # Server utilities
+          components/             # UI components
+          stores/                 # Client-side state (Svelte 5 class-based stores)
+          validators/             # Zod validation schemas
+          utils/                  # Shared utilities
+          assets/                 # Static assets
+      Key Server-Only Services: prompts.service.ts, versions.service.ts, improvement.service.ts, judge.service.ts, opencode.service.ts, analytics.service.ts, admin-settings.service.ts.
+      Naming Conventions: Svelte components kebab-case.svelte, TypeScript modules kebab-case.ts, route files SvelteKit conventions, test files *.test.ts (unit) / *.spec.ts (E2E), store files *.svelte.ts, interfaces PascalCase, schema-inferred types $inferSelect / $inferInsert.
+      Where to Add New Code: New feature → src/routes/[feature]/ + src/routes/api/[feature]/+server.ts + src/lib/server/services/[feature].service.ts; New component → src/lib/components/ui/[component]/; New API → src/routes/api/[resource]/+server.ts; New table → src/lib/server/db/schema.ts + drizzle-kit migration; New test → tests/[domain].test.ts or e2e/[feature].spec.ts.
+    integrations: |
+      OpenCode AI Platform: SDK @opencode-ai/sdk, client at src/lib/server/opencode/client.ts, OPENCODE_URL env var (default: http://localhost:4096), agents: prompt-judge and prompt-improve, session-based execution, provider/model catalog with 5-minute TTL cache, health check.
+      Data Storage: SQLite via libSQL (DATABASE_URL default: file:local.db), file storage local only (logs/audit.log via winston), caching in-memory only (rate limit map, provider catalog cache 5-min TTL); no Redis.
+      Authentication & Identity: Better Auth self-hosted (src/lib/auth.ts), Drizzle/SQLite adapter, scrypt via @noble/hashes/scrypt. Features: email/password, TOTP 2FA, OAuth (GitHub, Google optional), 7-day sessions, JWT API tokens. Admin: ADMIN_PASSWORD, ADMIN_EMAIL, dev bypass ALLOW_DEV_BYPASS=true (never in production).
+      Monitoring & Observability: Winston logging, health checks at /api/health, OpenCode health check, Docker HEALTHCHECK. Error tracking: none (application-level only).
+      CI/CD & Deployment: Docker containers, @sveltejs/adapter-auto, GitHub Actions .github/workflows/tests.yml via Docker, docker-compose.yml and docker-compose.playwright.yml.
+      Environment Configuration: Required: DATABASE_URL, BETTER_AUTH_SECRET, JWT_SECRET. Production required: OPENCODE_URL, ADMIN_PASSWORD. Optional OAuth: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET. Secrets: dev in .env, production via Docker secrets/environment injection.
+    researchArchitecture: |
+      System Overview Diagram: CLIENT LAYER → API LAYER → SERVICE LAYER → INTEGRATION LAYER → PERSISTENCE LAYER.
+      Recommended Services: Settings Resolver, Execution Logger, Snippet Service, Council Orchestrator, OpenCode Adapter, Contract Parser.
+      Architectural Patterns: Settings Resolution Cascade (Request > Preset > User Default > System Default), Execution Logging with Async Persistence (fire-and-forget, batch flush every 5s or queue > 50), Council Orchestrator (Orchestrator-Worker with checkpoint persistence), Snippet Variable Replacement ({{variable}} template engine).
+      Scaling Considerations: 0-1k users — monolith fine; 1k-100k — connection pooling, Redis log queue, read replicas; 100k+ — separate execution workers, async job queue (BullMQ), dedicated log service.
+      Anti-Patterns: Direct SDK calls in routes (always through service layer), synchronous logging (use async fire-and-forget), settings in environment only (use DB-backed with cascade), monolithic workflow functions (use step-based orchestrator with checkpoints).
+      Build Order: Phase 1 — Settings Resolver + Execution Logger; Phase 2 — Snippet Service; Phase 3 — Council Orchestrator.
+    researchStack: |
+      Recommended Stack (Maintain): SvelteKit ^2.51.0, Svelte ^5.51.0, Bun (latest), Drizzle ORM ^0.45.1, TypeScript ^5.9.3, OpenCode SDK ^1.2.1 (update from 1.1.53).
+      Supporting Libraries: sveltekit-sse ^1.0.0 (SSE streaming), Zod ^4.3.6, yaml ^2.8.2, tailwind-variants ^3.2.2.
+      Feature Stack Requirements: Settings Refactor — Zod v4 + TypeScript strict; Prompt Execution — OpenCode SDK ^1.2.1 + sveltekit-sse; Snippet Variables — custom regex; Council Modes — OpenCode SDK ^1.2.1 + Zod v4.
+      Alternatives Considered: sveltekit-sse vs Native ReadableStream/WebSockets — SSE chosen for cleaner API; Custom {{VAR}} vs Mustache/Handlebars — custom chosen to avoid over-engineering; OpenCode SDK vs Vercel AI SDK/Direct Anthropic API — project committed to OpenCode.
+      What NOT to Use: @anthropic-ai/sdk (use OpenCode SDK), Mustache/Handlebars/EJS/Pug (use custom regex), Vercel AI SDK (conflicts with OpenCode), WebSocket libraries (SSE simpler for unidirectional).
+    spec02Architecture: |
+      ARC-001 System Context: Frontend — SvelteKit UI for settings, prompt editing, testing; Backend — SvelteKit server routes + service layer; AI Engine — OpenCode server via @opencode-ai/sdk; Storage — SQLite/libsql via Drizzle.
+      ARC-002 Module Boundaries: MOD-001 Settings (policy/defaults/provider config), MOD-002 Prompt (CRUD/versioning/snippet rendering), MOD-003 Execution (run prompt, stream, log), MOD-004 Judge (rubric scoring), MOD-005 Council (multi-model orchestration).
+      ARC-003 Data Flow (Execution): UI submits prompt run → API resolves model by precedence → Snippets rendered → Execution service calls OpenCode SDK → Response + metrics saved → API returns structured result.
+      ARC-004 Operational Constraints: Do not call OpenCode directly from browser; always via server routes. Keep SDK errors mapped to stable app error codes. All settings writes must be auditable by key + timestamp.
+      ARC-005 Reliability Rules: Retry transient OpenCode failures up to configured limit. Do not retry validation errors. Timeout requests based on settings value.
+      ARC-006 Explicit Behaviors: Resolution behavior must follow SPEC-06-rules-and-policies.md (POL-002, POL-003, POL-004). Architecture and API documents must reference policy IDs instead of re-defining precedence. Error payloads must include stable app code and user action hint for UI rendering.
+    spec10SettingsSchema: |
+      SET-001 Purpose: Define all settings keys, types, defaults, and validation so backend and UI share one contract.
+      SET-002 Storage: Backed by adminSettings key-value table; key is unique; value is serialized JSON for non-scalar types.
+      SET-003 Key Registry includes: opencode_policy_mode (enum: restricted/open), opencode_allowed_models (string[]), opencode_global_default_model, opencode_timeout_ms, opencode_retry_count, opencode_retry_delay_ms, opencode_executor_default_model, opencode_executor_temperature, opencode_executor_max_tokens, opencode_judge_default_model, opencode_judge_temperature, opencode_improve_default_model, opencode_improve_temperature, opencode_council_correct_producer_model, opencode_council_correct_reviewer_model, opencode_council_correct_fix_model, opencode_council_step_timeout_ms, opencode_stream_enabled, snippet_strict_default, snippet_js_enabled.
+      SET-004 Validation Rules: Unknown key → SETTINGS_KEY_INVALID; Type mismatch → SETTINGS_VALUE_INVALID; Number out of range → SETTINGS_VALUE_INVALID; Invalid model id format → SETTINGS_VALUE_INVALID.
+      SET-005 Default/Override/Fallback/Error: Overrides happen in runtime APIs and prompt-level settings; Fallback and precedence follow POL-002 and POL-003; If no value can be resolved, return MODEL_RESOLUTION_FAILED.
+      SET-006 UI Binding Rules: Each key bound to specific form control type; Save action validates against schema before persistence; UI must show value source when inherited from global default.
+    aiSettingsArchitecture: |
+      Decision Snapshot: model + variant becomes first-class in backend settings flows; Variant choices in Function Defaults and LLM Council must be constrained by current AI Policy whitelist/matrix; If a stored variant is no longer allowed, behavior is hard fail (no silent fallback); Model Catalog must expose richer model/provider capabilities.
+      Current Architecture (As Is): Settings shell at src/routes/settings/+page.svelte, server aggregator at +page.server.ts, domain sections: connection, providers, AI policy, function defaults, LLM council, model catalog, presets. Policy can whitelist model variants, but Defaults/Council selectors do not fully persist/enforce variant.
+      Gap Analysis: Variant propagation gap (policy whitelists variants but Defaults/Council do not persist/enforce variant as backend identity); Catalog depth gap (missing reasoning level variants, tool support, JSON mode, context/output limits, pricing, policy-overlay status); Validation gap (no single central validator enforcing (scope, model, variant) against policy matrix).
+      Target Architecture (To Be): Policy as source of selectable variants; First-class modelVariant in settings chain (UI selection → API payload → DB storage → settings cascade → runtime request); Hard-fail policy (return typed validation failure 400/422 with reason and remediation; no auto-fallback); Catalog v2: rich and policy-aware (provider metadata, model metadata, variant list per model, policy overlay per scope).
+      End-to-End Behavior by Section: AI Policy — keep as authority, add explicit diagnostics for variant coverage gaps; Function Defaults — add variant picker tied to selected model, options filtered by policy scope, persist modelVariant; LLM Council — add variant picker per member, options filtered by council scope, persist modelVariant; Model Catalog — show richer capabilities and explicit variants per model, include policy overlay status; Runtime consumers — accept resolved variant from cascade and pass through to OpenCode adapter layer.
+      Backend Trace (Target): /api/admin/function-defaults/[type] — accept/store/validate modelVariant; /api/admin/council-agents* — accept/store/validate modelVariant; /api/opencode/providers — return enriched catalog with variant and capability payload; Service layer — add central validator module, extend cascade service to resolve variant + source; Storage layer — add function_defaults.model_variant, prompt_function_settings.model_variant_override, council_agents.model_variant.
+      Runtime Impact: execute, judge, improve endpoints must receive deterministic resolved variant from backend resolution, not infer ad-hoc.
+      Error Model (Hard Fail): Typed errors: MODEL_VARIANT_NOT_ALLOWED, MODEL_VARIANT_UNAVAILABLE, MODEL_VARIANT_REQUIRED. Validate on save (admin endpoints) and on resolve (runtime). Fail fast with actionable message; no variant auto-fallback.
+      Diagram Coverage: Diagrams in docs/plans/ai-settings-architecture/diagrams/ updated for variant-aware policy/defaults/council linkage, hard-fail resolution gate, ERD with variant columns.
+      Reference Paths: src/lib/server/services/settings-cascade.service.ts, src/lib/server/services/function-defaults.service.ts, src/lib/server/services/opencode.service.ts, src/routes/api/admin/function-defaults/[type]/+server.ts, src/routes/api/admin/council-agents/+server.ts, src/routes/api/opencode/providers/+server.ts.

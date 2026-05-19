@@ -1,0 +1,186 @@
+apiVersion: planning/v1
+kind: TestStrategy
+metadata:
+  name: test-strategy
+  lastUpdated: "2026-05-19"
+spec:
+  verificationLayers:
+    - name: Unit Tests
+      description: Vitest with jsdom, testing stores, services, validators
+      coverage: 1200+ tests
+    - name: E2E Tests
+      description: Playwright with chromium/firefox, testing full user flows
+      coverage: 30+ spec files
+    - name: Type Checking
+      description: svelte-check + tsc strict mode
+      coverage: Full codebase
+  activeTestCommands:
+    unit: bun run test
+    unitWatch: bun run test:watch
+    unitCoverage: bun run test:coverage
+    e2e: bun run test:e2e
+    e2eAll: bun run test:e2e:all
+    typeCheck: bun run check
+  testFileDiscovery:
+    unit: tests/unit/**/*.test.ts
+    e2e: e2e/**/*.spec.ts
+    setup: tests/setup.ts
+  testingApproachByStory:
+    - storyId: US-3.1
+      approach: Unit tests for API persistence
+      status: done
+      notes: 177+ registry tests passing
+    - storyId: US-5.1
+      approach: Integration test with OpenCode SDK
+      status: done
+      notes: Execution service tested
+    - storyId: US-10.1
+      approach: E2E test for council correct mode
+      status: done
+      notes: Council E2E specs passing
+  testGaps:
+    - 3 failing tests in judge.api.test.ts (ws module shim issue)
+    - 57 svelte-check warnings (pre-existing, not blocking)
+    - Coverage gap for instrumentation shim
+  testFramework:
+    runner: |
+      Vitest for unit tests
+      Playwright for E2E tests
+      Config: vitest.config.ts and playwright.config.ts
+    assertionLibrary: |
+      Vitest built-in assertions (expect, describe, it, beforeEach, afterEach)
+      Playwright Test assertions for E2E
+      @testing-library/jest-dom for DOM assertions
+    runCommands: |
+      bun run test              # Run all unit tests
+      bun run test:watch        # Watch mode
+      bun run test:coverage     # Coverage report
+      bun run test:e2e          # Run E2E tests (chromium only)
+      bun run test:e2e:all      # Run E2E tests across all browsers
+  testFileOrganization:
+    location: |
+      Unit tests: tests/**/*.test.ts (separate from source)
+      E2E tests: e2e/**/*.spec.ts (separate directory)
+      Pattern: Separate test directory, not co-located
+    naming: |
+      Unit tests: *.test.ts suffix (e.g., prompts.test.ts)
+      E2E tests: *.spec.ts suffix (e.g., prompts.spec.ts)
+      Test doubles: *.test-double.test.ts (e.g., opencode.test-double.test.ts)
+    structure: |
+      tests/
+      ├── setup.ts                    # Global test setup
+      ├── ws-interop.ts               # WebSocket mock for libsql
+      ├── prompts.test.ts             # Store/logic tests
+      ├── layout.test.ts              # Layout tests
+      ├── improvement/
+      │   ├── JudgeResults.test.ts    # Component logic tests
+      │   └── VariantComparison.test.ts
+      ├── integration/
+      │   ├── better-auth.test.ts     # Integration tests
+      │   └── better-auth-config.test.ts
+      ├── mocks/
+      │   └── opencode.test-double.test.ts
+      └── server/
+          ├── auth/
+          │   └── jwt.test.ts
+          └── env.test.ts
+
+      e2e/
+      ├── prompts.spec.ts             # E2E prompt tests
+      ├── prompt-editor.spec.ts       # E2E editor tests
+      ├── new-prompt.spec.ts          # E2E new prompt page
+      └── ...                         # Many more E2E specs
+  testPatterns: |
+    - Group tests by functionality using nested describe blocks
+    - Use beforeEach for setup, afterEach for cleanup
+    - Test both success and error cases
+    - Test edge cases (empty data, null values, boundary conditions)
+  mocking:
+    framework: Vitest (vi)
+    patterns: |
+      // Mock global fetch
+      global.fetch = vi.fn();
+
+      // Mock with resolved value
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ data: samplePrompts })
+      });
+
+      // Mock localStorage
+      const localStorageMock = {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        clear: vi.fn(),
+        removeItem: vi.fn()
+      };
+      global.localStorage = localStorageMock as unknown as Storage;
+
+      // Mock window.matchMedia
+      Object.defineProperty(window, 'matchMedia', {
+        value: vi.fn().mockReturnValue({
+          matches: false,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn()
+        }),
+        writable: true
+      });
+
+      // Mock modules
+      vi.mock('ws', () => ({
+        WebSocket: class {},
+        default: class {}
+      }));
+    whatToMock:
+      - Global APIs (fetch, localStorage, window properties)
+      - External dependencies (WebSocket, database clients)
+      - Network requests
+    whatNotToMock:
+      - Business logic (test actual implementation)
+      - Pure functions (test with real inputs)
+      - Type definitions
+  fixturesAndFactories: |
+    Test data defined inline in test files.
+    No separate fixture directory detected.
+    Shared types imported from source modules.
+  coverage:
+    requirements: No explicit coverage target enforced
+    viewCommand: bun run test:coverage
+    configStatus: Not explicitly configured in vitest.config.ts
+  testTypes:
+    unit:
+      description: |
+        Test stores, services, and utility functions.
+        Use mocking for external dependencies.
+        Test business logic in isolation.
+      location: tests/**/*.test.ts
+    e2e:
+      description: |
+        Test full user journeys across the application.
+        Run against real server with real database.
+        Validate integration between all layers.
+      location: e2e/**/*.spec.ts
+  operationalTestingContract:
+    workTypes:
+      build:
+        - verification: story-specific tests + acceptance evidence
+          evidence: assertion output, runtime/log/console
+      fix:
+        - verification: regression proof + affected callsite check
+          evidence: assertion output + bug reproduction
+      research:
+        - verification: hypothesis evidence
+          evidence: note, spike result
+      enable:
+        - verification: tool/runtime smoke
+          evidence: command output
+      verify:
+        - verification: acceptance/audit evidence
+          evidence: artifact links
+      release:
+        - verification: package/install/rollback proof
+          evidence: release command output
+  legacyContent:
+    - |
+      Source: docs/planning/09-testing/index.md
+      Original testing patterns and detailed test examples preserved in archive.

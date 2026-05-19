@@ -690,7 +690,7 @@
 									</div>
 								{/if}
 							{:else if section.id === 'policy'}
-								<PolicyEditor />
+							<PolicyEditor models={data.models} />
 							{:else if section.id === 'defaults'}
 								<FunctionDefaultsList
 									executor={functionDefaults.executor}

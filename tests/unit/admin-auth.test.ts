@@ -14,12 +14,14 @@ describe('Admin Authentication', () => {
 			vi.stubEnv('NODE_ENV', originalNodeEnv);
 		});
 
-		it('should allow ADMIN_PASSWORD to be empty in development', () => {
+		it('should require ADMIN_PASSWORD in development', () => {
 			const originalNodeEnv = process.env.NODE_ENV;
 			vi.stubEnv('NODE_ENV', 'development');
+			vi.stubEnv('ADMIN_PASSWORD', 'dev-password');
 
-			// In dev mode, we allow no password for easier local development
-			expect(process.env.ADMIN_PASSWORD).toBeUndefined();
+			// Admin password must be set even in dev - never allow empty passwords
+			expect(process.env.ADMIN_PASSWORD).toBeDefined();
+			expect(process.env.ADMIN_PASSWORD).not.toBe('');
 
 			vi.unstubAllEnvs();
 			vi.stubEnv('NODE_ENV', originalNodeEnv);

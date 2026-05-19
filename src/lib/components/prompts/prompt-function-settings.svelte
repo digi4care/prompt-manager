@@ -225,7 +225,7 @@
 										min={0}
 										max={2}
 										step={0.1}
-										type="range"
+										type="multiple"
 										onValueChange={(v: number[]) => {
 											localSettings[ft].temperature = v[0];
 										}}

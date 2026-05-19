@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAdmin } from './auth-helper';
 
 function setupConsoleErrorCheck(page: any): () => Promise<void> {
 	const errors: string[] = [];
@@ -23,19 +24,6 @@ function setupConsoleErrorCheck(page: any): () => Promise<void> {
 	};
 }
 
-/**
- * Authenticate as admin for E2E tests
- * In development mode, uses the bypass password
- */
-async function authenticateAdmin(page: any): Promise<void> {
-	const response = await page.request.post('/api/admin/login', {
-		data: { password: 'bypass' }
-	});
-
-	if (!response.ok()) {
-		throw new Error(`Failed to authenticate: ${response.statusText()}`);
-	}
-}
 
 test.describe('Admin Settings Page', () => {
 	test.beforeEach(async ({ page }) => {
@@ -227,7 +215,7 @@ test.describe('Admin Settings Page', () => {
 
 test.describe('Admin Settings - Interaction Tests', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/admin');
+		await authenticateAdmin(page, '/admin');
 		// Wait for loading spinner to disappear and settings to load
 		await page.waitForSelector('.settings-panel:not(:has(.animate-spin))', { timeout: 15000 });
 	});

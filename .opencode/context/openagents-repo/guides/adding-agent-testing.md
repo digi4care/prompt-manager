@@ -1,3 +1,5 @@
+<!-- Context: openagents-repo/guides | Priority: high | Version: 1.0 | Updated: 2026-02-15 -->
+
 # Guide: Adding Agent Tests
 
 **Prerequisites**: Load `adding-agent-basics.md` first  
@@ -46,7 +48,7 @@ expectations:
 
 ```bash
 # 1. Create agent file
-cat > .opencode/agent/development/api-specialist.md << 'EOF'
+cat > .opencode/agent/subagents/development/api-specialist.md << 'EOF'
 ---
 description: "Expert in REST and GraphQL API design"
 category: "development"

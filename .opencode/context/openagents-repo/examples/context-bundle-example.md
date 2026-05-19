@@ -1,3 +1,5 @@
+<!-- Context: openagents-repo/examples | Priority: high | Version: 1.0 | Updated: 2026-02-15 -->
+
 # Context Bundle Example: Create Data Analyst Agent
 
 Session: 20250121-143022-a4f2
@@ -35,7 +37,7 @@ Create a new data analyst agent for the OpenAgents Control repository. This agen
 - `.opencode/context/openagents-repo/core-concepts/categories.md` → How organization works
 
 **Guides** (Load for specific workflows):
-- `.opencode/context/openagents-repo/guides/adding-agent.md` → Step-by-step agent creation
+- `.opencode/context/openagents-repo/guides/adding-agent-basics.md` → Step-by-step agent creation
 - `.opencode/context/openagents-repo/guides/testing-agent.md` → Testing workflow
 - `.opencode/context/openagents-repo/guides/updating-registry.md` → Registry workflow
 
@@ -165,7 +167,7 @@ Create a complete data analyst agent for the OpenAgents Control repository follo
 **Approach**:
 1. **Load Context**: Read all context files listed above to understand:
    - How agents are structured (core-concepts/agents.md)
-   - How to add an agent (guides/adding-agent.md)
+   - How to add an agent (guides/adding-agent-basics.md)
    - Code standards (standards/code-quality.md)
    - Testing requirements (core-concepts/evals.md)
 

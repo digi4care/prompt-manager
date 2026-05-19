@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { generateToken } from '$lib/server/auth.helper';
+import { authenticateAdmin } from './auth-helper';
 import { generateTestPrompt } from './helpers';
 
 test.describe('Admin Route Protection', () => {
@@ -15,12 +15,9 @@ test.describe('Admin Route Protection', () => {
 	});
 
 	test('should allow authenticated users to access admin', async ({ page }) => {
-		// Login first
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
-		await page.getByRole('button', { name: 'Login' }).click();
+		await authenticateAdmin(page, '/admin');
 
-		// Should be redirected to admin
+		// Should be on admin page
 		await expect(page).toHaveURL('/admin');
 
 		// Verify admin page is accessible
@@ -41,19 +38,20 @@ test.describe('Admin Route Protection', () => {
 		expect(body.error).toContain('Authentication required');
 	});
 
-	test('should allow API access with valid JWT', async ({ request }) => {
-		// Generate a valid JWT token
-		const token = generateToken({
-			userId: 'admin',
-			email: 'admin@localhost',
-			role: 'admin'
-		});
+	test('should allow API access with valid session', async ({ page, request, context }) => {
+		await authenticateAdmin(page);
 
-		// Make request with JWT
+		// Get session cookies from browser context
+		const cookies = await context.cookies();
+		const sessionCookie = cookies.find(
+			(c) => c.name.includes('better-auth') || c.name.includes('session')
+		);
+
+		// Make request with session cookie
 		const testPrompt = generateTestPrompt();
 		const response = await request.post('/api/prompts', {
 			headers: {
-				Authorization: `Bearer ${token}`,
+				Cookie: sessionCookie ? `${sessionCookie.name}=${sessionCookie.value}` : '',
 				'Content-Type': 'application/json'
 			},
 			data: testPrompt
@@ -63,34 +61,39 @@ test.describe('Admin Route Protection', () => {
 		expect(response.status()).not.toBe(401);
 	});
 
-	test('should show login/logout buttons in header', async ({ page }) => {
+	test('should show login button when logged out and hide admin links', async ({ page }) => {
 		// Before login - should show login button
 		await page.goto('/');
 		await expect(page.getByRole('link', { name: 'Login' })).toBeVisible();
 
-		// Login
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
-		await page.getByRole('button', { name: 'Login' }).click();
-		await page.waitForURL('/admin');
+		// Admin links should NOT be visible
+		await expect(page.getByRole('link', { name: 'Profile' })).not.toBeVisible();
+		await expect(page.getByRole('button', { name: 'Logout' })).not.toBeVisible();
+
+		await authenticateAdmin(page);
 
 		// After login - should show logout button
 		await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
 		await expect(page.getByRole('link', { name: 'Login' })).not.toBeVisible();
 	});
 
+	test('should protect all admin sub-routes when logged out', async ({ page }) => {
+		const adminRoutes = ['/admin/ai-settings', '/admin/profile', '/admin/snippets'];
+
+		for (const route of adminRoutes) {
+			await page.goto(route);
+			await expect(page).toHaveURL(/.*login.*/);
+		}
+	});
+
 	test('should clear session on logout', async ({ page }) => {
-		// Login first
-		await page.goto('/login');
-		await page.getByLabel('Password').fill(process.env.ADMIN_PASSWORD || 'admin123');
-		await page.getByRole('button', { name: 'Login' }).click();
-		await page.waitForURL('/admin');
+		await authenticateAdmin(page);
 
 		// Logout
 		await page.getByRole('button', { name: 'Logout' }).click();
 
-		// Should redirect to home or login
-		await expect(page).toHaveURL(/.*\/$/);
+		// Should redirect to login after logout
+		await expect(page).toHaveURL(/.*login.*/);
 
 		// Try to access admin again
 		await page.goto('/admin');
@@ -100,10 +103,11 @@ test.describe('Admin Route Protection', () => {
 	});
 
 	test('should handle invalid JWT tokens', async ({ request }) => {
-		// Make request with invalid token
-		const response = await request.get('/api/prompts', {
+		// Make request to protected admin endpoint with invalid token
+		const response = await request.get('/api/admin/settings', {
 			headers: {
-				Authorization: 'Bearer invalid-token-123'
+				Authorization: 'Bearer invalid-token-123',
+				Accept: 'application/json'
 			}
 		});
 
@@ -116,9 +120,10 @@ test.describe('Admin Route Protection', () => {
 		const expiredToken =
 			'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AbG9jYWxob3N0Iiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9.invalid-signature';
 
-		const response = await request.get('/api/prompts', {
+		const response = await request.get('/api/admin/settings', {
 			headers: {
-				Authorization: `Bearer ${expiredToken}`
+				Authorization: `Bearer ${expiredToken}`,
+				Accept: 'application/json'
 			}
 		});
 

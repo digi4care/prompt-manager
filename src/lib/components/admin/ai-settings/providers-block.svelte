@@ -6,11 +6,16 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent } from '$lib/components/ui/card';
+	import { showSuccess, showError } from '$lib/stores/toast';
 
 	// Local state
 	let showProviderModal = $state(false);
 	let searchQuery = $state('');
 	let isRefreshing = $state(false);
+	let showConfirmDisconnect = $state(false);
+	let disconnectProviderId = $state('');
+	let disconnectProviderName = $state('');
+	let isDisconnecting = $state(false);
 
 	// Derived: filtered providers for modal
 	let filteredProviders = $derived.by(() => {
@@ -183,23 +188,49 @@
 		apiKeyInput = '';
 	}
 
-	async function handleDisconnectProvider(providerId: string) {
+	function handleDisconnectClick(providerId: string, providerName: string) {
+		disconnectProviderId = providerId;
+		disconnectProviderName = providerName;
+		showConfirmDisconnect = true;
+	}
+
+	function cancelDisconnect() {
+		showConfirmDisconnect = false;
+		disconnectProviderId = '';
+		disconnectProviderName = '';
+	}
+
+	async function confirmDisconnect() {
+		if (!disconnectProviderId) return;
+
+		isDisconnecting = true;
+
 		try {
-			const response = await fetch(`/api/opencode/providers/auth/${providerId}`, {
+			const response = await fetch(`/api/opencode/providers/auth/${disconnectProviderId}`, {
 				method: 'DELETE'
 			});
 
 			if (!response.ok) {
 				const error = await response.json();
 				console.error('Failed to disconnect provider:', error);
+				showError(
+					`Failed to disconnect ${disconnectProviderName}: ${error.message || 'Unknown error'}`
+				);
 				return;
 			}
 
 			const result = await response.json();
-			console.log('Provider disconnected:', providerId, 'connected:', result.connected);
+			console.log('Provider disconnected:', disconnectProviderId, 'connected:', result.connected);
 			providers.setConnected(result.connected);
+			showSuccess(`Successfully disconnected ${disconnectProviderName}`);
+			showConfirmDisconnect = false;
 		} catch (err) {
 			console.error('Error disconnecting provider:', err);
+			showError(`Failed to disconnect ${disconnectProviderName}`);
+		} finally {
+			isDisconnecting = false;
+			disconnectProviderId = '';
+			disconnectProviderName = '';
 		}
 	}
 </script>
@@ -248,22 +279,43 @@
 									</div>
 								</div>
 								<div class="flex items-center gap-2">
-									<Badge variant="default" class="gap-1">
-										<Check class="h-3 w-3" />
-										Connected
-									</Badge>
 									<Button
-										variant="ghost"
-										size="icon"
-										onclick={() => handleDisconnectProvider(provider.id)}
-										title="Disconnect"
+										variant="outline"
+										size="sm"
+										onclick={() => handleDisconnectClick(provider.id, provider.name)}
+										disabled={isDisconnecting}
 									>
-										<X class="h-4 w-4" />
+										Disconnect
 									</Button>
 								</div>
-							</div>
-						</Card>
+							</div></Card
+						>
 					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Disconnect Confirmation Modal -->
+		{#if showConfirmDisconnect}
+			<div
+				class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+				role="dialog"
+				aria-modal="true"
+			>
+				<div class="w-full max-w-md rounded-xl border bg-background p-6 shadow-xl">
+					<h3 class="text-lg font-semibold">Disconnect Provider</h3>
+					<p class="mt-2 text-sm text-muted-foreground">
+						Are you sure you want to disconnect <strong>{disconnectProviderName}</strong>? You'll
+						need to reconnect it to use it again.
+					</p>
+					<div class="mt-4 flex justify-end gap-2">
+						<Button variant="outline" onclick={cancelDisconnect} disabled={isDisconnecting}>
+							Cancel
+						</Button>
+						<Button variant="destructive" onclick={confirmDisconnect} disabled={isDisconnecting}>
+							{isDisconnecting ? 'Disconnecting...' : 'Yes, Disconnect'}
+						</Button>
+					</div>
 				</div>
 			</div>
 		{/if}

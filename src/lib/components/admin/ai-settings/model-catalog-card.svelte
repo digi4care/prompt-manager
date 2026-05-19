@@ -11,9 +11,12 @@
 		context_window?: number;
 		supports_vision?: boolean;
 		supports_function_call?: boolean;
+		supports_thinking?: boolean;
+		supportsThinking?: boolean;
 		status?: string;
 		limit?: { context: number; output: number };
 		variants?: Array<{ id: string; label?: string; isDefault?: boolean }>;
+		reasoningEffortLevels?: string[];
 		pricing?: { input?: number; output?: number; currency?: string };
 		max_output_tokens?: number;
 	}
@@ -118,6 +121,29 @@
 					{meta.variants.length} variant{meta.variants.length > 1 ? 's' : ''}
 				</Badge>
 			{/if}
+
+			{#if meta?.supports_thinking || meta?.supportsThinking}
+				<Badge variant="secondary" class="text-xs">
+					<span class="mr-1">🧠</span> Thinking
+				</Badge>
+			{/if}
+
+			{#if meta?.reasoningEffortLevels && meta.reasoningEffortLevels.length > 0}
+				<Badge variant="outline" class="text-xs">
+					Reasoning: {meta.reasoningEffortLevels.join(', ')}
+				</Badge>
+			{/if}
 		</div>
+
+		{#if meta?.variants && meta.variants.length > 0}
+			<div class="mt-3 flex flex-wrap gap-1">
+				<span class="text-[10px] text-muted-foreground uppercase">Variants:</span>
+				{#each meta.variants as variant}
+					<span class="rounded bg-muted px-1.5 py-0.5 text-[10px]">
+						{variant.label || variant.id}
+					</span>
+				{/each}
+			</div>
+		{/if}
 	</CardContent>
 </Card>

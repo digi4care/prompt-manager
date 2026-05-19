@@ -52,7 +52,7 @@ describe('improve-presets API routes', () => {
 		it('returns list of improve presets', async () => {
 			const { GET } = await import('../../../../src/routes/api/admin/improve-presets/+server');
 
-			const response = await GET({} as RequestEvent);
+			const response = await GET({} as any);
 			const json = await response.json();
 
 			expect(response.status).toBe(200);
@@ -87,7 +87,7 @@ describe('improve-presets API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await POST(event);
 			const json = await response.json();
@@ -117,7 +117,7 @@ describe('improve-presets API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await POST(event);
@@ -153,7 +153,7 @@ describe('improve-presets API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await POST(event);
@@ -192,7 +192,7 @@ describe('improve-presets API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await POST(event);
@@ -222,7 +222,7 @@ describe('improve-presets API routes', () => {
 
 			const event = {
 				params: { id: '999' }
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await GET(event);
@@ -269,7 +269,7 @@ describe('improve-presets API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await PUT(event);
 			const json = await response.json();
@@ -296,7 +296,7 @@ describe('improve-presets API routes', () => {
 
 			const event = {
 				params: { id: '1' }
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await DELETE(event);
 			const json = await response.json();

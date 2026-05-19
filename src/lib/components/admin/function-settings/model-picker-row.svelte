@@ -353,7 +353,7 @@
 <ModelPickerModal
 	bind:open={isModelModalOpen}
 	title={`Select ${functionLabels[type]} model`}
-	{groupedModels}
+	groupedModels={groupedModels as any}
 	selectedModelId={setting.modelId}
 	onSave={handleModelSave}
 	onClose={() => (isModelModalOpen = false)}

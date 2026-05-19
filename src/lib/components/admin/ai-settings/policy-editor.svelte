@@ -13,8 +13,7 @@
 	import { getCachedModelCatalog, setCachedModelCatalog } from '$lib/client/model-catalog-cache';
 	import ModelPickerModal from '$lib/components/shared/model-selection/model-picker-modal.svelte';
 	import ProviderLogo from '$lib/components/ui/provider-logo.svelte';
-	// Use shared types instead of local interfaces
-	import type { ProviderGroup } from '$lib/types/model.types';
+	import type { ProviderGroup, ThinkingLevel } from '$lib/types/model.types';
 	import { normalizeToProviderGroups } from '$lib/types/model.types';
 
 	type PolicyScope = 'judge' | 'executor' | 'improve' | 'council';
@@ -29,9 +28,26 @@
 	interface Props {
 		class?: string;
 		onSave?: () => void;
+		models?: unknown[];
+		allowedModels?: string[];
+		blockedModels?: string[];
+		requireApproval?: boolean;
+		onChange?: (config: {
+			allowedModels: string[];
+			blockedModels: string[];
+			requireApproval: boolean;
+		}) => void;
 	}
 
-	let { class: className = '', onSave }: Props = $props();
+	let {
+		class: className = '',
+		onSave,
+		models: propModels,
+		allowedModels: propAllowedModels,
+		blockedModels: propBlockedModels,
+		requireApproval: propRequireApproval,
+		onChange
+	}: Props = $props();
 
 	let groupedModels = $state<ProviderGroup[]>([]);
 	let isLoadingCatalog = $state(true);
@@ -41,15 +57,19 @@
 	let allowedModels = $state<string[]>([]);
 	let policyMatrix = $state<Record<string, ScopeToggles>>({});
 	let allowedModelVariants = $state<Record<string, string[]>>({});
+	let allowedModelThinkingLevels = $state<Record<string, ThinkingLevel | null>>({});
 	let initialAllowedModelsSnapshot = $state('[]');
 	let initialPolicyMatrixSnapshot = $state('{}');
 	let initialAllowedVariantsSnapshot = $state('{}');
+	let initialAllowedThinkingLevelsSnapshot = $state('{}');
 
 	let hasChanges = $derived(
 		JSON.stringify(normalizeModelIds(allowedModels)) !== initialAllowedModelsSnapshot ||
 			serializePolicyMatrix(policyMatrix, allowedModels) !== initialPolicyMatrixSnapshot ||
 			serializeAllowedModelVariants(allowedModelVariants, allowedModels) !==
-				initialAllowedVariantsSnapshot
+				initialAllowedVariantsSnapshot ||
+			serializeAllowedModelThinkingLevels(allowedModelThinkingLevels, allowedModels) !==
+				initialAllowedThinkingLevelsSnapshot
 	);
 
 	let selectedPreviewModels = $derived.by(() => {
@@ -63,7 +83,8 @@
 			modelId,
 			model: resolveModelById(modelId),
 			scopes: policyMatrix[modelId] ?? createDefaultScopeToggles(),
-			allowedVariants: getAllowedVariantsForModel(modelId)
+			allowedVariants: getAllowedVariantsForModel(modelId),
+			thinkingLevel: allowedModelThinkingLevels[modelId] ?? null
 		}));
 	});
 
@@ -102,118 +123,129 @@
 	function parseApiError(payload: string): string {
 		const normalized = payload.trimStart().toLowerCase();
 		if (normalized.startsWith('<!doctype') || normalized.startsWith('<html')) {
-			return 'Login required. Open /login and refresh this page.';
+			const match = payload.match(/<title[^>]*>([^<]*)<\/title>/i);
+			if (match?.[1]) {
+				return match[1].trim();
+			}
+			return 'Server returned HTML error page';
 		}
 
 		try {
-			const parsed = JSON.parse(payload) as { message?: string; error?: string };
-			return parsed.message || parsed.error || payload;
+			const parsed = JSON.parse(payload);
+			if (parsed.error?.message) {
+				return parsed.error.message;
+			}
+			if (parsed.message) {
+				return parsed.message;
+			}
+			if (parsed.error) {
+				return typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error);
+			}
 		} catch {
-			return payload;
+			// Not JSON, return as-is
 		}
+
+		return payload.trim() || 'Unknown error';
 	}
 
-	// Local normalizer functions removed - using shared normalizeToProviderGroups from $lib/types/model.types.ts
-
-	function parseAllowedModelList(raw: string): string[] {
+	function parseAllowedModelList(json: string): string[] {
 		try {
-			const parsed = JSON.parse(raw) as unknown;
-			if (!Array.isArray(parsed)) {
-				return [];
+			const parsed = JSON.parse(json);
+			if (Array.isArray(parsed)) {
+				return parsed.filter((item): item is string => typeof item === 'string');
 			}
-			return normalizeModelIds(
-				parsed.filter(
-					(value): value is string => typeof value === 'string' && value.trim().length > 0
-				)
-			);
 		} catch {
-			return [];
+			// Invalid JSON
 		}
+		return [];
 	}
 
-	function parsePolicyMatrix(raw: string): Record<string, ScopeToggles> {
+	function parsePolicyMatrix(json: string): Record<string, ScopeToggles> {
 		try {
-			const parsed = JSON.parse(raw) as unknown;
-			if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-				return {};
-			}
-
-			const result: Record<string, ScopeToggles> = {};
-			for (const [modelId, scopes] of Object.entries(parsed as Record<string, unknown>)) {
-				if (modelId.trim().length === 0) {
-					continue;
+			const parsed = JSON.parse(json);
+			if (typeof parsed === 'object' && parsed !== null) {
+				const result: Record<string, ScopeToggles> = {};
+				for (const [key, value] of Object.entries(parsed)) {
+					if (typeof key === 'string') {
+						result[key] = normalizeScopeToggles(value);
+					}
 				}
-				result[modelId] = normalizeScopeToggles(scopes);
+				return result;
 			}
-
-			return result;
 		} catch {
-			return {};
+			// Invalid JSON
 		}
+		return {};
 	}
 
-	function parseAllowedModelVariants(raw: string): Record<string, string[]> {
+	function parseAllowedModelVariants(json: string): Record<string, string[]> {
 		try {
-			const parsed = JSON.parse(raw) as unknown;
-			if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-				return {};
+			const parsed = JSON.parse(json);
+			if (typeof parsed === 'object' && parsed !== null) {
+				const result: Record<string, string[]> = {};
+				for (const [key, value] of Object.entries(parsed)) {
+					if (
+						typeof key === 'string' &&
+						Array.isArray(value) &&
+						value.every((item) => typeof item === 'string')
+					) {
+						result[key] = value;
+					}
+				}
+				return result;
 			}
-
-			const result: Record<string, string[]> = {};
-			for (const [modelId, variants] of Object.entries(parsed as Record<string, unknown>)) {
-				if (typeof modelId !== 'string' || modelId.trim().length === 0) {
-					continue;
-				}
-
-				if (!Array.isArray(variants)) {
-					continue;
-				}
-
-				const normalizedVariants = Array.from(
-					new Set(
-						variants.filter(
-							(value): value is string => typeof value === 'string' && value.trim().length > 0
-						)
-					)
-				);
-
-				if (normalizedVariants.length > 0) {
-					result[modelId] = normalizedVariants;
-				}
-			}
-
-			return result;
 		} catch {
-			return {};
+			// Invalid JSON
 		}
+		return {};
 	}
 
-	function serializePolicyMatrix(
-		matrix: Record<string, ScopeToggles>,
-		modelIds: string[] = Object.keys(matrix)
-	): string {
-		const normalizedIds = normalizeModelIds(modelIds);
+	function parseAllowedModelThinkingLevels(json: string): Record<string, ThinkingLevel | null> {
+		try {
+			const parsed = JSON.parse(json);
+			if (typeof parsed === 'object' && parsed !== null) {
+				const result: Record<string, ThinkingLevel | null> = {};
+				for (const [key, value] of Object.entries(parsed)) {
+					if (typeof key === 'string') {
+						if (value === null) {
+							result[key] = null;
+						} else if (['low', 'medium', 'high'].includes(value as string)) {
+							result[key] = value as ThinkingLevel;
+						}
+					}
+				}
+				return result;
+			}
+		} catch {
+			// Invalid JSON
+		}
+		return {};
+	}
+
+	function serializePolicyMatrix(matrix: Record<string, ScopeToggles>, modelIds: string[]): string {
 		const normalized: Record<string, ScopeToggles> = {};
-
-		for (const modelId of normalizedIds) {
-			normalized[modelId] = normalizeScopeToggles(matrix[modelId]);
+		for (const modelId of modelIds) {
+			if (matrix[modelId]) {
+				normalized[modelId] = normalizeScopeToggles(matrix[modelId]);
+			}
 		}
-
 		return JSON.stringify(normalized);
 	}
 
 	function serializeAllowedModelVariants(
-		variantMap: Record<string, string[]>,
-		modelIds: string[] = Object.keys(variantMap)
+		variants: Record<string, string[]>,
+		modelIds: string[]
 	): string {
-		const normalizedModelIds = normalizeModelIds(modelIds);
 		const normalized: Record<string, string[]> = {};
+		for (const modelId of modelIds) {
+			const modelVariants = variants[modelId];
+			if (!Array.isArray(modelVariants)) {
+				continue;
+			}
 
-		for (const modelId of normalizedModelIds) {
-			const variants = variantMap[modelId] || [];
 			const normalizedVariants = Array.from(
 				new Set(
-					variants.filter(
+					modelVariants.filter(
 						(value): value is string => typeof value === 'string' && value.trim().length > 0
 					)
 				)
@@ -224,6 +256,20 @@
 			}
 		}
 
+		return JSON.stringify(normalized);
+	}
+
+	function serializeAllowedModelThinkingLevels(
+		thinkingLevels: Record<string, ThinkingLevel | null>,
+		modelIds: string[]
+	): string {
+		const normalized: Record<string, ThinkingLevel | null> = {};
+		for (const modelId of modelIds) {
+			const level = thinkingLevels[modelId];
+			if (level !== undefined) {
+				normalized[modelId] = level;
+			}
+		}
 		return JSON.stringify(normalized);
 	}
 
@@ -248,18 +294,47 @@
 		return filtered.length > 0 ? filtered : [variantOptions[0]];
 	}
 
+	function normalizeVariantsToOptions(variants: unknown): string[] {
+		if (!variants) return [];
+
+		if (Array.isArray(variants)) {
+			if (variants.length === 0) return [];
+
+			if (typeof variants[0] === 'string') {
+				return variants as string[];
+			}
+
+			if (typeof variants[0] === 'object' && variants[0] !== null) {
+				return variants.map((v: unknown) => {
+					const obj = v as { id?: string; label?: string };
+					return obj.id || obj.label || String(v);
+				});
+			}
+
+			return variants.map(String);
+		}
+
+		if (typeof variants === 'object' && variants !== null) {
+			const keys = Object.keys(variants);
+			if (keys.length === 0) return [];
+			return keys;
+		}
+
+		return [];
+	}
+
 	function resolveModelById(modelId: string): {
 		id: string;
 		name: string;
 		providerName: string;
 		providerId: string;
 		variantOptions?: string[];
+		supportsThinking?: boolean;
 	} | null {
 		if (!modelId) {
 			return null;
 		}
 
-		// Check for provider/model format (e.g., "openrouter/glm-4")
 		const slashIndex = modelId.indexOf('/');
 		if (slashIndex > 0) {
 			const providerId = modelId.slice(0, slashIndex);
@@ -269,24 +344,28 @@
 				const model = provider.models.find((entry) => entry.id === actualModelId);
 				if (model) {
 					return {
-						...model,
-						id: modelId, // Keep full provider/model format
+						id: modelId,
+						name: model.name,
 						providerName: provider.providerName,
-						providerId: provider.providerId
+						providerId: provider.providerId,
+						variantOptions: normalizeVariantsToOptions(model.variants),
+						supportsThinking: model.supportsThinking ?? false
 					};
 				}
 			}
 			return null;
 		}
 
-		// Legacy fallback: search by model ID only
 		for (const provider of groupedModels) {
 			const model = provider.models.find((entry) => entry.id === modelId);
 			if (model) {
 				return {
-					...model,
+					id: modelId,
+					name: model.name,
 					providerName: provider.providerName,
-					providerId: provider.providerId
+					providerId: provider.providerId,
+					variantOptions: normalizeVariantsToOptions(model.variants),
+					supportsThinking: model.supportsThinking ?? false
 				};
 			}
 		}
@@ -296,9 +375,15 @@
 
 	async function loadCatalog(): Promise<void> {
 		try {
+			if (propModels && Array.isArray(propModels) && propModels.length > 0) {
+				groupedModels = normalizeToProviderGroups(propModels as Record<string, unknown>[]);
+				isLoadingCatalog = false;
+				return;
+			}
+
 			const cachedCatalog = getCachedModelCatalog();
 			if (cachedCatalog) {
-				groupedModels = normalizeToProviderGroups(cachedCatalog);
+				groupedModels = normalizeToProviderGroups(cachedCatalog as Record<string, unknown>[]);
 				isLoadingCatalog = false;
 				return;
 			}
@@ -316,7 +401,7 @@
 
 			const parsedCatalog = JSON.parse(payload);
 			setCachedModelCatalog(parsedCatalog);
-			groupedModels = normalizeToProviderGroups(parsedCatalog);
+			groupedModels = normalizeToProviderGroups(parsedCatalog as Record<string, unknown>[]);
 		} catch (err) {
 			console.error('Failed to load catalog:', err);
 			toast.error('Failed to load model catalog');
@@ -350,11 +435,15 @@
 			const variantsFromSettings = parseAllowedModelVariants(
 				settings?.models?.opencode_allowed_model_variants || '{}'
 			);
+			const thinkingLevelsFromSettings = parseAllowedModelThinkingLevels(
+				settings?.models?.opencode_allowed_model_thinking_levels || '{}'
+			);
 
 			const allModelIds = normalizeModelIds([
 				...allowedFromSettings,
 				...Object.keys(matrixFromSettings),
-				...Object.keys(variantsFromSettings)
+				...Object.keys(variantsFromSettings),
+				...Object.keys(thinkingLevelsFromSettings)
 			]);
 
 			allowedModels = allModelIds;
@@ -365,11 +454,16 @@
 			}
 			policyMatrix = normalizedMatrix;
 			allowedModelVariants = variantsFromSettings;
+			allowedModelThinkingLevels = thinkingLevelsFromSettings;
 
 			initialAllowedModelsSnapshot = JSON.stringify(allModelIds);
 			initialPolicyMatrixSnapshot = serializePolicyMatrix(normalizedMatrix, allModelIds);
 			initialAllowedVariantsSnapshot = serializeAllowedModelVariants(
 				variantsFromSettings,
+				allModelIds
+			);
+			initialAllowedThinkingLevelsSnapshot = serializeAllowedModelThinkingLevels(
+				thinkingLevelsFromSettings,
 				allModelIds
 			);
 		} catch (err) {
@@ -382,26 +476,29 @@
 		const normalizedIds = normalizeModelIds(modelIds);
 		const nextMatrix: Record<string, ScopeToggles> = {};
 		const nextVariants: Record<string, string[]> = {};
+		const nextThinkingLevels: Record<string, ThinkingLevel | null> = {};
 
 		for (const modelId of normalizedIds) {
 			nextMatrix[modelId] = policyMatrix[modelId] || createDefaultScopeToggles();
 			const variantOptions = getModelVariantOptions(modelId);
-			if (variantOptions.length === 0) {
-				continue;
+			if (variantOptions.length > 0) {
+				const existingVariants = allowedModelVariants[modelId] || variantOptions;
+				const existingVariantSet = new Set(existingVariants);
+				const normalizedVariants = variantOptions.filter((variant) =>
+					existingVariantSet.has(variant)
+				);
+				nextVariants[modelId] =
+					normalizedVariants.length > 0 ? normalizedVariants : [variantOptions[0]];
 			}
 
-			const existingVariants = allowedModelVariants[modelId] || variantOptions;
-			const existingVariantSet = new Set(existingVariants);
-			const normalizedVariants = variantOptions.filter((variant) =>
-				existingVariantSet.has(variant)
-			);
-			nextVariants[modelId] =
-				normalizedVariants.length > 0 ? normalizedVariants : [variantOptions[0]];
+			// Preserve existing thinking level or default to null
+			nextThinkingLevels[modelId] = allowedModelThinkingLevels[modelId] ?? null;
 		}
 
 		allowedModels = normalizedIds;
 		policyMatrix = nextMatrix;
 		allowedModelVariants = nextVariants;
+		allowedModelThinkingLevels = nextThinkingLevels;
 	}
 
 	function removeAllowedModel(modelId: string): void {
@@ -413,6 +510,11 @@
 		if (allowedModelVariants[modelId]) {
 			const { [modelId]: _removedVariant, ...remainingVariants } = allowedModelVariants;
 			allowedModelVariants = remainingVariants;
+		}
+
+		if (allowedModelThinkingLevels[modelId] !== undefined) {
+			const { [modelId]: _removedThinking, ...remainingThinking } = allowedModelThinkingLevels;
+			allowedModelThinkingLevels = remainingThinking;
 		}
 	}
 
@@ -457,6 +559,13 @@
 		};
 	}
 
+	function handleThinkingLevelChange(modelId: string, level: ThinkingLevel | null): void {
+		allowedModelThinkingLevels = {
+			...allowedModelThinkingLevels,
+			[modelId]: level
+		};
+	}
+
 	async function handleSave(): Promise<void> {
 		if (!hasChanges || isSaving) {
 			return;
@@ -468,17 +577,22 @@
 			const normalizedAllowedModels = normalizeModelIds(allowedModels);
 			const normalizedPolicyMatrixRaw: Record<string, ScopeToggles> = {};
 			const normalizedAllowedVariantsRaw: Record<string, string[]> = {};
+			const normalizedAllowedThinkingLevelsRaw: Record<string, ThinkingLevel | null> = {};
 
 			for (const modelId of normalizedAllowedModels) {
 				normalizedPolicyMatrixRaw[modelId] = normalizeScopeToggles(policyMatrix[modelId]);
 				const variantOptions = getModelVariantOptions(modelId);
-				if (variantOptions.length === 0) {
-					continue;
+				if (variantOptions.length > 0) {
+					const selectedVariants = getAllowedVariantsForModel(modelId);
+					normalizedAllowedVariantsRaw[modelId] =
+						selectedVariants.length > 0 ? selectedVariants : [variantOptions[0]];
 				}
 
-				const selectedVariants = getAllowedVariantsForModel(modelId);
-				normalizedAllowedVariantsRaw[modelId] =
-					selectedVariants.length > 0 ? selectedVariants : [variantOptions[0]];
+				// Only save thinking level if model supports thinking
+				const model = resolveModelById(modelId);
+				if (model?.supportsThinking) {
+					normalizedAllowedThinkingLevelsRaw[modelId] = allowedModelThinkingLevels[modelId] ?? null;
+				}
 			}
 
 			const updates = [
@@ -495,6 +609,11 @@
 				{
 					key: 'opencode_allowed_model_variants',
 					value: JSON.stringify(normalizedAllowedVariantsRaw),
+					updatedBy: 'admin'
+				},
+				{
+					key: 'opencode_allowed_model_thinking_levels',
+					value: JSON.stringify(normalizedAllowedThinkingLevelsRaw),
 					updatedBy: 'admin'
 				}
 			];
@@ -515,6 +634,7 @@
 			allowedModels = normalizedAllowedModels;
 			policyMatrix = normalizedPolicyMatrixRaw;
 			allowedModelVariants = normalizedAllowedVariantsRaw;
+			allowedModelThinkingLevels = normalizedAllowedThinkingLevelsRaw;
 			initialAllowedModelsSnapshot = JSON.stringify(normalizedAllowedModels);
 			initialPolicyMatrixSnapshot = serializePolicyMatrix(
 				normalizedPolicyMatrixRaw,
@@ -522,6 +642,10 @@
 			);
 			initialAllowedVariantsSnapshot = serializeAllowedModelVariants(
 				normalizedAllowedVariantsRaw,
+				normalizedAllowedModels
+			);
+			initialAllowedThinkingLevelsSnapshot = serializeAllowedModelThinkingLevels(
+				normalizedAllowedThinkingLevelsRaw,
 				normalizedAllowedModels
 			);
 
@@ -567,6 +691,13 @@
 			</div>
 		{:else}
 			<div class="space-y-2">
+				{#if groupedModels.length === 0}
+					<div
+						class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+					>
+						⚠️ No models available. Connect at least one provider in the "Providers" section first.
+					</div>
+				{/if}
 				<div class="flex items-start justify-between gap-4">
 					<div>
 						<p class="text-sm font-medium">Whitelist Models</p>
@@ -579,7 +710,9 @@
 					<Button
 						variant="outline"
 						size="sm"
-						onclick={() => (isPickerOpen = true)}
+						onclick={() => {
+							isPickerOpen = true;
+						}}
 						class="touch-target min-h-[40px] hover:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2"
 					>
 						Select models
@@ -647,6 +780,10 @@
 										>Variants</th
 									>
 									<th
+										class="px-4 py-3 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Thinking</th
+									>
+									<th
 										class="w-20 px-3 py-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase"
 										>Judge</th
 									>
@@ -698,6 +835,26 @@
 														</button>
 													{/each}
 												</div>
+											{:else}
+												<span class="text-xs text-muted-foreground">—</span>
+											{/if}
+										</td>
+										<td class="px-4 py-3">
+											{#if row.model?.supportsThinking}
+												<select
+													class="h-8 rounded border border-input bg-background px-2 text-xs focus:ring-2 focus:ring-ring"
+													value={row.thinkingLevel || ''}
+													onchange={(e) =>
+														handleThinkingLevelChange(
+															row.modelId,
+															(e.currentTarget.value as ThinkingLevel) || null
+														)}
+												>
+													<option value="">Disabled</option>
+													<option value="low">Low</option>
+													<option value="medium">Medium</option>
+													<option value="high">High</option>
+												</select>
 											{:else}
 												<span class="text-xs text-muted-foreground">—</span>
 											{/if}
@@ -818,6 +975,30 @@
 									</div>
 								{/if}
 
+								{#if row.model?.supportsThinking}
+									<div class="mt-3">
+										<p
+											class="mb-1.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
+										>
+											Thinking Level
+										</p>
+										<select
+											class="h-9 w-full rounded border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-ring"
+											value={row.thinkingLevel || ''}
+											onchange={(e) =>
+												handleThinkingLevelChange(
+													row.modelId,
+													(e.currentTarget.value as ThinkingLevel) || null
+												)}
+										>
+											<option value="">Disabled</option>
+											<option value="low">Low</option>
+											<option value="medium">Medium</option>
+											<option value="high">High</option>
+										</select>
+									</div>
+								{/if}
+
 								<div class="mt-4">
 									<p
 										class="mb-2 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
@@ -897,7 +1078,15 @@
 	title="Select models for AI policy"
 	{groupedModels}
 	selectedModelIds={allowedModels}
-	config={{ multiSelect: true }}
+	config={{
+		multiSelect: true,
+		showVariants: false,
+		showThinkingLevel: false,
+		showTemperature: false,
+		showMaxTokens: false,
+		showPromptLink: false,
+		enableWhitelist: false
+	}}
 	onSaveMultiple={handleModelSelectionSave}
 	onClose={() => (isPickerOpen = false)}
 />

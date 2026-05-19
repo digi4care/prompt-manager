@@ -100,7 +100,6 @@ function requiresAuthentication(pathname: string): boolean {
 		'/login',
 		'/api/health',
 		'/api/admin/health', // OpenCode connection status - needed before login
-		'/api/admin/opencode-connection', // Connection settings - needed before login
 		'/api/prompts', // Public prompts - auth handled per-method in endpoint
 		'/favicon.ico',
 		'/static/',

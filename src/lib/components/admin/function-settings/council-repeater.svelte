@@ -440,7 +440,7 @@
 <ModelPickerModal
 	open={activeModelPickerAgentId !== null}
 	title="Select council agent model"
-	{groupedModels}
+	groupedModels={groupedModels as any}
 	selectedModelId={activeAgent?.modelId || ''}
 	onSave={handleModelSave}
 	onClose={closeModelPicker}

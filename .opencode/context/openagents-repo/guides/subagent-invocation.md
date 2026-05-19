@@ -1,3 +1,5 @@
+<!-- Context: openagents-repo/guides | Priority: high | Version: 1.0 | Updated: 2026-02-15 -->
+
 # Guide: Subagent Invocation
 
 **Purpose**: How to correctly invoke subagents using the task tool  
@@ -76,7 +78,7 @@ task(
 
 // ❌ Using registry path
 task(
-  subagent_type=".opencode/agent/TaskManager.md",
+  subagent_type=".opencode/agent/subagents/core/task-manager.md",
   ...
 )
 ```

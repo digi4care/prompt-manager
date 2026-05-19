@@ -53,18 +53,6 @@ describe('Better Auth Configuration', () => {
 			vi.unstubAllEnvs();
 		});
 
-		it('should allow missing auth secret in development with warning', () => {
-			vi.stubEnv('NODE_ENV', 'development');
-			vi.stubEnv('BETTER_AUTH_SECRET', '');
-			vi.stubEnv('BETTER_AUTH_URL', 'http://localhost:5173');
-			vi.stubEnv('DATABASE_URL', 'file:local.db');
-
-			// In development, we allow missing config for easier local testing
-			// The auth instance should still initialize with defaults
-			expect(process.env.BETTER_AUTH_SECRET).toBe('');
-
-			vi.unstubAllEnvs();
-		});
 
 		it('should use default BETTER_AUTH_URL in development', () => {
 			vi.stubEnv('NODE_ENV', 'development');

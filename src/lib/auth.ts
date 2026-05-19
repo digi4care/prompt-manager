@@ -107,7 +107,7 @@ export const auth = betterAuth({
 	},
 
 	appURL: process.env.BETTER_AUTH_URL || 'http://localhost:5173',
-	secret: process.env.BETTER_AUTH_SECRET || '',
+	secret: process.env.BETTER_AUTH_SECRET || (() => { throw new Error('Missing BETTER_AUTH_SECRET. Generate with: openssl rand -base64 32'); })(),
 
 	// Two-factor authentication plugin
 	// SvelteKit cookie plugin - MUST be last in plugins array

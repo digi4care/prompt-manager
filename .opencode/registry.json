@@ -1,0 +1,1202 @@
+{
+	"version": "1.0.0",
+	"lastUpdated": "2026-03-06T00:00:00Z",
+	"metadata": {
+		"description": "OpenCode component registry for prompt-manager",
+		"schema": "opencode-registry-v1"
+	},
+	"components": {
+		"agents": [
+			{
+				"id": "core/openagent",
+				"name": "OpenAgent",
+				"path": ".opencode/agent/core/openagent.md",
+				"mode": "primary",
+				"dependencies": [
+					"context:core/standards/code-quality",
+					"context:core/standards/documentation",
+					"context:core/standards/test-coverage",
+					"context:core/workflows/code-review",
+					"context:core/workflows/task-delegation-basics",
+					"context:navigation"
+				]
+			},
+			{
+				"id": "core/opencoder",
+				"name": "OpenCoder",
+				"path": ".opencode/agent/core/opencoder.md",
+				"mode": "primary",
+				"dependencies": []
+			},
+			{
+				"id": "content/copywriter",
+				"name": "Copywriter",
+				"path": ".opencode/agent/content/copywriter.md",
+				"mode": "specialist",
+				"dependencies": []
+			},
+			{
+				"id": "content/technical-writer",
+				"name": "TechnicalWriter",
+				"path": ".opencode/agent/content/technical-writer.md",
+				"mode": "specialist",
+				"dependencies": []
+			},
+			{
+				"id": "data/data-analyst",
+				"name": "DataAnalyst",
+				"path": ".opencode/agent/data/data-analyst.md",
+				"mode": "specialist",
+				"dependencies": []
+			},
+			{
+				"id": "eval-runner",
+				"name": "EvalRunner",
+				"path": ".opencode/agent/eval-runner.md",
+				"mode": "utility",
+				"dependencies": []
+			},
+			{
+				"id": "meta/repo-manager",
+				"name": "RepoManager",
+				"path": ".opencode/agent/meta/repo-manager.md",
+				"mode": "orchestrator",
+				"dependencies": [
+					"context:openagents-repo/quick-start",
+					"context:openagents-repo/core-concepts/evals",
+					"context:core/standards/code-quality",
+					"context:core/standards/test-coverage",
+					"context:core/workflows/code-review",
+					"context:core/standards/documentation",
+					"context:core/standards/security-patterns"
+				]
+			},
+			{
+				"id": "meta/system-builder",
+				"name": "SystemBuilder",
+				"path": ".opencode/agent/meta/system-builder.md",
+				"mode": "orchestrator",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/code/build-agent",
+				"name": "BuildAgent",
+				"path": ".opencode/agent/subagents/code/build-agent.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/code/coder-agent",
+				"name": "CoderAgent",
+				"path": ".opencode/agent/subagents/code/coder-agent.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/code/reviewer",
+				"name": "CodeReviewer",
+				"path": ".opencode/agent/subagents/code/reviewer.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/code/test-engineer",
+				"name": "TestEngineer",
+				"path": ".opencode/agent/subagents/code/test-engineer.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/core/context-retriever",
+				"name": "ContextRetriever",
+				"path": ".opencode/agent/subagents/core/context-retriever.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/core/contextscout",
+				"name": "ContextScout",
+				"path": ".opencode/agent/subagents/core/contextscout.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/core/documentation",
+				"name": "DocWriter",
+				"path": ".opencode/agent/subagents/core/documentation.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/core/externalscout",
+				"name": "ExternalScout",
+				"path": ".opencode/agent/subagents/core/externalscout.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/core/task-manager",
+				"name": "TaskManager",
+				"path": ".opencode/agent/subagents/core/task-manager.md",
+				"mode": "subagent",
+				"dependencies": [
+					"context:core/task-management/navigation",
+					"context:core/task-management/standards/task-schema",
+					"context:core/task-management/guides/splitting-tasks",
+					"context:core/task-management/guides/managing-tasks"
+				]
+			},
+			{
+				"id": "subagents/development/devops-specialist",
+				"name": "OpenDevopsSpecialist",
+				"path": ".opencode/agent/subagents/development/devops-specialist.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/development/frontend-specialist",
+				"name": "OpenFrontendSpecialist",
+				"path": ".opencode/agent/subagents/development/frontend-specialist.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/system-builder/agent-generator",
+				"name": "AgentGenerator",
+				"path": ".opencode/agent/subagents/system-builder/agent-generator.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/system-builder/command-creator",
+				"name": "CommandCreator",
+				"path": ".opencode/agent/subagents/system-builder/command-creator.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/system-builder/context-organizer",
+				"name": "ContextOrganizer",
+				"path": ".opencode/agent/subagents/system-builder/context-organizer.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/system-builder/domain-analyzer",
+				"name": "DomainAnalyzer",
+				"path": ".opencode/agent/subagents/system-builder/domain-analyzer.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/system-builder/workflow-designer",
+				"name": "WorkflowDesigner",
+				"path": ".opencode/agent/subagents/system-builder/workflow-designer.md",
+				"mode": "subagent",
+				"dependencies": []
+			},
+			{
+				"id": "subagents/utils/image-specialist",
+				"name": "ImageSpecialist",
+				"path": ".opencode/agent/subagents/utils/image-specialist.md",
+				"mode": "subagent",
+				"dependencies": []
+			}
+		],
+		"contexts": [
+			{
+				"id": "core/config/navigation",
+				"path": ".opencode/context/core/config/navigation.md",
+				"category": "config"
+			},
+			{
+				"id": "core/context-system",
+				"path": ".opencode/context/core/context-system.md",
+				"category": "core"
+			},
+			{
+				"id": "core/context-system/CHANGELOG",
+				"path": ".opencode/context/core/context-system/CHANGELOG.md",
+				"category": "core"
+			},
+			{
+				"id": "core/context-system/examples/navigation-examples",
+				"path": ".opencode/context/core/context-system/examples/navigation-examples.md",
+				"category": "examples"
+			},
+			{
+				"id": "core/context-system/guides/compact",
+				"path": ".opencode/context/core/context-system/guides/compact.md",
+				"category": "guides"
+			},
+			{
+				"id": "core/context-system/guides/creation",
+				"path": ".opencode/context/core/context-system/guides/creation.md",
+				"category": "guides"
+			},
+			{
+				"id": "core/context-system/guides/navigation-design-basics",
+				"path": ".opencode/context/core/context-system/guides/navigation-design-basics.md",
+				"category": "guides"
+			},
+			{
+				"id": "core/context-system/guides/navigation-templates",
+				"path": ".opencode/context/core/context-system/guides/navigation-templates.md",
+				"category": "guides"
+			},
+			{
+				"id": "core/context-system/guides/organizing-context",
+				"path": ".opencode/context/core/context-system/guides/organizing-context.md",
+				"category": "guides"
+			},
+			{
+				"id": "core/context-system/guides/workflows",
+				"path": ".opencode/context/core/context-system/guides/workflows.md",
+				"category": "guides"
+			},
+			{
+				"id": "core/context-system/navigation",
+				"path": ".opencode/context/core/context-system/navigation.md",
+				"category": "core"
+			},
+			{
+				"id": "core/context-system/operations/error",
+				"path": ".opencode/context/core/context-system/operations/error.md",
+				"category": "operations"
+			},
+			{
+				"id": "core/context-system/operations/extract",
+				"path": ".opencode/context/core/context-system/operations/extract.md",
+				"category": "operations"
+			},
+			{
+				"id": "core/context-system/operations/harvest",
+				"path": ".opencode/context/core/context-system/operations/harvest.md",
+				"category": "operations"
+			},
+			{
+				"id": "core/context-system/operations/migrate",
+				"path": ".opencode/context/core/context-system/operations/migrate.md",
+				"category": "operations"
+			},
+			{
+				"id": "core/context-system/operations/organize",
+				"path": ".opencode/context/core/context-system/operations/organize.md",
+				"category": "operations"
+			},
+			{
+				"id": "core/context-system/operations/update",
+				"path": ".opencode/context/core/context-system/operations/update.md",
+				"category": "operations"
+			},
+			{
+				"id": "core/context-system/standards/codebase-references",
+				"path": ".opencode/context/core/context-system/standards/codebase-references.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/context-system/standards/frontmatter",
+				"path": ".opencode/context/core/context-system/standards/frontmatter.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/context-system/standards/mvi",
+				"path": ".opencode/context/core/context-system/standards/mvi.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/context-system/standards/structure",
+				"path": ".opencode/context/core/context-system/standards/structure.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/context-system/standards/templates",
+				"path": ".opencode/context/core/context-system/standards/templates.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/essential-patterns",
+				"path": ".opencode/context/core/essential-patterns.md",
+				"category": "core"
+			},
+			{
+				"id": "core/navigation",
+				"path": ".opencode/context/core/navigation.md",
+				"category": "core"
+			},
+			{
+				"id": "core/standards/code-analysis",
+				"path": ".opencode/context/core/standards/code-analysis.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/standards/code-quality",
+				"path": ".opencode/context/core/standards/code-quality.md",
+				"category": "standards",
+				"usedBy": ["core/openagent", "meta/repo-manager"]
+			},
+			{
+				"id": "core/standards/documentation",
+				"path": ".opencode/context/core/standards/documentation.md",
+				"category": "standards",
+				"usedBy": ["core/openagent", "meta/repo-manager"]
+			},
+			{
+				"id": "core/standards/navigation",
+				"path": ".opencode/context/core/standards/navigation.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/standards/project-intelligence",
+				"path": ".opencode/context/core/standards/project-intelligence.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/standards/project-intelligence-management",
+				"path": ".opencode/context/core/standards/project-intelligence-management.md",
+				"category": "standards"
+			},
+			{
+				"id": "core/standards/security-patterns",
+				"path": ".opencode/context/core/standards/security-patterns.md",
+				"category": "standards",
+				"usedBy": ["meta/repo-manager"]
+			},
+			{
+				"id": "core/standards/test-coverage",
+				"path": ".opencode/context/core/standards/test-coverage.md",
+				"category": "standards",
+				"usedBy": ["core/openagent", "meta/repo-manager"]
+			},
+			{
+				"id": "core/system/context-guide",
+				"path": ".opencode/context/core/system/context-guide.md",
+				"category": "system"
+			},
+			{
+				"id": "core/system/context-paths",
+				"path": ".opencode/context/core/system/context-paths.md",
+				"category": "system"
+			},
+			{
+				"id": "core/system/navigation",
+				"path": ".opencode/context/core/system/navigation.md",
+				"category": "system"
+			},
+			{
+				"id": "core/task-management/guides/managing-tasks",
+				"path": ".opencode/context/core/task-management/guides/managing-tasks.md",
+				"category": "guides",
+				"usedBy": ["subagents/core/task-manager"]
+			},
+			{
+				"id": "core/task-management/guides/splitting-tasks",
+				"path": ".opencode/context/core/task-management/guides/splitting-tasks.md",
+				"category": "guides",
+				"usedBy": ["subagents/core/task-manager"]
+			},
+			{
+				"id": "core/task-management/lookup/task-commands",
+				"path": ".opencode/context/core/task-management/lookup/task-commands.md",
+				"category": "lookup"
+			},
+			{
+				"id": "core/task-management/navigation",
+				"path": ".opencode/context/core/task-management/navigation.md",
+				"category": "core",
+				"usedBy": ["subagents/core/task-manager"]
+			},
+			{
+				"id": "core/task-management/standards/task-schema",
+				"path": ".opencode/context/core/task-management/standards/task-schema.md",
+				"category": "standards",
+				"usedBy": ["subagents/core/task-manager"]
+			},
+			{
+				"id": "core/visual-development",
+				"path": ".opencode/context/core/visual-development.md",
+				"category": "core"
+			},
+			{
+				"id": "core/workflows/code-review",
+				"path": ".opencode/context/core/workflows/code-review.md",
+				"category": "workflows",
+				"usedBy": ["core/openagent", "meta/repo-manager"]
+			},
+			{
+				"id": "core/workflows/component-planning",
+				"path": ".opencode/context/core/workflows/component-planning.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/delegation",
+				"path": ".opencode/context/core/workflows/delegation.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-best-practices",
+				"path": ".opencode/context/core/workflows/design-iteration-best-practices.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-overview",
+				"path": ".opencode/context/core/workflows/design-iteration-overview.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-plan-file",
+				"path": ".opencode/context/core/workflows/design-iteration-plan-file.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-plan-iterations",
+				"path": ".opencode/context/core/workflows/design-iteration-plan-iterations.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-stage-animation",
+				"path": ".opencode/context/core/workflows/design-iteration-stage-animation.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-stage-implementation",
+				"path": ".opencode/context/core/workflows/design-iteration-stage-implementation.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-stage-layout",
+				"path": ".opencode/context/core/workflows/design-iteration-stage-layout.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-stage-theme",
+				"path": ".opencode/context/core/workflows/design-iteration-stage-theme.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/design-iteration-visual-content",
+				"path": ".opencode/context/core/workflows/design-iteration-visual-content.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/external-context-integration",
+				"path": ".opencode/context/core/workflows/external-context-integration.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/external-context-management",
+				"path": ".opencode/context/core/workflows/external-context-management.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/external-libraries-faq",
+				"path": ".opencode/context/core/workflows/external-libraries-faq.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/external-libraries-scenarios",
+				"path": ".opencode/context/core/workflows/external-libraries-scenarios.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/feature-breakdown",
+				"path": ".opencode/context/core/workflows/feature-breakdown.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/navigation",
+				"path": ".opencode/context/core/workflows/navigation.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/review",
+				"path": ".opencode/context/core/workflows/review.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/session-management",
+				"path": ".opencode/context/core/workflows/session-management.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/task-delegation-basics",
+				"path": ".opencode/context/core/workflows/task-delegation-basics.md",
+				"category": "workflows",
+				"usedBy": ["core/openagent"]
+			},
+			{
+				"id": "core/workflows/task-delegation-caching",
+				"path": ".opencode/context/core/workflows/task-delegation-caching.md",
+				"category": "workflows"
+			},
+			{
+				"id": "core/workflows/task-delegation-specialists",
+				"path": ".opencode/context/core/workflows/task-delegation-specialists.md",
+				"category": "workflows"
+			},
+			{
+				"id": "development/ai/mastra-ai/concepts/agents-tools",
+				"path": ".opencode/context/development/ai/mastra-ai/concepts/agents-tools.md",
+				"category": "concepts"
+			},
+			{
+				"id": "development/ai/mastra-ai/concepts/core",
+				"path": ".opencode/context/development/ai/mastra-ai/concepts/core.md",
+				"category": "concepts"
+			},
+			{
+				"id": "development/ai/mastra-ai/concepts/evaluations",
+				"path": ".opencode/context/development/ai/mastra-ai/concepts/evaluations.md",
+				"category": "concepts"
+			},
+			{
+				"id": "development/ai/mastra-ai/concepts/storage",
+				"path": ".opencode/context/development/ai/mastra-ai/concepts/storage.md",
+				"category": "concepts"
+			},
+			{
+				"id": "development/ai/mastra-ai/concepts/workflows",
+				"path": ".opencode/context/development/ai/mastra-ai/concepts/workflows.md",
+				"category": "concepts"
+			},
+			{
+				"id": "development/ai/mastra-ai/errors/mastra-errors",
+				"path": ".opencode/context/development/ai/mastra-ai/errors/mastra-errors.md",
+				"category": "errors"
+			},
+			{
+				"id": "development/ai/mastra-ai/examples/workflow-example",
+				"path": ".opencode/context/development/ai/mastra-ai/examples/workflow-example.md",
+				"category": "examples"
+			},
+			{
+				"id": "development/ai/mastra-ai/guides/modular-building",
+				"path": ".opencode/context/development/ai/mastra-ai/guides/modular-building.md",
+				"category": "guides"
+			},
+			{
+				"id": "development/ai/mastra-ai/guides/testing",
+				"path": ".opencode/context/development/ai/mastra-ai/guides/testing.md",
+				"category": "guides"
+			},
+			{
+				"id": "development/ai/mastra-ai/guides/workflow-step-structure",
+				"path": ".opencode/context/development/ai/mastra-ai/guides/workflow-step-structure.md",
+				"category": "guides"
+			},
+			{
+				"id": "development/ai/mastra-ai/lookup/mastra-config",
+				"path": ".opencode/context/development/ai/mastra-ai/lookup/mastra-config.md",
+				"category": "lookup"
+			},
+			{
+				"id": "development/ai/navigation",
+				"path": ".opencode/context/development/ai/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/backend-navigation",
+				"path": ".opencode/context/development/backend-navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/backend/navigation",
+				"path": ".opencode/context/development/backend/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/data/navigation",
+				"path": ".opencode/context/development/data/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/frameworks/navigation",
+				"path": ".opencode/context/development/frameworks/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/frameworks/svelte/anti-patterns",
+				"path": ".opencode/context/development/frameworks/svelte/anti-patterns.md",
+				"category": "anti-patterns"
+			},
+			{
+				"id": "development/frameworks/sveltekit/anti-patterns",
+				"path": ".opencode/context/development/frameworks/sveltekit/anti-patterns.md",
+				"category": "anti-patterns"
+			},
+			{
+				"id": "development/frontend/navigation",
+				"path": ".opencode/context/development/frontend/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/frontend/tailwind/anti-patterns",
+				"path": ".opencode/context/development/frontend/tailwind/anti-patterns.md",
+				"category": "anti-patterns"
+			},
+			{
+				"id": "development/frontend/when-to-delegate",
+				"path": ".opencode/context/development/frontend/when-to-delegate.md",
+				"category": "guides"
+			},
+			{
+				"id": "development/fullstack-navigation",
+				"path": ".opencode/context/development/fullstack-navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/guides/poc-first",
+				"path": ".opencode/context/development/guides/poc-first.md",
+				"category": "guides"
+			},
+			{
+				"id": "development/guides/tdd-workflow",
+				"path": ".opencode/context/development/guides/tdd-workflow.md",
+				"category": "guides"
+			},
+			{
+				"id": "development/infrastructure/navigation",
+				"path": ".opencode/context/development/infrastructure/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/integration/navigation",
+				"path": ".opencode/context/development/integration/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/lookup/frontend-qa-checklist",
+				"path": ".opencode/context/development/lookup/frontend-qa-checklist.md",
+				"category": "lookup"
+			},
+			{
+				"id": "development/lookup/quality-gates",
+				"path": ".opencode/context/development/lookup/quality-gates.md",
+				"category": "lookup"
+			},
+			{
+				"id": "development/navigation",
+				"path": ".opencode/context/development/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/principles/api-design",
+				"path": ".opencode/context/development/principles/api-design.md",
+				"category": "principles"
+			},
+			{
+				"id": "development/principles/clean-code",
+				"path": ".opencode/context/development/principles/clean-code.md",
+				"category": "principles"
+			},
+			{
+				"id": "development/principles/navigation",
+				"path": ".opencode/context/development/principles/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "development/security/auth/better-auth-anti-patterns",
+				"path": ".opencode/context/development/security/auth/better-auth-anti-patterns.md",
+				"category": "anti-patterns"
+			},
+			{
+				"id": "development/security/auth/patterns",
+				"path": ".opencode/context/development/security/auth/patterns.md",
+				"category": "patterns"
+			},
+			{
+				"id": "development/ui-navigation",
+				"path": ".opencode/context/development/ui-navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "navigation",
+				"path": ".opencode/context/navigation.md",
+				"category": "root",
+				"usedBy": ["core/openagent"]
+			},
+			{
+				"id": "openagents-repo/blueprints/context-bundle-template",
+				"path": ".opencode/context/openagents-repo/blueprints/context-bundle-template.md",
+				"category": "blueprints"
+			},
+			{
+				"id": "openagents-repo/blueprints/navigation",
+				"path": ".opencode/context/openagents-repo/blueprints/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/concepts/navigation",
+				"path": ".opencode/context/openagents-repo/concepts/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/concepts/subagent-testing-modes",
+				"path": ".opencode/context/openagents-repo/concepts/subagent-testing-modes.md",
+				"category": "concepts"
+			},
+			{
+				"id": "openagents-repo/core-concepts/agent-metadata",
+				"path": ".opencode/context/openagents-repo/core-concepts/agent-metadata.md",
+				"category": "core-concepts"
+			},
+			{
+				"id": "openagents-repo/core-concepts/agents",
+				"path": ".opencode/context/openagents-repo/core-concepts/agents.md",
+				"category": "core-concepts"
+			},
+			{
+				"id": "openagents-repo/core-concepts/categories",
+				"path": ".opencode/context/openagents-repo/core-concepts/categories.md",
+				"category": "core-concepts"
+			},
+			{
+				"id": "openagents-repo/core-concepts/evals",
+				"path": ".opencode/context/openagents-repo/core-concepts/evals.md",
+				"category": "core-concepts",
+				"usedBy": ["meta/repo-manager"]
+			},
+			{
+				"id": "openagents-repo/core-concepts/navigation",
+				"path": ".opencode/context/openagents-repo/core-concepts/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/core-concepts/registry",
+				"path": ".opencode/context/openagents-repo/core-concepts/registry.md",
+				"category": "core-concepts"
+			},
+			{
+				"id": "openagents-repo/errors/navigation",
+				"path": ".opencode/context/openagents-repo/errors/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/errors/tool-permission-errors",
+				"path": ".opencode/context/openagents-repo/errors/tool-permission-errors.md",
+				"category": "errors"
+			},
+			{
+				"id": "openagents-repo/examples/context-bundle-example",
+				"path": ".opencode/context/openagents-repo/examples/context-bundle-example.md",
+				"category": "examples"
+			},
+			{
+				"id": "openagents-repo/examples/navigation",
+				"path": ".opencode/context/openagents-repo/examples/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/examples/subagent-prompt-structure",
+				"path": ".opencode/context/openagents-repo/examples/subagent-prompt-structure.md",
+				"category": "examples"
+			},
+			{
+				"id": "openagents-repo/guides/adding-agent-basics",
+				"path": ".opencode/context/openagents-repo/guides/adding-agent-basics.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/adding-agent-testing",
+				"path": ".opencode/context/openagents-repo/guides/adding-agent-testing.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/adding-skill-basics",
+				"path": ".opencode/context/openagents-repo/guides/adding-skill-basics.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/adding-skill-example",
+				"path": ".opencode/context/openagents-repo/guides/adding-skill-example.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/adding-skill-implementation",
+				"path": ".opencode/context/openagents-repo/guides/adding-skill-implementation.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/building-cli-compact",
+				"path": ".opencode/context/openagents-repo/guides/building-cli-compact.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/creating-release",
+				"path": ".opencode/context/openagents-repo/guides/creating-release.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/debugging",
+				"path": ".opencode/context/openagents-repo/guides/debugging.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/external-libraries-workflow",
+				"path": ".opencode/context/openagents-repo/guides/external-libraries-workflow.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/github-issues-workflow",
+				"path": ".opencode/context/openagents-repo/guides/github-issues-workflow.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/navigation",
+				"path": ".opencode/context/openagents-repo/guides/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/guides/npm-publishing",
+				"path": ".opencode/context/openagents-repo/guides/npm-publishing.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/profile-validation",
+				"path": ".opencode/context/openagents-repo/guides/profile-validation.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/resolving-installer-wildcard-failures",
+				"path": ".opencode/context/openagents-repo/guides/resolving-installer-wildcard-failures.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/subagent-invocation",
+				"path": ".opencode/context/openagents-repo/guides/subagent-invocation.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/testing-agent",
+				"path": ".opencode/context/openagents-repo/guides/testing-agent.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/testing-subagents",
+				"path": ".opencode/context/openagents-repo/guides/testing-subagents.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/testing-subagents-approval",
+				"path": ".opencode/context/openagents-repo/guides/testing-subagents-approval.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/guides/updating-registry",
+				"path": ".opencode/context/openagents-repo/guides/updating-registry.md",
+				"category": "guides"
+			},
+			{
+				"id": "openagents-repo/lookup/commands",
+				"path": ".opencode/context/openagents-repo/lookup/commands.md",
+				"category": "lookup"
+			},
+			{
+				"id": "openagents-repo/lookup/file-locations",
+				"path": ".opencode/context/openagents-repo/lookup/file-locations.md",
+				"category": "lookup"
+			},
+			{
+				"id": "openagents-repo/lookup/navigation",
+				"path": ".opencode/context/openagents-repo/lookup/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/lookup/subagent-framework-maps",
+				"path": ".opencode/context/openagents-repo/lookup/subagent-framework-maps.md",
+				"category": "lookup"
+			},
+			{
+				"id": "openagents-repo/lookup/subagent-test-commands",
+				"path": ".opencode/context/openagents-repo/lookup/subagent-test-commands.md",
+				"category": "lookup"
+			},
+			{
+				"id": "openagents-repo/navigation",
+				"path": ".opencode/context/openagents-repo/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/plugins/context/architecture/lifecycle",
+				"path": ".opencode/context/openagents-repo/plugins/context/architecture/lifecycle.md",
+				"category": "architecture"
+			},
+			{
+				"id": "openagents-repo/plugins/context/architecture/overview",
+				"path": ".opencode/context/openagents-repo/plugins/context/architecture/overview.md",
+				"category": "architecture"
+			},
+			{
+				"id": "openagents-repo/plugins/context/capabilities/agents",
+				"path": ".opencode/context/openagents-repo/plugins/context/capabilities/agents.md",
+				"category": "capabilities"
+			},
+			{
+				"id": "openagents-repo/plugins/context/capabilities/events",
+				"path": ".opencode/context/openagents-repo/plugins/context/capabilities/events.md",
+				"category": "capabilities"
+			},
+			{
+				"id": "openagents-repo/plugins/context/capabilities/events_skills",
+				"path": ".opencode/context/openagents-repo/plugins/context/capabilities/events_skills.md",
+				"category": "capabilities"
+			},
+			{
+				"id": "openagents-repo/plugins/context/capabilities/tools",
+				"path": ".opencode/context/openagents-repo/plugins/context/capabilities/tools.md",
+				"category": "capabilities"
+			},
+			{
+				"id": "openagents-repo/plugins/context/context-overview",
+				"path": ".opencode/context/openagents-repo/plugins/context/context-overview.md",
+				"category": "overview"
+			},
+			{
+				"id": "openagents-repo/plugins/context/reference/best-practices",
+				"path": ".opencode/context/openagents-repo/plugins/context/reference/best-practices.md",
+				"category": "reference"
+			},
+			{
+				"id": "openagents-repo/plugins/navigation",
+				"path": ".opencode/context/openagents-repo/plugins/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/quality/navigation",
+				"path": ".opencode/context/openagents-repo/quality/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "openagents-repo/quality/registry-dependencies",
+				"path": ".opencode/context/openagents-repo/quality/registry-dependencies.md",
+				"category": "quality"
+			},
+			{
+				"id": "openagents-repo/quick-start",
+				"path": ".opencode/context/openagents-repo/quick-start.md",
+				"category": "quick-start",
+				"usedBy": ["meta/repo-manager"]
+			},
+			{
+				"id": "openagents-repo/templates/context-bundle-template",
+				"path": ".opencode/context/openagents-repo/templates/context-bundle-template.md",
+				"category": "templates"
+			},
+			{
+				"id": "openagents-repo/templates/navigation",
+				"path": ".opencode/context/openagents-repo/templates/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "project-intelligence/business-domain",
+				"path": ".opencode/context/project-intelligence/business-domain.md",
+				"category": "intelligence"
+			},
+			{
+				"id": "project-intelligence/business-tech-bridge",
+				"path": ".opencode/context/project-intelligence/business-tech-bridge.md",
+				"category": "intelligence"
+			},
+			{
+				"id": "project-intelligence/decisions-log",
+				"path": ".opencode/context/project-intelligence/decisions-log.md",
+				"category": "intelligence"
+			},
+			{
+				"id": "project-intelligence/living-notes",
+				"path": ".opencode/context/project-intelligence/living-notes.md",
+				"category": "intelligence"
+			},
+			{
+				"id": "project-intelligence/navigation",
+				"path": ".opencode/context/project-intelligence/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "project-intelligence/technical-domain",
+				"path": ".opencode/context/project-intelligence/technical-domain.md",
+				"category": "intelligence"
+			},
+			{
+				"id": "project/project-context",
+				"path": ".opencode/context/project/project-context.md",
+				"category": "project"
+			},
+			{
+				"id": "svelte/concepts/deep-reactivity",
+				"path": ".opencode/context/svelte/concepts/deep-reactivity.md",
+				"category": "concepts"
+			},
+			{
+				"id": "svelte/concepts/props",
+				"path": ".opencode/context/svelte/concepts/props.md",
+				"category": "concepts"
+			},
+			{
+				"id": "svelte/concepts/runes",
+				"path": ".opencode/context/svelte/concepts/runes.md",
+				"category": "concepts"
+			},
+			{
+				"id": "svelte/concepts/ui-principles",
+				"path": ".opencode/context/svelte/concepts/ui-principles.md",
+				"category": "concepts"
+			},
+			{
+				"id": "svelte/concepts/visual-design",
+				"path": ".opencode/context/svelte/concepts/visual-design.md",
+				"category": "concepts"
+			},
+			{
+				"id": "svelte/guides/component-patterns",
+				"path": ".opencode/context/svelte/guides/component-patterns.md",
+				"category": "guides"
+			},
+			{
+				"id": "svelte/guides/form-handling",
+				"path": ".opencode/context/svelte/guides/form-handling.md",
+				"category": "guides"
+			},
+			{
+				"id": "svelte/guides/remote-functions",
+				"path": ".opencode/context/svelte/guides/remote-functions.md",
+				"category": "guides"
+			},
+			{
+				"id": "svelte/lookup/cli-commands",
+				"path": ".opencode/context/svelte/lookup/cli-commands.md",
+				"category": "lookup"
+			},
+			{
+				"id": "svelte/lookup/design-tokens",
+				"path": ".opencode/context/svelte/lookup/design-tokens.md",
+				"category": "lookup"
+			},
+			{
+				"id": "svelte/lookup/shadcn-reference",
+				"path": ".opencode/context/svelte/lookup/shadcn-reference.md",
+				"category": "lookup"
+			},
+			{
+				"id": "svelte/navigation",
+				"path": ".opencode/context/svelte/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "system-builder-templates/orchestrator-template",
+				"path": ".opencode/context/system-builder-templates/orchestrator-template.md",
+				"category": "templates"
+			},
+			{
+				"id": "system-builder-templates/subagent-template",
+				"path": ".opencode/context/system-builder-templates/subagent-template.md",
+				"category": "templates"
+			},
+			{
+				"id": "system-builder-templates/SYSTEM-BUILDER-GUIDE",
+				"path": ".opencode/context/system-builder-templates/SYSTEM-BUILDER-GUIDE.md",
+				"category": "guides"
+			},
+			{
+				"id": "testing/philosophy",
+				"path": ".opencode/context/testing/philosophy.md",
+				"category": "testing"
+			},
+			{
+				"id": "testing/test-enforcement",
+				"path": ".opencode/context/testing/test-enforcement.md",
+				"category": "testing"
+			},
+			{
+				"id": "testing/test-guide",
+				"path": ".opencode/context/testing/test-guide.md",
+				"category": "testing"
+			},
+			{
+				"id": "ui/navigation",
+				"path": ".opencode/context/ui/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "ui/terminal/navigation",
+				"path": ".opencode/context/ui/terminal/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "ui/web/animation-advanced",
+				"path": ".opencode/context/ui/web/animation-advanced.md",
+				"category": "animation"
+			},
+			{
+				"id": "ui/web/animation-basics",
+				"path": ".opencode/context/ui/web/animation-basics.md",
+				"category": "animation"
+			},
+			{
+				"id": "ui/web/animation-chat",
+				"path": ".opencode/context/ui/web/animation-chat.md",
+				"category": "animation"
+			},
+			{
+				"id": "ui/web/animation-components",
+				"path": ".opencode/context/ui/web/animation-components.md",
+				"category": "animation"
+			},
+			{
+				"id": "ui/web/animation-forms",
+				"path": ".opencode/context/ui/web/animation-forms.md",
+				"category": "animation"
+			},
+			{
+				"id": "ui/web/animation-loading",
+				"path": ".opencode/context/ui/web/animation-loading.md",
+				"category": "animation"
+			},
+			{
+				"id": "ui/web/design/concepts/scroll-linked-animations",
+				"path": ".opencode/context/ui/web/design/concepts/scroll-linked-animations.md",
+				"category": "concepts"
+			},
+			{
+				"id": "ui/web/design/examples/scrollytelling-headphone",
+				"path": ".opencode/context/ui/web/design/examples/scrollytelling-headphone.md",
+				"category": "examples"
+			},
+			{
+				"id": "ui/web/design/guides/building-scrollytelling-pages",
+				"path": ".opencode/context/ui/web/design/guides/building-scrollytelling-pages.md",
+				"category": "guides"
+			},
+			{
+				"id": "ui/web/design/lookup/scroll-animation-prompts",
+				"path": ".opencode/context/ui/web/design/lookup/scroll-animation-prompts.md",
+				"category": "lookup"
+			},
+			{
+				"id": "ui/web/design/navigation",
+				"path": ".opencode/context/ui/web/design/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "ui/web/design-systems",
+				"path": ".opencode/context/ui/web/design-systems.md",
+				"category": "design"
+			},
+			{
+				"id": "ui/web/navigation",
+				"path": ".opencode/context/ui/web/navigation.md",
+				"category": "navigation"
+			},
+			{
+				"id": "ui/web/react-patterns",
+				"path": ".opencode/context/ui/web/react-patterns.md",
+				"category": "patterns"
+			},
+			{
+				"id": "ui/web/ui-styling-standards",
+				"path": ".opencode/context/ui/web/ui-styling-standards.md",
+				"category": "standards"
+			}
+		]
+	}
+}

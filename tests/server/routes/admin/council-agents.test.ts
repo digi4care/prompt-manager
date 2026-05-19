@@ -105,7 +105,7 @@ describe('council-agents API routes', () => {
 
 			const event = {
 				url: new URL('http://localhost/api/admin/council-agents')
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await GET(event);
 			const json = await response.json();
@@ -144,7 +144,7 @@ describe('council-agents API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await POST(event);
 			const json = await response.json();
@@ -167,7 +167,7 @@ describe('council-agents API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await POST(event);
@@ -210,7 +210,7 @@ describe('council-agents API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await POST(event);
@@ -252,7 +252,7 @@ describe('council-agents API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await POST(event);
@@ -302,7 +302,7 @@ describe('council-agents API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await PUT(event);
 			const json = await response.json();
@@ -340,7 +340,7 @@ describe('council-agents API routes', () => {
 					headers: { 'Content-Type': 'application/json' },
 					body
 				})
-			} as unknown as RequestEvent;
+			} as any;
 
 			try {
 				await PUT(event);
@@ -358,7 +358,7 @@ describe('council-agents API routes', () => {
 
 			const event = {
 				params: { id: '1' }
-			} as unknown as RequestEvent;
+			} as any;
 
 			const response = await DELETE(event);
 			const json = await response.json();

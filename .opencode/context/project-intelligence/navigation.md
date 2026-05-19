@@ -1,40 +1,65 @@
-<!-- Context: project-intelligence/nav | Priority: critical | Version: 1.0 | Updated: 2026-02-12 -->
+<!-- Context: project-intelligence/nav | Priority: high | Version: 1.0 | Updated: 2025-01-12 -->
 
 # Project Intelligence
 
-> Technical patterns and standards for prompt-management. Agents: Load technical-domain.md for code generation.
+> Start here for quick project understanding. These files bridge business and technical domains.
+
+## Structure
+
+```
+.opencode/context/project-intelligence/
+├── navigation.md              # This file - quick overview
+├── business-domain.md         # Business context and problem statement
+├── technical-domain.md        # Stack, architecture, technical decisions
+├── business-tech-bridge.md    # How business needs map to solutions
+├── decisions-log.md           # Major decisions with rationale
+└── living-notes.md            # Active issues, debt, open questions
+```
 
 ## Quick Routes
 
-| What You Need     | File                                       | Priority |
-| ----------------- | ------------------------------------------ | -------- |
-| **Code patterns** | [technical-domain.md](technical-domain.md) | critical |
-| Build commands    | [AGENTS.md](/AGENTS.md)                    | -        |
+| What You Need | File | Description |
+|---------------|------|-------------|
+| Understand the "why" | `business-domain.md` | Problem, users, value proposition |
+| Understand the "how" | `technical-domain.md` | Stack, architecture, integrations |
+| See the connection | `business-tech-bridge.md` | Business → technical mapping |
+| Know the context | `decisions-log.md` | Why decisions were made |
+| Current state | `living-notes.md` | Active issues and open questions |
+| All of the above | Read all files in order | Full project intelligence |
 
-## Tech Stack Summary
+## Usage
 
-- **Framework**: SvelteKit 2.x + Svelte 5.x (runes)
-- **Language**: TypeScript 5.x (strict)
-- **Database**: libsql + Drizzle ORM
-- **Styling**: Tailwind CSS 4.x
-- **Validation**: Zod 4.x
-- **Auth**: better-auth
-- **Testing**: Vitest + Playwright
+**New Team Member / Agent**:
+1. Start with `navigation.md` (this file)
+2. Read all files in order for complete understanding
+3. Follow onboarding checklist in each file
 
-## Key Patterns (Quick Reference)
+**Quick Reference**:
+- Business focus → `business-domain.md`
+- Technical focus → `technical-domain.md`
+- Decision context → `decisions-log.md`
 
-| Pattern    | Convention                                |
-| ---------- | ----------------------------------------- |
-| API routes | `+server.ts` with RequestHandler          |
-| Components | Svelte 5 runes ($state, $props, $derived) |
-| DB queries | Drizzle with soft delete (deletedAt)      |
-| Validation | Zod safeParse() on all inputs             |
-| Naming     | kebab-case files, PascalCase components   |
+## Integration
 
-## Full Context
+This folder is referenced from:
+- `.opencode/context/core/standards/project-intelligence.md` (standards and patterns)
+- `.opencode/context/core/system/context-guide.md` (context loading)
 
-See `technical-domain.md` for complete patterns with code examples.
+See `.opencode/context/core/context-system.md` for the broader context architecture.
 
----
+## Maintenance
 
-**Management**: Run `/add-context --update` when patterns change.
+Keep this folder current:
+- Update when business direction changes
+- Document decisions as they're made
+- Review `living-notes.md` regularly
+- Archive resolved items from decisions-log.md
+
+**Management Guide**: See `.opencode/context/core/standards/project-intelligence-management.md` for complete lifecycle management including:
+- How to update, add, and remove files
+- How to create new subfolders
+- Version tracking and frontmatter standards
+- Quality checklists and anti-patterns
+- Governance and ownership
+
+See `.opencode/context/core/standards/project-intelligence.md` for the standard itself.

@@ -128,13 +128,20 @@ export async function generateVariantsWithModelSelection(
 
 	// Execute using session.prompt with model selection
 	const res = await withRetry(
-		() => executeAgent({
-			model: modelSelection,
-			agent: 'prompt-improve',
-			parts: [{ type: 'text', text: JSON.stringify(agentInput) }],
-			temperature,
-			maxTokens: options.maxTokens
-		}),
+		async () => {
+			const result = await executeAgent({
+				model: modelSelection,
+				agent: 'prompt-improve',
+				parts: [{ type: 'text', text: JSON.stringify(agentInput) }],
+				temperature,
+				maxTokens: options.maxTokens
+			});
+			// SDK returns { error } instead of throwing — convert to throw for retry
+			if (result && typeof result === 'object' && 'error' in result) {
+				throw new Error(result.error?.message || 'Agent execution failed');
+			}
+			return result;
+		},
 		{ maxRetries: 2 }
 	);
 

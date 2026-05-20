@@ -1,15 +1,18 @@
 /**
  * Council Debate Service — thin re-export barrel.
  *
- * All logic has been decomposed into:
- *   src/lib/server/council/debate/types.ts
- *   src/lib/server/council/debate/prompts.ts
- *   src/lib/server/council/debate/execution.ts
+ * All implementation has been decomposed into focused modules under council/:
+ * - debate-types.ts      — type definitions
+ * - debate-prompts.ts    — prompt building, synthesis parsing
+ * - agent-loader.ts      — agent config loading from DB
+ * - agent-runner.ts      — single agent execution (streaming)
+ * - synthesizer.ts       — synthesis execution
+ * - debate-persistence.ts — DB create/update for debate runs
+ * - debate-executor.ts   — orchestration (executeDebate)
  *
- * Import from this file for backward compatibility.
+ * This file preserves backward compatibility for existing import paths.
  */
 
-export { executeCouncilDebate, executeDebate } from '../council/debate';
 export type {
 	DebateArchetype,
 	DebateState,
@@ -21,4 +24,6 @@ export type {
 	DebateEventType,
 	DebateEvent,
 	AgentOverride
-} from '../council/debate';
+} from '../council/debate-types';
+
+export { executeDebate, executeDebate as executeCouncilDebate } from '../council/debate-executor';

@@ -18,5 +18,5 @@ export type {
 	DebateEventType,
 	DebateEvent,
 	AgentOverride
-} from './debate';
-export { executeCouncilDebate, executeDebate } from './debate';
+} from './debate-types';
+export { executeDebate } from './debate-executor';

@@ -140,7 +140,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			const providerId = modelParts.length > 1 ? modelParts[0] : undefined;
 			const modelId = modelParts.length > 1 ? modelParts.slice(1).join('/') : agent.modelId;
 
-			const model = (models as any[]).find((m) => m.id === agent.modelId);
+		const model = (models as { id: string; name: string; logo?: string }[]).find((m) => m.id === agent.modelId);
 
 			return {
 				id: String(agent.id),

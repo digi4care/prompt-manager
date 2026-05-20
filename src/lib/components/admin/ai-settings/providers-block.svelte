@@ -92,10 +92,10 @@
 			if (authMethods.length === 0) {
 				console.log('No auth methods, using default API key method');
 				authMethods = [
-					{
-						type: 'api',
-						label: 'API Key'
-					} as any
+				{
+					type: 'api',
+					label: 'API Key'
+				}
 				];
 			}
 

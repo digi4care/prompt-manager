@@ -48,19 +48,19 @@ export const load: PageServerLoad = async ({ url }) => {
 				}
 				return p.tags || [];
 			})(),
-			llmProviders:
-				typeof (p as any).llm_providers === 'string'
-					? (() => {
-							try {
-								return JSON.parse((p as any).llm_providers);
-							} catch {
-								return ((p as any).llm_providers || '')
-									.split(',')
-									.map((t: string) => t.trim())
-									.filter(Boolean);
-							}
-						})()
-					: (p as any).llm_providers || []
+		llmProviders:
+			typeof p.llm_providers === 'string'
+				? (() => {
+						try {
+							return JSON.parse(p.llm_providers);
+						} catch {
+							return (p.llm_providers || '')
+								.split(',')
+								.map((t: string) => t.trim())
+								.filter(Boolean);
+						}
+					})()
+				: p.llm_providers || []
 		}));
 
 		return {

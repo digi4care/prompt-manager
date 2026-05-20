@@ -226,41 +226,40 @@
 	// Helper to resolve model name from model ID
 	function resolveModelName(modelId: string | null): string {
 		if (!modelId) return '';
-		const model = data.models?.find((m: any) => m.id === modelId);
+		const model = data.models?.find((m: { id: string; name: string }) => m.id === modelId);
 		return model?.name || modelId;
 	}
 
 	// Initialize function defaults from server data
 	$effect(() => {
 		if (data.settings?.executor) {
-			const exec = data.settings.executor as any;
+			const exec = data.settings.executor as Record<string, unknown>;
 			functionDefaults.executor = {
-				...exec,
-				modelName: resolveModelName(exec.modelId),
-				modelProvider: exec.providerId || exec.modelProvider || '',
-				promptLinkId: exec.promptId ?? null
+				...(exec as any),
+				modelName: resolveModelName(exec.modelId as string),
+				modelProvider: (exec.providerId || exec.modelProvider || '') as string,
+				promptLinkId: (exec.promptId ?? null) as number | null
 			};
 		}
 		if (data.settings?.judge) {
-			const judge = data.settings.judge as any;
+			const judge = data.settings.judge as Record<string, unknown>;
 			functionDefaults.judge = {
-				...judge,
-				modelName: resolveModelName(judge.modelId),
-				modelProvider: judge.providerId || judge.modelProvider || '',
-				promptLinkId: judge.promptId ?? null
+				...(judge as any),
+				modelName: resolveModelName(judge.modelId as string),
+				modelProvider: (judge.providerId || judge.modelProvider || '') as string,
+				promptLinkId: (judge.promptId ?? null) as number | null
 			};
 		}
 		if (data.settings?.improve) {
-			const improve = data.settings.improve as any;
+			const improve = data.settings.improve as Record<string, unknown>;
 			functionDefaults.improve = {
-				...improve,
-				modelName: resolveModelName(improve.modelId),
-				modelProvider: improve.providerId || improve.modelProvider || '',
-				promptLinkId: improve.promptId ?? null
+				...(improve as any),
+				modelName: resolveModelName(improve.modelId as string),
+				modelProvider: (improve.providerId || improve.modelProvider || '') as string,
+				promptLinkId: (improve.promptId ?? null) as number | null
 			};
 		}
 	});
-
 	// Handler for model selection (marks as dirty, doesn't save yet)
 	function handleModelSelect(
 		type: 'executor' | 'judge' | 'improve',

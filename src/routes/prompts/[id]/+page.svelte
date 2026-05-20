@@ -40,8 +40,8 @@
 	let showDetail = $state(false);
 
 	// Shallow routing state - read from page.state
-	const showHistoryOverlay = $derived(!!(page.state as any)?.showHistory);
-	const showEditOverlay = $derived(!!(page.state as any)?.showEdit);
+	const showHistoryOverlay = $derived(!!(page.state as Record<string, unknown>)?.showHistory);
+	const showEditOverlay = $derived(!!(page.state as Record<string, unknown>)?.showEdit);
 
 	// Open history with shallow routing
 	function openHistory() {

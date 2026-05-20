@@ -76,7 +76,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		const content = res.data || '';
-		const usage = (res as any)?.usage ?? { input_tokens: 0, output_tokens: 0 };
+		const usage = (res as { usage?: { input_tokens: number; output_tokens: number } })?.usage ?? { input_tokens: 0, output_tokens: 0 };
 
 		return apiSuccess({ content, message: content, usage });
 	} catch (err: unknown) {

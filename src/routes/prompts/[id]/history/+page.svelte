@@ -17,7 +17,7 @@
 	let selectedLogId = $state<number | null>(null);
 
 	// Check if we came via shallow routing (has state) or direct navigation
-	const isShallowNavigation = $derived(!!(page.state as any)?.fromDetail);
+	const isShallowNavigation = $derived(!!(page.state as Record<string, unknown>)?.fromDetail);
 
 	// Handle back navigation
 	function handleBack() {

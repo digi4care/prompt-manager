@@ -4,6 +4,7 @@ import {
 	executeAgentWithSession,
 	OpenCodeValidationError
 } from '$lib/server/services/opencode.service';
+import { withRetry } from '../utils/retry';
 import { parseJudgeAgentResponse } from '$lib/server/opencode/contracts';
 import {
 	getOpenCodePolicy,
@@ -105,60 +106,52 @@ export { OpenCodeValidationError } from '$lib/server/services/opencode.service';
 
 export async function evaluatePrompt(
 	version: PromptVersion,
-	retryCount = 0,
 	allowedModels?: string[]
 ): Promise<EvaluationResult> {
-	const maxRetries = 2;
+	return withRetry(
+		async () => {
+			// 1. Get OpenCode policy for model selection
+			const policy = await getOpenCodePolicy();
 
-	try {
-		// 1. Get OpenCode policy for model selection
-		const policy = await getOpenCodePolicy();
+			// 2. Select effective model based on policy and request constraints
+			const selectedModel = selectEffectiveModel(policy, allowedModels);
 
-		// 2. Select effective model based on policy and request constraints
-		const selectedModel = selectEffectiveModel(policy, allowedModels);
+			// 3. Parse model ID to extract provider and model components
+			const { providerID, modelID } = parseModelId(selectedModel);
 
-		// 3. Parse model ID to extract provider and model components
-		const { providerID, modelID } = parseModelId(selectedModel);
+			// 4. Call OpenCode using session.prompt with model selection (ara.12 spike result)
+			// Rubric-only: no instruction field, only prompt content
+			const res = await executeAgentWithSession({
+				model: { providerID, modelID },
+				agent: 'prompt-judge',
+				parts: [{ type: 'text', text: JSON.stringify({ prompt: version.content }) }],
+				temperature: policy.judgeTemperature
+			});
 
-		// 4. Call OpenCode using session.prompt with model selection (ara.12 spike result)
-		// Rubric-only: no instruction field, only prompt content
-		const res = await executeAgentWithSession({
-			model: { providerID, modelID },
-			agent: 'prompt-judge',
-			parts: [{ type: 'text', text: JSON.stringify({ prompt: version.content }) }],
-			temperature: policy.judgeTemperature
-		});
+			const payload = (res as any)?.data ?? res;
+			const parsed = parseJudgeAgentResponse(payload);
 
-		const payload = (res as any)?.data ?? res;
-		const parsed = parseJudgeAgentResponse(payload);
+			const mapped: JudgeResponse = {
+				clarity: clamp0to100(parsed.criteria.clarity),
+				completeness: clamp0to100(parsed.criteria.structure),
+				specificity: clamp0to100(parsed.criteria.specificity),
+				gaps: parsed.gaps,
+				recommendations: parsed.recommendations
+			};
 
-		const mapped: JudgeResponse = {
-			clarity: clamp0to100(parsed.criteria.clarity),
-			completeness: clamp0to100(parsed.criteria.structure),
-			specificity: clamp0to100(parsed.criteria.specificity),
-			gaps: parsed.gaps,
-			recommendations: parsed.recommendations
-		};
-
-		// 5. Return result with model parameters for provenance (ara.14)
-		return {
-			response: mapped,
-			thinking: null,
-			rawText: JSON.stringify(payload),
-			providerId: providerID,
-			modelId: selectedModel,
-			temperature: policy.judgeTemperature,
-			allowedModels
-		};
-	} catch (error: unknown) {
-		// Retry a couple of times for transient failures.
-		if (retryCount < maxRetries) {
-			const backoff = Math.pow(2, retryCount) * 250;
-			await new Promise((r) => setTimeout(r, backoff));
-			return evaluatePrompt(version, retryCount + 1, allowedModels);
-		}
-		throw error;
-	}
+			// 5. Return result with model parameters for provenance (ara.14)
+			return {
+				response: mapped,
+				thinking: null,
+				rawText: JSON.stringify(payload),
+				providerId: providerID,
+				modelId: selectedModel,
+				temperature: policy.judgeTemperature,
+				allowedModels
+			};
+		},
+		{ maxRetries: 2 }
+	);
 }
 
 export async function saveEvaluation(

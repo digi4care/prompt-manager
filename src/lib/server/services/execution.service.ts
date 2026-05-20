@@ -12,6 +12,7 @@ import {
 } from './settings-cascade.service';
 import { getOpencodeClient, getProviders } from './opencode.service';
 import type { FunctionType } from './function-defaults.service';
+import { withRetry } from '../utils/retry';
 
 /**
  * Custom error class for execution errors
@@ -261,25 +262,37 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 			);
 		}
 
-		session = createResult.data as Session;
+		session = (createResult.data as Session) ?? null;
+		if (!session) {
+			throw new ExecutionError(
+				500,
+				'SESSION_CREATE_FAILED',
+				'Session creation returned null',
+				'Try again in a moment'
+			);
+		}
+		const activeSession = session;
 
 		// Send prompt to session
 		console.log('[ExecutionService] Sending prompt:', {
-			sessionId: session.id,
+			sessionId: activeSession.id,
 			contentLength: content.length,
 			model: { providerId, modelId }
 		});
 
-		const promptResult = await client.session.prompt({
-			path: { id: session.id },
-			body: {
-				parts: [{ type: 'text', text: content }],
-				model: {
-					providerID: providerId,
-					modelID: modelId
+		const promptResult = await withRetry(
+			() => client.session.prompt({
+				path: { id: activeSession.id },
+				body: {
+					parts: [{ type: 'text', text: content }],
+					model: {
+						providerID: providerId,
+						modelID: modelId
+					}
 				}
-			}
-		});
+			}),
+			{ maxRetries: 2 }
+		);
 
 		console.log('[ExecutionService] Prompt result:', {
 			hasData: !!promptResult.data,

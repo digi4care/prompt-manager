@@ -1,20 +1,19 @@
 import 'dotenv/config';
 import { validateEnvironment } from '$lib/server/env';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
 import { redirect } from '@sveltejs/kit';
-import * as crypto from 'crypto';
-import { building } from '$app/environment';
 import { paraglideMiddleware } from '$lib/paraglide/server.js';
+import { dev } from '$app/environment';
+import { logSecurityEvent } from '$lib/server/audit';
+import {
+	rateLimitMiddleware,
+	authMiddleware,
+	securityHeadersMiddleware
+} from '$lib/server/middleware';
 
 // Validate environment on server start
 validateEnvironment();
-
-import { dev } from '$app/environment';
-import { error } from '@sveltejs/kit';
-import type { RequestEvent } from '@sveltejs/kit';
-import { logSecurityEvent } from '$lib/server/audit';
-import { auth } from '$lib/auth';
-import { svelteKitHandler } from 'better-auth/svelte-kit';
 
 // Extend SvelteKit Locals type to include Better Auth session
 declare module '@sveltejs/kit' {
@@ -43,194 +42,53 @@ declare module '@sveltejs/kit' {
 	}
 }
 
-/**
- * HIGH-1 FIX: Rate limiting configuration
- * Protect against brute force and DoS attacks
- */
-interface RateLimitEntry {
-	count: number;
-	resetTime: number;
-}
-
-const rateLimitMap = new Map<string, RateLimitEntry>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
-const RATE_LIMIT_MAX_REQUESTS = 100; // 100 requests per minute for general routes
-const RATE_LIMIT_MAX_AUTH_REQUESTS = 30; // 30 requests per minute for auth routes
-
-/**
- * Check if request exceeds rate limit
- */
-function isRateLimited(event: RequestEvent): { limited: boolean; retryAfter: number } {
-	const clientIP = event.getClientAddress?.() || 'unknown';
-	const route = event.url.pathname;
-	const isAuthRoute =
-		route.includes('/login') || route.includes('/admin') || route.includes('/settings');
-	const maxRequests = isAuthRoute ? RATE_LIMIT_MAX_AUTH_REQUESTS : RATE_LIMIT_MAX_REQUESTS;
-	const key = `${clientIP}:${route}`;
-	const now = Date.now();
-
-	const entry = rateLimitMap.get(key);
-
-	if (!entry || now > entry.resetTime) {
-		rateLimitMap.set(key, {
-			count: 1,
-			resetTime: now + RATE_LIMIT_WINDOW_MS
-		});
-		return { limited: false, retryAfter: 0 };
+// DevTools detection middleware
+const devToolsMiddleware: Handle = async ({ event, resolve }) => {
+	if (dev && event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
+		return new Response(undefined, { status: 404 });
 	}
+	return resolve(event);
+};
 
-	entry.count++;
-
-	if (entry.count > maxRequests) {
-		const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
-		console.warn(
-			`[AUDIT] Rate limit exceeded: IP=${clientIP}, route=${route}, count=${entry.count}, max=${maxRequests}`
-		);
-		return { limited: true, retryAfter };
+// Route protection middleware
+const routeProtectionMiddleware: Handle = async ({ event, resolve }) => {
+	const { requiresAuthentication, isAdminAuthenticated } = await import('$lib/server/middleware/auth');
+	if (requiresAuthentication(event.url.pathname) && !isAdminAuthenticated(event)) {
+		if (event.request.headers.get('accept')?.includes('application/json')) {
+			const errorBody = JSON.stringify({
+				error: 'Authentication required',
+				message: 'Please log in to access this resource'
+			});
+			return new Response(errorBody, {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+		return redirect(302, '/login');
 	}
-
-	return { limited: false, retryAfter: 0 };
-}
-
-/**
- * Check if request requires authentication
- */
-function requiresAuthentication(pathname: string): boolean {
-	const publicRoutes = [
-		'/login',
-		'/api/health',
-		'/api/admin/health', // OpenCode connection status - needed before login
-		'/api/prompts', // Public prompts - auth handled per-method in endpoint
-		'/favicon.ico',
-		'/static/',
-		'/.well-known/'
-	];
-	return !publicRoutes.some((route) => pathname.startsWith(route));
-}
-
-/**
- * Verify admin authentication from Better Auth session
- */
-function isAdminAuthenticated(event: RequestEvent): boolean {
-	return !!event.locals.auth?.session;
-}
-
-/**
- * Redirect to admin login page
- */
-function redirectToAdminLogin(event: RequestEvent) {
-	if (event.request.headers.get('accept')?.includes('application/json')) {
-		const errorBody = JSON.stringify({
-			error: 'Authentication required',
-			message: 'Please log in to access this resource'
-		});
-		return new Response(errorBody, {
-			status: 401,
-			headers: { 'Content-Type': 'application/json' }
-		});
-	}
-
-	return redirect(302, '/login');
-}
+	return resolve(event);
+};
 
 export const handle: Handle = async ({ event, resolve }) => {
 	return paraglideMiddleware(event.request, async ({ request: localizedRequest, locale }) => {
 		// Update event.request with the localized request (de-localized URL)
 		event.request = localizedRequest;
 
-		// 1. Fetch Better Auth session and populate event.locals
-		const session = await auth.api.getSession({
-			headers: event.request.headers
-		});
+		const sequenceHandle = sequence(
+			rateLimitMiddleware,
+			devToolsMiddleware,
+			authMiddleware,
+			routeProtectionMiddleware,
+			securityHeadersMiddleware
+		);
 
-		if (session) {
-			event.locals.auth = session as any;
-		}
-
-		// 2. Rate limiting
-		const { limited, retryAfter } = isRateLimited(event);
-		if (limited) {
-			return new Response('Rate limit exceeded. Please try again later.', {
-				status: 429,
-				headers: {
-					'Retry-After': String(retryAfter),
-					'Content-Type': 'text/plain'
-				}
-			});
-		}
-
-		// 3. Handle Chrome DevTools detection
-		if (dev && event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
-			return new Response(undefined, { status: 404 });
-		}
-
-		// 4. Protect routes with authentication
-		if (requiresAuthentication(event.url.pathname)) {
-			if (!isAdminAuthenticated(event)) {
-				return redirectToAdminLogin(event);
-			}
-		}
-
-		// 5. Better Auth SvelteKit handler with locale transformation
-		const response = await resolve(event, {
-			transformPageChunk: ({ html }) => html.replace('%paraglide-locale%', locale)
-		});
-
-		// Apply Better Auth handling after resolution
-		const finalResponse = await svelteKitHandler({
+		return sequenceHandle({
 			event,
-			resolve: () => Promise.resolve(response),
-			auth,
-			building
+			resolve: (e) =>
+				resolve(e, {
+					transformPageChunk: ({ html }) => html.replace('%paraglide-locale%', locale)
+				})
 		});
-
-		// 6. Add security headers
-		const origin = event.request.headers.get('origin');
-		const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
-		const isApiRoute = event.url.pathname.startsWith('/api/');
-
-		if (isApiRoute && origin && allowedOrigins.includes(origin)) {
-			finalResponse.headers.set('Access-Control-Allow-Origin', origin);
-			finalResponse.headers.set('Access-Control-Allow-Credentials', 'true');
-			finalResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-			finalResponse.headers.set(
-				'Access-Control-Allow-Headers',
-				'Content-Type, Authorization, X-CSRF-Token'
-			);
-		}
-
-		if (event.request.method === 'OPTIONS' && isApiRoute) {
-			return new Response(null, {
-				status: 204,
-				headers: {
-					'Access-Control-Allow-Origin': origin || '*',
-					'Access-Control-Allow-Credentials': 'true',
-					'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-					'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token',
-					'Access-Control-Max-Age': '86400'
-				}
-			});
-		}
-
-		const headers: Record<string, string> = {
-			'Content-Security-Policy':
-				"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://localhost:4096; report-uri /api/csp-report;",
-			'X-Frame-Options': 'DENY',
-			'X-Content-Type-Options': 'nosniff',
-			'Referrer-Policy': 'strict-origin-when-cross-origin',
-			'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-			'X-XSS-Protection': '1; mode=block'
-		};
-
-		if (process.env.NODE_ENV === 'production') {
-			headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
-		}
-
-		Object.entries(headers).forEach(([key, value]) => {
-			finalResponse.headers.set(key, value);
-		});
-
-		return finalResponse;
 	});
 };
 

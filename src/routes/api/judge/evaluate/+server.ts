@@ -77,7 +77,6 @@ export const POST: RequestHandler = async (event) => {
 				createdAt: new Date(versionToEvaluate!.createdAt),
 				frontmatterYaml: versionToEvaluate!.frontmatterYaml ?? null
 			},
-			0, // retryCount (default)
 			parsed.data.allowedModels
 		);
 

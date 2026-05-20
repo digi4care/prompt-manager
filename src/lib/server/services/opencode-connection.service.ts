@@ -229,6 +229,14 @@ export async function resetCachedConnection(): Promise<void> {
 	cachedSettingsKey = null;
 }
 
+// Graceful cleanup on process exit
+async function gracefulShutdown() {
+	await resetCachedConnection();
+}
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
 export async function getConnection(
 	settings: OpenCodeConnectionSettings
 ): Promise<OpenCodeConnection> {

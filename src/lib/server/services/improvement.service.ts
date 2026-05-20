@@ -7,6 +7,7 @@ import {
 	executeAgentWithSession,
 	type ModelSelection
 } from '$lib/server/services/opencode.service';
+import { withRetry } from '../utils/retry';
 import { parseImproveAgentResponse } from '$lib/server/opencode/contracts';
 import { getOpenCodePolicy, isModelAllowed, type OpenCodePolicy } from './admin-settings.service';
 import { getPresetWithDefaults } from './improve-presets.service';
@@ -117,13 +118,16 @@ export async function generateVariantsWithModelSelection(
 	}
 
 	// Execute using session.prompt with model selection
-	const res = await executeAgentWithSession({
-		model: modelSelection,
-		agent: 'prompt-improve',
-		parts: [{ type: 'text', text: JSON.stringify(agentInput) }],
-		temperature,
-		maxTokens: options.maxTokens
-	});
+	const res = await withRetry(
+		() => executeAgentWithSession({
+			model: modelSelection,
+			agent: 'prompt-improve',
+			parts: [{ type: 'text', text: JSON.stringify(agentInput) }],
+			temperature,
+			maxTokens: options.maxTokens
+		}),
+		{ maxRetries: 2 }
+	);
 
 	const payload = (res as any)?.data ?? res;
 	const parsed = parseImproveAgentResponse(payload);

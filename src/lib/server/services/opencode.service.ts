@@ -236,6 +236,18 @@ export function clearCatalogCache(): void {
 	catalogCache = null;
 }
 
+/**
+ * Clear all caches (called on disconnect/connect operations or shutdown)
+ */
+export function clearAllCaches(): void {
+	clearCatalogCache();
+	clearProvidersCache();
+}
+
+// Graceful cleanup on process exit
+process.on('SIGTERM', () => clearAllCaches());
+process.on('SIGINT', () => clearAllCaches());
+
 // Types
 export interface ProviderInfo {
 	id: string;

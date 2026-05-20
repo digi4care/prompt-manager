@@ -12,6 +12,7 @@ import {
 } from './settings-cascade.service';
 import { getOpencodeClient, getProviders } from './opencode.service';
 import type { FunctionType } from './function-defaults.service';
+import { withRetry } from '../utils/retry';
 
 /**
  * Streaming event types emitted to SSE clients
@@ -223,16 +224,19 @@ export async function* streamPromptExecution(
 	});
 
 	// Send prompt (non-blocking - events will stream via subscription)
-	const promptPromise = client.session.prompt({
-		path: { id: sessionID },
-		body: {
-			parts: [{ type: 'text', text: content }],
-			model: {
-				providerID: providerId,
-				modelID: modelId
+	const promptPromise = withRetry(
+		() => client.session.prompt({
+			path: { id: sessionID },
+			body: {
+				parts: [{ type: 'text', text: content }],
+				model: {
+					providerID: providerId,
+					modelID: modelId
+				}
 			}
-		}
-	});
+		}),
+		{ maxRetries: 2 }
+	);
 
 	// Track usage from response
 	let inputTokens = 0;

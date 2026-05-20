@@ -234,16 +234,23 @@ export async function* streamPromptExecution(
 
 	// Send prompt (non-blocking - events will stream via subscription)
 	const promptPromise = withRetry(
-		() => client.session.prompt({
-			path: { id: sessionID },
-			body: {
-				parts: [{ type: 'text', text: content }],
-				model: {
-					providerID: providerId,
-					modelID: modelId
+		async () => {
+			const result = await client.session.prompt({
+				path: { id: sessionID },
+				body: {
+					parts: [{ type: 'text', text: content }],
+					model: {
+						providerID: providerId,
+						modelID: modelId
+					}
 				}
+			});
+			// SDK returns error in result — throw so withRetry can retry transient failures
+			if (result.error) {
+				throw new Error(`SDK prompt error: ${JSON.stringify(result.error)}`);
 			}
-		}),
+			return result;
+		},
 		{ maxRetries: 2 }
 	);
 

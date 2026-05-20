@@ -13,8 +13,47 @@ export interface RetryOptions {
 const DEFAULT_OPTIONS: Required<RetryOptions> = {
 	maxRetries: 2,
 	baseDelayMs: 250,
-	shouldRetry: () => true
+	shouldRetry: isTransientError
 };
+
+/**
+ * Determine if an error is transient (worth retrying).
+ * Non-transient errors include validation errors, auth errors, and 4xx client errors.
+ */
+export function isTransientError(error: unknown): boolean {
+	if (error instanceof Error) {
+		// Validation errors (model not allowed, invalid input) — never retry
+		if (error.name === 'OpenCodeValidationError') return false;
+
+		const msg = error.message?.toLowerCase() ?? '';
+
+		// Network/timeout errors — always retry
+		if (
+			msg.includes('timeout') ||
+			msg.includes('econnreset') ||
+			msg.includes('econnrefused') ||
+			msg.includes('fetch failed') ||
+			msg.includes('network') ||
+			msg.includes('abort')
+		) {
+			return true;
+		}
+
+		// Client errors (4xx) — don't retry
+		if (
+			msg.includes('400') ||
+			msg.includes('401') ||
+			msg.includes('403') ||
+			msg.includes('404') ||
+			msg.includes('429')
+		) {
+			return false;
+		}
+	}
+
+	// Default: retry unknown errors (safer for transient network blips)
+	return true;
+}
 
 export async function withRetry<T>(
 	fn: () => Promise<T>,

@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getExecutionLog } from '$lib/server/services/execution-log.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
+import { authenticateRequest } from '$lib/server/auth.helper';
 
 /**
  * GET /api/prompts/[id]/history/[logId]
@@ -16,7 +16,7 @@ import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
  */
 export const GET: RequestHandler = async (event) => {
 	// Require authentication
-	authenticateWithBetterAuth(event);
+	authenticateRequest(event);
 
 	// Parse prompt ID from path
 	const promptIdParam = event.params.id;

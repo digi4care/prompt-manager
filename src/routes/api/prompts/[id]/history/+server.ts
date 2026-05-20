@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { getExecutionHistory } from '$lib/server/services/execution-log.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
+import { authenticateRequest } from '$lib/server/auth.helper';
 
 /**
  * Query parameter validation schema for history endpoint
@@ -28,7 +28,7 @@ const querySchema = z.object({
  */
 export const GET: RequestHandler = async (event) => {
 	// Require authentication
-	authenticateWithBetterAuth(event);
+	authenticateRequest(event);
 
 	// Parse prompt ID from path
 	const promptIdParam = event.params.id;

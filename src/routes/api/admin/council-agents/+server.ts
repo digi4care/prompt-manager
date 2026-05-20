@@ -1,7 +1,4 @@
 import { json, error } from '@sveltejs/kit';
-import { db } from '$lib/server/db/client';
-import { councilAgents, prompts } from '$lib/server/db/schema';
-import { eq, asc } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
 import { getProviderCatalog, type ProviderInfo } from '$lib/server/services/opencode.service';
@@ -11,35 +8,17 @@ import {
 	type PolicyData,
 	type CatalogData
 } from '$lib/server/validators/model-variant.validator';
-import { createCouncilAgent } from '$lib/server/db/council-agents.facade';
-
-type ParentType = 'function_defaults' | 'prompt_function_settings' | 'review_defaults';
+import {
+	getCouncilAgents,
+	createCouncilAgentWithOrder
+} from '$lib/server/services/council-agents.service';
+import type { ParentType } from '$lib/server/db/schema';
 
 // GET: List all council agents for function_defaults with prompt names
 export const GET: RequestHandler = async ({ url }) => {
 	const parentType = (url.searchParams.get('parentType') ?? 'function_defaults') as ParentType;
 
-	const agents = await db
-		.select({
-			id: councilAgents.id,
-			parentType: councilAgents.parentType,
-			parentId: councilAgents.parentId,
-			modelId: councilAgents.modelId,
-			modelVariant: councilAgents.modelVariant,
-			modelName: councilAgents.modelName,
-			modelProvider: councilAgents.modelProvider,
-			temperature: councilAgents.temperature,
-			maxTokens: councilAgents.maxTokens,
-			agentOrder: councilAgents.agentOrder,
-			promptLinkId: councilAgents.promptLinkId,
-			createdAt: councilAgents.createdAt,
-			updatedAt: councilAgents.updatedAt,
-			promptName: prompts.title
-		})
-		.from(councilAgents)
-		.leftJoin(prompts, eq(councilAgents.promptLinkId, prompts.id))
-		.where(eq(councilAgents.parentType, parentType))
-		.orderBy(asc(councilAgents.agentOrder));
+	const agents = await getCouncilAgents(parentType);
 
 	return json({ agents });
 };
@@ -133,25 +112,14 @@ export const POST: RequestHandler = async ({ request }) => {
 		);
 	}
 
-	// Get next order
-	const existing = await db
-		.select({ agentOrder: councilAgents.agentOrder })
-		.from(councilAgents)
-		.where(eq(councilAgents.parentType, parentType as ParentType))
-		.orderBy(asc(councilAgents.agentOrder));
-
-	const nextOrder = existing.length > 0 ? Math.max(...existing.map((a) => a.agentOrder)) + 1 : 1;
-
-	// Use facade to work around Drizzle ORM auto-increment bug
-	const agent = await createCouncilAgent({
+	const agent = await createCouncilAgentWithOrder({
 		parentType,
 		parentId,
 		modelId,
 		modelVariant,
 		temperature,
 		maxTokens,
-		promptLinkId,
-		agentOrder: nextOrder
+		promptLinkId
 	});
 
 	return json({ data: agent }, { status: 201 });

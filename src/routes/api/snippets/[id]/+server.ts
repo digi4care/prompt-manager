@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	getSnippet,
@@ -8,8 +8,10 @@ import {
 	getAllCategories,
 	getAllTags
 } from '$lib/server/services/snippets.service';
-import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
+import { authenticateRequest } from '$lib/server/auth.helper';
 import { z } from 'zod';
+import { validateRequest } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 
 const updateSnippetSchema = z.object({
 	title: z.string().min(1).max(200).optional(),
@@ -22,18 +24,16 @@ const updateSnippetSchema = z.object({
 export const GET: RequestHandler = async ({ params }) => {
 	const id = parseInt(params.id);
 	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid snippet ID', errors: null }));
+		apiFail('Invalid snippet ID', 400);
 	}
 
 	try {
 		const snippet = await getSnippet(id);
 		if (!snippet) {
-			throw error(404, JSON.stringify({ message: 'Snippet not found', errors: null }));
+			apiFail('Snippet not found', 404);
 		}
 
-		return json({
-			data: snippet
-		});
+		return apiSuccess(snippet);
 	} catch (err: unknown) {
 		const e = err as { status?: number };
 		if (e.status) throw err;
@@ -43,43 +43,30 @@ export const GET: RequestHandler = async ({ params }) => {
 };
 
 export const PATCH: RequestHandler = async (event) => {
-	const { params, request } = event;
+	const { params } = event;
 
 	// Require authentication for updating snippets
-	authenticateWithBetterAuth(event);
+	authenticateRequest(event);
 	const id = parseInt(params.id);
 	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid snippet ID', errors: null }));
+		apiFail('Invalid snippet ID', 400);
 	}
 
-	let data: unknown;
-	try {
-		data = await request.json();
-	} catch {
-		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
-	}
-
-	const parsed = updateSnippetSchema.safeParse(data);
-	if (!parsed.success) {
-		throw error(
-			400,
-			JSON.stringify({ message: 'Validation failed', errors: parsed.error.flatten() })
-		);
-	}
+	const data = await validateRequest(event, updateSnippetSchema);
 
 	try {
 		const existing = await getSnippet(id);
 		if (!existing) {
-			throw error(404, JSON.stringify({ message: 'Snippet not found', errors: null }));
+			apiFail('Snippet not found', 404);
 		}
 
-		const { tagIds, ...rest } = parsed.data;
+		const { tagIds, ...rest } = data;
 
 		// Validate categoryId if provided
 		if (rest.categoryId !== undefined && rest.categoryId !== null) {
 			const categories = await getAllCategories();
 			if (!categories.find((c) => c.id === rest.categoryId)) {
-				throw error(400, JSON.stringify({ message: 'Invalid category ID', errors: null }));
+				apiFail('Invalid category ID', 400);
 			}
 		}
 
@@ -89,7 +76,7 @@ export const PATCH: RequestHandler = async (event) => {
 			const validTagIds = new Set(tags.map((t) => t.id));
 			for (const tagId of tagIds) {
 				if (!validTagIds.has(tagId)) {
-					throw error(400, JSON.stringify({ message: `Invalid tag ID: ${tagId}`, errors: null }));
+					apiFail(`Invalid tag ID: ${tagId}`, 400);
 				}
 			}
 		}
@@ -98,13 +85,7 @@ export const PATCH: RequestHandler = async (event) => {
 		if (rest.title && rest.title !== existing.title) {
 			const titleExists = await snippetTitleExists(rest.title, id);
 			if (titleExists) {
-				throw error(
-					409,
-					JSON.stringify({
-						message: 'A snippet with this title already exists',
-						errors: null
-					})
-				);
+				apiFail('A snippet with this title already exists', 409);
 			}
 		}
 
@@ -113,7 +94,7 @@ export const PATCH: RequestHandler = async (event) => {
 			tagIds
 		});
 
-		return json({ data: updated });
+		return apiSuccess(updated);
 	} catch (err: unknown) {
 		const e = err as { status?: number };
 		if (e.status) throw err;
@@ -126,16 +107,16 @@ export const DELETE: RequestHandler = async (event) => {
 	const { params } = event;
 
 	// Require authentication for deleting snippets
-	authenticateWithBetterAuth(event);
+	authenticateRequest(event);
 	const id = parseInt(params.id);
 	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid snippet ID', errors: null }));
+		apiFail('Invalid snippet ID', 400);
 	}
 
 	try {
 		const existing = await getSnippet(id);
 		if (!existing) {
-			throw error(404, JSON.stringify({ message: 'Snippet not found', errors: null }));
+			apiFail('Snippet not found', 404);
 		}
 
 		await deleteSnippet(id);

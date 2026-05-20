@@ -6,7 +6,7 @@ import {
 	type FunctionType
 } from '$lib/server/services/function-defaults.service';
 import { validateFunctionSettingUpdate } from '$lib/validators/function-settings';
-import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
+import { authenticateRequest } from '$lib/server/auth.helper';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
 import { getProviderCatalog, type ProviderInfo } from '$lib/server/services/opencode.service';
 import {
@@ -25,8 +25,8 @@ const VALID_FUNCTION_TYPES: FunctionType[] = ['executor', 'judge', 'improve', 'c
  * Fetch a single function default by type
  */
 export const GET: RequestHandler = async (event) => {
-	// Require authentication via Better Auth
-	authenticateWithBetterAuth(event);
+	// Require authentication
+	authenticateRequest(event);
 
 	const { type } = event.params;
 
@@ -76,8 +76,8 @@ export const GET: RequestHandler = async (event) => {
  * Update a function default by type with validation
  */
 export const PUT: RequestHandler = async (event) => {
-	// Require authentication via Better Auth
-	authenticateWithBetterAuth(event);
+	// Require authentication
+	authenticateRequest(event);
 
 	const { type } = event.params;
 

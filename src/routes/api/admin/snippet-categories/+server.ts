@@ -1,13 +1,11 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { db } from '$lib/server/db/client';
-import {
-	snippetCategories,
-	type NewSnippetCategory,
-	type SnippetCategory
-} from '$lib/server/db/schema';
-import { eq, asc } from 'drizzle-orm';
 import { authenticateRequest } from '$lib/server/auth.helper';
+import {
+	getCategories,
+	createCategory,
+	DuplicateNameError
+} from '$lib/server/services/snippet-categories.service';
 import { z } from 'zod';
 
 const createCategorySchema = z.object({
@@ -24,10 +22,7 @@ const updateCategorySchema = z.object({
 
 // GET /api/admin/snippet-categories - List all categories
 export const GET: RequestHandler = async () => {
-	const categories = await db
-		.select()
-		.from(snippetCategories)
-		.orderBy(asc(snippetCategories.sortOrder), asc(snippetCategories.name));
+	const categories = await getCategories();
 
 	return json({ data: categories });
 };
@@ -53,33 +48,18 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	try {
-		// Check for duplicate name
-		const [existing] = await db
-			.select()
-			.from(snippetCategories)
-			.where(eq(snippetCategories.name, parsed.data.name))
-			.limit(1);
-
-		if (existing) {
-			throw error(
-				409,
-				JSON.stringify({ message: 'A category with this name already exists', errors: null })
-			);
-		}
-
-		const [category] = await db
-			.insert(snippetCategories)
-			.values({
-				name: parsed.data.name,
-				description: parsed.data.description || null,
-				sortOrder: parsed.data.sortOrder ?? 0
-			})
-			.returning();
+		const category = await createCategory(parsed.data);
 
 		console.log(`[AUDIT] User ${user.userId} created snippet category: ${category.name}`);
 
 		return json(category, { status: 201 });
 	} catch (err: unknown) {
+		if (err instanceof DuplicateNameError) {
+			throw error(
+				409,
+				JSON.stringify({ message: 'A category with this name already exists', errors: null })
+			);
+		}
 		const e = err as { status?: number };
 		if (e.status) throw err;
 		console.error('Failed to create snippet category:', err);

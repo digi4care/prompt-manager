@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { executePrompt, ExecutionError } from '$lib/server/services/execution.service';
 import { eventBus } from '$lib/server/events';
-import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
+import { authenticateRequest } from '$lib/server/auth.helper';
 
 /**
  * Request validation schema for execute endpoint
@@ -38,7 +38,7 @@ const executeRequestSchema = z.object({
  */
 export const POST: RequestHandler = async (event) => {
 	// Require authentication
-	authenticateWithBetterAuth(event);
+	authenticateRequest(event);
 
 	// Parse prompt ID from path
 	const promptIdParam = event.params.id;

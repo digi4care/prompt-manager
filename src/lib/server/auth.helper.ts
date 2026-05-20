@@ -41,11 +41,8 @@ export function optionalAuthenticateRequest(event: RequestEvent): {
 		return null;
 	}
 }
+export { authenticateRequest as authenticateWithBetterAuth };
 
-/**
- * Alias for authenticateRequest for backward compatibility
- */
-export const authenticateWithBetterAuth = authenticateRequest;
 
 /**
  * Require admin role

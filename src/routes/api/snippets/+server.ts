@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	listSnippets,
@@ -8,7 +8,9 @@ import {
 	getAllTags
 } from '$lib/server/services/snippets.service';
 import { z } from 'zod';
-import { optionalAuthenticateRequest, authenticateWithBetterAuth } from '$lib/server/auth.helper';
+import { optionalAuthenticateRequest, authenticateRequest } from '$lib/server/auth.helper';
+import { validateRequest } from '$lib/server/utils/validate-request';
+import { apiCreated, apiFail, apiPaginated } from '$lib/server/utils/api-response';
 
 const createSnippetSchema = z.object({
 	title: z.string().min(1).max(200),
@@ -40,10 +42,10 @@ export const GET: RequestHandler = async (event) => {
 			categoryId,
 			tagId
 		);
-		return json({
-			data: { snippets: snippetsList, totalCount },
-			pagination: { limit, offset, hasMore: snippetsList.length === limit }
-		});
+		return apiPaginated(
+			{ snippets: snippetsList, totalCount },
+			{ limit, offset, total: totalCount }
+		);
 	} catch (err) {
 		console.error('Failed to fetch snippets:', err);
 		throw error(500, JSON.stringify({ message: 'Failed to fetch snippets', errors: null }));
@@ -51,32 +53,18 @@ export const GET: RequestHandler = async (event) => {
 };
 
 export const POST: RequestHandler = async (event) => {
-	const { request } = event;
-	let data: unknown;
-	try {
-		data = await request.json();
-	} catch {
-		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
-	}
+	const data = await validateRequest(event, createSnippetSchema);
 
 	// Require authentication for creating snippets
-	const user = authenticateWithBetterAuth(event);
+	const user = authenticateRequest(event);
 
-	const parsed = createSnippetSchema.safeParse(data);
-	if (!parsed.success) {
-		throw error(
-			400,
-			JSON.stringify({ message: 'Validation failed', errors: parsed.error.flatten() })
-		);
-	}
-
-	const { tagIds, ...snippetData } = parsed.data;
+	const { tagIds, ...snippetData } = data;
 
 	// Validate categoryId if provided
 	if (snippetData.categoryId) {
 		const categories = await getAllCategories();
 		if (!categories.find((c) => c.id === snippetData.categoryId)) {
-			throw error(400, JSON.stringify({ message: 'Invalid category ID', errors: null }));
+			apiFail('Invalid category ID', 400);
 		}
 	}
 
@@ -86,7 +74,7 @@ export const POST: RequestHandler = async (event) => {
 		const validTagIds = new Set(tags.map((t) => t.id));
 		for (const tagId of tagIds) {
 			if (!validTagIds.has(tagId)) {
-				throw error(400, JSON.stringify({ message: `Invalid tag ID: ${tagId}`, errors: null }));
+				apiFail(`Invalid tag ID: ${tagId}`, 400);
 			}
 		}
 	}
@@ -94,13 +82,7 @@ export const POST: RequestHandler = async (event) => {
 	// Check for duplicate title
 	const titleExists = await snippetTitleExists(snippetData.title);
 	if (titleExists) {
-		throw error(
-			409,
-			JSON.stringify({
-				message: 'A snippet with this title already exists',
-				errors: null
-			})
-		);
+		apiFail('A snippet with this title already exists', 409);
 	}
 
 	try {
@@ -114,7 +96,7 @@ export const POST: RequestHandler = async (event) => {
 			tagIds
 		});
 
-		return json(snippet, { status: 201 });
+		return apiCreated(snippet);
 	} catch (err) {
 		console.error('Failed to create snippet:', err);
 		throw error(500, JSON.stringify({ message: 'Failed to create snippet', errors: null }));

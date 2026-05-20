@@ -1,23 +1,16 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { auth } from '$lib/auth';
+import { requireAdmin } from '$lib/server/auth.helper';
 import { getAllSettings } from '$lib/server/services/admin-settings.service';
 
 /**
  * GET /api/admin/settings
  * Fetch all admin settings grouped by category
  */
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async (event) => {
+	requireAdmin(event);
+
 	try {
-		// Check authentication via Better Auth session
-		const session = await auth.api.getSession({
-			headers: request.headers
-		});
-
-		if (!session) {
-			return json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
 		const settings = await getAllSettings();
 		return json({ success: true, data: settings });
 	} catch (err) {

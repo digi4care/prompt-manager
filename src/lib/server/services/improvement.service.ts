@@ -1,7 +1,10 @@
 import { db } from '../db/client';
 import { improvementLoops, type PromptVersion } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import type { JudgeResponse } from './judge.service';
+import type { JudgeResponse, ThinkingBlock } from './judge.service';
+import { evaluatePrompt, saveEvaluation } from './judge.service';
+import { getPrompt } from './prompts.service';
+import { getVersion, getLatestVersion, createVersion } from './versions.service';
 import {
 	executeAgent,
 	executeAgentWithSession,
@@ -289,6 +292,142 @@ function parseModelId(modelId: string): ModelSelection {
 		providerID: 'unknown',
 		modelID: modelId
 	};
+}
+
+/**
+ * Orchestrate the full improvement flow: fetch prompt, evaluate, generate variants,
+ * create versions, and optionally auto-select the best variant.
+ */
+export async function orchestrateImprovement(params: {
+	promptId: number;
+	versionId?: number;
+	variantCount: number;
+	autoSelect: boolean;
+	improveOptions: ImproveOptions;
+}): Promise<{
+	loopId: number;
+	status: 'completed' | 'pending_selection';
+	evaluation: JudgeResponse;
+	thinking?: ThinkingBlock | null;
+	variants: PromptVersion[];
+	selectedVariant?: PromptVersion;
+	metadata: ImproveResult['metadata'];
+}> {
+	const { promptId, versionId, variantCount, autoSelect, improveOptions } = params;
+
+	const prompt = await getPrompt(promptId);
+	if (!prompt) {
+		const e = new Error('Prompt not found') as any;
+		e.status = 404;
+		throw e;
+	}
+
+	let baseVersion: PromptVersion;
+	if (versionId) {
+		const v = await getVersion(versionId);
+		if (!v || v.promptId !== promptId) {
+			const e = new Error('Version not found') as any;
+			e.status = 404;
+			throw e;
+		}
+		baseVersion = v;
+	} else {
+		const v = await getLatestVersion(promptId);
+		if (!v) {
+			const e = new Error('Prompt has no versions') as any;
+			e.status = 400;
+			throw e;
+		}
+		baseVersion = v;
+	}
+
+	let loopId: number | null = null;
+
+	try {
+		loopId = await startImprovementLoop(promptId, baseVersion.id, variantCount, {
+			providerId: improveOptions.providerId,
+			modelId: improveOptions.modelId,
+			temperature: improveOptions.temperature,
+			maxTokens: improveOptions.maxTokens
+		});
+
+		const baseResult = await evaluatePrompt(baseVersion);
+		await saveEvaluation(baseVersion.id, baseResult.response, baseResult.rawText, baseResult.thinking);
+
+		const improveResult = await generateVariantsWithModelSelection(
+			baseVersion,
+			baseResult.response,
+			improveOptions,
+			variantCount
+		);
+
+		const variantVersions = await Promise.all(
+			improveResult.variants.map((content, index) =>
+				createVersion(
+					promptId,
+					content,
+					'minor',
+					`Improvement variant ${index + 1} from loop ${loopId}`,
+					'system',
+					{
+						loopId,
+						variantIndex: index,
+						model: improveResult.metadata.model,
+						temperature: improveResult.metadata.temperature,
+						preset: improveResult.metadata.preset,
+						instruction: improveResult.metadata.instruction
+					}
+				)
+			)
+		);
+
+		if (autoSelect) {
+			const variantScores = await Promise.all(
+				variantVersions.map(async (v) => {
+					const response = await evaluatePrompt(v);
+					return {
+						versionId: v.id,
+						score:
+							(response.response.clarity +
+								response.response.completeness +
+								response.response.specificity) /
+							3
+					};
+				})
+			);
+
+			const best = variantScores.reduce((a, b) => (a.score > b.score ? a : b));
+			await completeImprovementLoop(
+				loopId,
+				best.versionId,
+				`Auto-selected with score ${best.score.toFixed(1)}`
+			);
+
+			return {
+				loopId,
+				status: 'completed',
+				evaluation: baseResult.response,
+				thinking: baseResult.thinking,
+				variants: variantVersions,
+				selectedVariant: variantVersions.find((v) => v.id === best.versionId),
+				metadata: improveResult.metadata
+			};
+		}
+
+		return {
+			loopId,
+			status: 'pending_selection',
+			evaluation: baseResult.response,
+			thinking: baseResult.thinking,
+			variants: variantVersions,
+			metadata: improveResult.metadata
+		};
+	} catch (err) {
+		if (loopId) {
+			await failImprovementLoop(loopId, String(err));
+		}
+		throw err;
+	}
 }
 
 export async function completeImprovementLoop(

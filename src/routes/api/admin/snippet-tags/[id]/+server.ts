@@ -1,24 +1,23 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db/client';
 import { snippetTags, snippetTagAssignments } from '$lib/server/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { authenticateRequest } from '$lib/server/auth.helper';
-
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 // GET /api/admin/snippet-tags/[id] - Get a single tag
 export const GET: RequestHandler = async ({ params }) => {
 	const id = parseInt(params.id);
 	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid tag ID', errors: null }));
+		apiFail('Invalid tag ID', 400);
 	}
 
 	const [tag] = await db.select().from(snippetTags).where(eq(snippetTags.id, id)).limit(1);
 
 	if (!tag) {
-		throw error(404, JSON.stringify({ message: 'Tag not found', errors: null }));
+		apiFail('Tag not found', 404);
 	}
 
-	return json({ data: tag });
+	return apiSuccess(tag);
 };
 
 // DELETE /api/admin/snippet-tags/[id] - Delete a tag
@@ -28,14 +27,14 @@ export const DELETE: RequestHandler = async (event) => {
 
 	const id = parseInt(params.id);
 	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid tag ID', errors: null }));
+		apiFail('Invalid tag ID', 400);
 	}
 
 	try {
 		const [existing] = await db.select().from(snippetTags).where(eq(snippetTags.id, id)).limit(1);
 
 		if (!existing) {
-			throw error(404, JSON.stringify({ message: 'Tag not found', errors: null }));
+			apiFail('Tag not found', 404);
 		}
 
 		// Delete all tag assignments first (cascade should handle this, but be explicit)
@@ -51,6 +50,6 @@ export const DELETE: RequestHandler = async (event) => {
 		const e = err as { status?: number };
 		if (e.status) throw err;
 		console.error('Failed to delete snippet tag:', err);
-		throw error(500, JSON.stringify({ message: 'Failed to delete tag', errors: null }));
+		apiFail('Failed to delete tag', 500);
 	}
 };

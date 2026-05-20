@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 
+const instrumentationShim = fileURLToPath(
+	new URL('./src/lib/better-auth-instrumentation-shim.ts', import.meta.url)
+);
 export default defineConfig({
 	plugins: [
 		paraglideVitePlugin({
@@ -27,7 +30,8 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
-			ws: fileURLToPath(new URL('./tests/ws-shim.ts', import.meta.url))
+			ws: fileURLToPath(new URL('./tests/ws-shim.ts', import.meta.url)),
+			'@better-auth/core/instrumentation': instrumentationShim
 		}
 	},
 	test: {

@@ -1,0 +1,15 @@
+{
+  "version": 8,
+  "locked": false,
+  "beadsPolling": false,
+  "beadsAutoNudge": true,
+  "beadsClaimedIssue": null,
+  "nudgeCount": 3,
+  "lastNudgeTime": 1779273254264,
+  "lastNudgeIssue": "prompt-management-zy4",
+  "nudgePausedNotified": false,
+  "currentPhase": 1,
+  "phaseEnteredAt": "2026-05-19T21:20:24.055Z",
+  "phaseAdvanceOverridden": false,
+  "stepProgress": {}
+}

@@ -5,14 +5,17 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Badge } from '$lib/components/ui/badge';
 	import { cn } from '$lib/utils';
-	import { Play, Loader2, Users, MessageSquare } from 'lucide-svelte';
+	import { Loader2 } from 'lucide-svelte';
 	import { CouncilReviewPanel } from '$lib/components/council';
 	import { CouncilDebatePanel } from '$lib/components/council';
-	import { CouncilCorrectPanel } from '$lib/components/council';
 	import { toast } from 'svelte-sonner';
 	import * as m from '$lib/paraglide/messages.js';
-
-	type ExecutionMode = 'single' | 'review' | 'debate' | 'correct';
+	import {
+		getAvailableModes,
+		getExecutionMode,
+		isCouncilMode,
+		type ExecutionModeType
+	} from '$lib/execution-modes';
 
 	interface Props {
 		promptId: number;
@@ -22,7 +25,7 @@
 	let { promptId, template }: Props = $props();
 
 	// State
-	let mode = $state<ExecutionMode>('single');
+	let mode = $state<ExecutionModeType>('single');
 	let variableInputs = $state<Record<string, string>>({});
 	let running = $state(false);
 	let result = $state<string | null>(null);
@@ -45,15 +48,18 @@
 	// Derived state
 	let variables = $derived(extractVariables(template));
 	let processedContent = $derived(() => {
-		let result = template;
+		let output = template;
 		for (const [varName, value] of Object.entries(variableInputs)) {
-			result = result.replace(new RegExp(`\\{\\{${varName}\\}\\}`, 'g'), value || '');
+			output = output.replace(new RegExp(`\\{\\{${varName}\\}\\}`, 'g'), value || '');
 		}
-		return result;
+		return output;
 	});
 	let allVariablesFilled = $derived(
 		variables.length === 0 || variables.every((v) => (variableInputs[v] ?? '').trim() !== '')
 	);
+
+	// Available modes from registry
+	let modes = $derived(getAvailableModes());
 
 	// Initialize variable inputs when template changes
 	$effect(() => {
@@ -100,42 +106,24 @@
 </script>
 
 <section class="rounded-lg border bg-card p-4">
-	<!-- Mode Tabs -->
+	<!-- Mode Tabs (registry-driven) -->
 	<div class="mb-4 flex items-center justify-between border-b pb-3">
 		<div class="flex gap-1 rounded-lg bg-muted p-1">
-			<button
-				class={cn(
-					'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-					mode === 'single' && 'bg-background shadow-sm',
-					mode !== 'single' && 'text-muted-foreground hover:text-foreground'
-				)}
-				onclick={() => (mode = 'single')}
-			>
-				<Play size={14} />
-				Single
-			</button>
-			<button
-				class={cn(
-					'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-					mode === 'review' && 'bg-background shadow-sm',
-					mode !== 'review' && 'text-muted-foreground hover:text-foreground'
-				)}
-				onclick={() => (mode = 'review')}
-			>
-				<Users size={14} />
-				Review
-			</button>
-			<button
-				class={cn(
-					'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-					mode === 'debate' && 'bg-background shadow-sm',
-					mode !== 'debate' && 'text-muted-foreground hover:text-foreground'
-				)}
-				onclick={() => (mode = 'debate')}
-			>
-				<MessageSquare size={14} />
-				Debate
-			</button>
+			{#each modes as modeType}
+				{@const modeConfig = getExecutionMode(modeType)}
+				{@const Icon = modeConfig.icon}
+				<button
+					class={cn(
+						'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+						mode === modeType && 'bg-background shadow-sm',
+						mode !== modeType && 'text-muted-foreground hover:text-foreground'
+					)}
+					onclick={() => (mode = modeType)}
+				>
+					<Icon size={14} />
+					{modeConfig.label}
+				</button>
+			{/each}
 		</div>
 	</div>
 
@@ -172,7 +160,7 @@
 		</p>
 	{/if}
 
-	<!-- Execution Panels -->
+	<!-- Execution Panels (registry dispatch) -->
 	{#if mode === 'single'}
 		<div class="space-y-4">
 			<Button onclick={runSingle} disabled={running || !allVariablesFilled} class="w-full">
@@ -180,7 +168,6 @@
 					<Loader2 class="mr-2 h-4 w-4 animate-spin" />
 					{m['common.loading']()}
 				{:else}
-					<Play class="mr-2 h-4 w-4" />
 					Run
 				{/if}
 			</Button>

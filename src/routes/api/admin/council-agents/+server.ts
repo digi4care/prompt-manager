@@ -1,5 +1,6 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { apiSuccess, apiCreated, apiFail } from '$lib/server/utils/api-response';
+import { validateRequest } from '$lib/server/utils/validate-request';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
 import { getProviderCatalog, type ProviderInfo } from '$lib/server/services/opencode.service';
 import {
@@ -13,43 +14,33 @@ import {
 	createCouncilAgentWithOrder
 } from '$lib/server/services/council-agents.service';
 import type { ParentType } from '$lib/server/db/schema';
+import { z } from 'zod';
+
+const createAgentSchema = z.object({
+	parentType: z.string().default('function_defaults'),
+	parentId: z.number().default(0),
+	modelId: z.string().min(1, 'Je moet een model selecteren'),
+	modelVariant: z.string().nullable().optional(),
+	temperature: z.number().default(0.7),
+	maxTokens: z.number().default(4096),
+	thinkingLevel: z.string().nullable().optional(),
+	promptLinkId: z.number().nullable().optional()
+});
 
 // GET: List all council agents for function_defaults with prompt names
 export const GET: RequestHandler = async ({ url }) => {
 	const parentType = (url.searchParams.get('parentType') ?? 'function_defaults') as ParentType;
-
 	const agents = await getCouncilAgents(parentType);
-
-	return json({ agents });
+	return apiSuccess(agents);
 };
 
 // POST: Create new council agent with variant validation
-export const POST: RequestHandler = async ({ request }) => {
-	const body = await request.json();
-
-	const {
-		parentType = 'function_defaults',
-		parentId = 0,
-		modelId = '',
-		modelVariant = null,
-		temperature = 0.7,
-		maxTokens = 4096,
-		thinkingLevel = null,
-		promptLinkId = null
-	} = body;
-
-	if (!modelId) {
-		throw error(
-			400,
-			JSON.stringify({ message: 'Je moet een model selecteren', code: 'MODEL_REQUIRED' })
-		);
-	}
+export const POST: RequestHandler = async (event) => {
+	const data = await validateRequest(event, createAgentSchema);
 
 	// Validate model+variant against policy (SPEC-14 AIC-008)
 	try {
 		const [policy, catalog] = await Promise.all([getOpenCodePolicy(), getProviderCatalog()]);
-
-		const scope: PolicyScope = 'council';
 
 		const policyData: PolicyData = {
 			allowedModels: policy.allowedModels || [],
@@ -78,9 +69,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		};
 
 		const variantValidation = validateModelVariantScope({
-			modelId,
-			modelVariant,
-			scope,
+			modelId: data.modelId,
+			modelVariant: data.modelVariant ?? null,
+			scope: 'council' as PolicyScope,
 			policy: policyData,
 			catalog: catalogData,
 			requireConnected: true
@@ -89,38 +80,26 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (!variantValidation.valid) {
 			const errorCode = variantValidation.error?.code || 'MODEL_NOT_FOUND';
 			const httpStatus = errorCode === 'VARIANT_REQUIRED' ? 400 : 422;
-			throw error(
-				httpStatus,
-				JSON.stringify({
-					message: variantValidation.error?.message || 'Model/variant validation failed',
-					code: errorCode
-				})
+			apiFail(
+				variantValidation.error?.message || 'Model/variant validation failed',
+				httpStatus
 			);
 		}
 	} catch (err) {
-		// Re-throw SvelteKit HttpError (has status property)
-		if (err && typeof err === 'object' && 'status' in err) {
-			throw err;
-		}
+		if (err && typeof err === 'object' && 'status' in err) throw err;
 		console.error('Council agent validation error:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Council agent validation failed',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Council agent validation failed', 500);
 	}
 
 	const agent = await createCouncilAgentWithOrder({
-		parentType,
-		parentId,
-		modelId,
-		modelVariant,
-		temperature,
-		maxTokens,
-		promptLinkId
+		parentType: data.parentType,
+		parentId: data.parentId,
+		modelId: data.modelId,
+		modelVariant: data.modelVariant ?? null,
+		temperature: data.temperature,
+		maxTokens: data.maxTokens,
+		promptLinkId: data.promptLinkId ?? null
 	});
 
-	return json({ data: agent }, { status: 201 });
+	return apiCreated(agent);
 };

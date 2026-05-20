@@ -1,7 +1,9 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getPrompt, updatePrompt, deletePrompt } from '$lib/server/services/prompts.service';
 import { getVersionHistory } from '$lib/server/services/versions.service';
+import { authenticateRequest } from '$lib/server/auth.helper';
+import { validateRequest } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 import { z } from 'zod';
 
 const updatePromptSchema = z.object({
@@ -14,85 +16,62 @@ const updatePromptSchema = z.object({
 
 export const GET: RequestHandler = async ({ params }) => {
 	const id = parseInt(params.id);
-	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid prompt ID', errors: null }));
-	}
+	if (isNaN(id)) apiFail('Invalid prompt ID', 400);
 
 	try {
 		const prompt = await getPrompt(id);
-		if (!prompt) {
-			throw error(404, JSON.stringify({ message: 'Prompt not found', errors: null }));
-		}
+		if (!prompt) apiFail('Prompt not found', 404);
 
 		const versions = await getVersionHistory(id);
 
-		return json({
-			data: {
-				...prompt,
-				tags: prompt.tags ? JSON.parse(prompt.tags) : [],
-				llmProviders: prompt.llm_providers ? JSON.parse(prompt.llm_providers) : [],
-				versions
-			}
+		return apiSuccess({
+			...prompt,
+			tags: prompt.tags ? JSON.parse(prompt.tags) : [],
+			llmProviders: prompt.llm_providers ? JSON.parse(prompt.llm_providers) : [],
+			versions
 		});
 	} catch (err: unknown) {
 		const e = err as { status?: number };
 		if (e.status) throw err;
 		console.error('Failed to fetch prompt:', err);
-		throw error(500, JSON.stringify({ message: 'Failed to fetch prompt', errors: null }));
+		apiFail('Failed to fetch prompt', 500);
 	}
 };
 
-export const PATCH: RequestHandler = async ({ params, request }) => {
-	const id = parseInt(params.id);
-	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid prompt ID', errors: null }));
-	}
+export const PATCH: RequestHandler = async (event) => {
+	authenticateRequest(event);
+	const id = parseInt(event.params.id);
+	if (isNaN(id)) apiFail('Invalid prompt ID', 400);
 
-	let data: unknown;
-	try {
-		data = await request.json();
-	} catch {
-		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
-	}
-
-	const parsed = updatePromptSchema.safeParse(data);
-	if (!parsed.success) {
-		throw error(400, JSON.stringify({ message: 'Validation failed', errors: parsed.error.flatten() }));
-	}
+	const parsed = await validateRequest(event, updatePromptSchema);
 
 	try {
 		const existing = await getPrompt(id);
-		if (!existing) {
-			throw error(404, JSON.stringify({ message: 'Prompt not found', errors: null }));
-		}
+		if (!existing) apiFail('Prompt not found', 404);
 
-		const { tags, llmProviders, ...rest } = parsed.data;
+		const { tags, llmProviders, ...rest } = parsed;
 		const updated = await updatePrompt(id, {
 			...rest,
 			tags: tags ? JSON.stringify(tags) : undefined,
 			llm_providers: llmProviders ? JSON.stringify(llmProviders) : undefined
 		});
 
-		return json({ data: updated });
+		return apiSuccess(updated);
 	} catch (err: unknown) {
 		const e = err as { status?: number };
 		if (e.status) throw err;
 		console.error('Failed to update prompt:', err);
-		throw error(500, JSON.stringify({ message: 'Failed to update prompt', errors: null }));
+		apiFail('Failed to update prompt', 500);
 	}
 };
 
 export const DELETE: RequestHandler = async ({ params }) => {
 	const id = parseInt(params.id);
-	if (isNaN(id)) {
-		throw error(400, JSON.stringify({ message: 'Invalid prompt ID', errors: null }));
-	}
+	if (isNaN(id)) apiFail('Invalid prompt ID', 400);
 
 	try {
 		const existing = await getPrompt(id);
-		if (!existing) {
-			throw error(404, JSON.stringify({ message: 'Prompt not found', errors: null }));
-		}
+		if (!existing) apiFail('Prompt not found', 404);
 
 		await deletePrompt(id);
 		return new Response(null, { status: 204 });
@@ -100,6 +79,6 @@ export const DELETE: RequestHandler = async ({ params }) => {
 		const e = err as { status?: number };
 		if (e.status) throw err;
 		console.error('Failed to delete prompt:', err);
-		throw error(500, JSON.stringify({ message: 'Failed to delete prompt', errors: null }));
+		apiFail('Failed to delete prompt', 500);
 	}
 };

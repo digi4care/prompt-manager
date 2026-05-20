@@ -1,9 +1,11 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { executePrompt, ExecutionError } from '$lib/server/services/execution.service';
 import { eventBus } from '$lib/server/events';
 import { authenticateRequest } from '$lib/server/auth.helper';
+import { validateRequest } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 
 /**
  * Request validation schema for execute endpoint
@@ -24,76 +26,17 @@ const executeRequestSchema = z.object({
  * POST /api/prompts/[id]/execute
  *
  * Execute a prompt with resolved settings from the cascade.
- *
- * Request body:
- * - content: The prompt content to execute (required, max 100000 chars)
- * - versionId: Optional version ID to execute
- * - overrides: Optional run-level overrides for model/temperature/maxTokens
- *
- * Response:
- * - 200: ExecutionResult with content, model, usage, and duration
- * - 400: Validation error
- * - 401: Authentication required
- * - 4xx/5xx: Execution error with message, code, and recovery hint
  */
 export const POST: RequestHandler = async (event) => {
-	// Require authentication
 	authenticateRequest(event);
 
-	// Parse prompt ID from path
-	const promptIdParam = event.params.id;
-	const promptId = parseInt(promptIdParam, 10);
-
+	const promptId = parseInt(event.params.id, 10);
 	if (isNaN(promptId) || promptId <= 0) {
-		throw error(
-			400,
-			JSON.stringify({
-				message: 'Invalid prompt ID',
-				code: 'INVALID_PROMPT_ID',
-				errors: { id: 'Must be a positive number' }
-			})
-		);
+		apiFail('Invalid prompt ID', 400);
 	}
 
-	// Parse and validate request body
-	let body: unknown;
-	try {
-		body = await event.request.json();
-	} catch {
-		throw error(
-			400,
-			JSON.stringify({
-				message: 'Invalid JSON body',
-				code: 'INVALID_JSON'
-			})
-		);
-	}
+	const { content, overrides } = await validateRequest(event, executeRequestSchema);
 
-	const validation = executeRequestSchema.safeParse(body);
-
-	if (!validation.success) {
-		const errors = validation.error.issues.reduce(
-			(acc: Record<string, string>, err) => {
-				const path = err.path.join('.');
-				acc[path] = err.message;
-				return acc;
-			},
-			{} as Record<string, string>
-		);
-
-		throw error(
-			400,
-			JSON.stringify({
-				message: 'Validation failed',
-				code: 'VALIDATION_ERROR',
-				errors
-			})
-		);
-	}
-
-	const { content, overrides } = validation.data;
-
-	// Execute the prompt
 	try {
 		const result = await executePrompt({
 			promptId,
@@ -102,7 +45,6 @@ export const POST: RequestHandler = async (event) => {
 			overrides
 		});
 
-		// Emit execution event (async, non-blocking)
 		eventBus.emit('execution:completed', {
 			promptId,
 			inputContent: content,
@@ -110,11 +52,9 @@ export const POST: RequestHandler = async (event) => {
 			functionType: 'executor'
 		});
 
-		return json(result);
+		return apiSuccess(result);
 	} catch (err) {
-		// Handle ExecutionError instances
 		if (err instanceof ExecutionError) {
-			// Emit execution event (async, non-blocking)
 			eventBus.emit('execution:completed', {
 				promptId,
 				inputContent: content,
@@ -133,16 +73,7 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 
-		// Log unexpected errors
 		console.error('Prompt execution failed:', err);
-
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'An unexpected error occurred during execution',
-				code: 'INTERNAL_ERROR',
-				recovery: 'Try again or contact support if the problem persists'
-			})
-		);
+		apiFail('An unexpected error occurred during execution', 500);
 	}
 };

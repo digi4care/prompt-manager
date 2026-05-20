@@ -1,11 +1,8 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import {
 	executeAgentWithSession,
-	type ModelSelection
-} from '$lib/server/services/opencode.service';
-import {
+	type ModelSelection,
 	OpenCodeError,
 	OpenCodeConnectionError,
 	OpenCodeAuthenticationError,
@@ -13,6 +10,8 @@ import {
 	OpenCodeExecutionError
 } from '$lib/server/services/opencode.service';
 import { authenticateRequest } from '$lib/server/auth.helper';
+import { validateRequest } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 
 const chatRequestSchema = z.object({
 	message: z.string().min(1).max(10000),
@@ -21,21 +20,16 @@ const chatRequestSchema = z.object({
 
 /**
  * Parse model ID into providerID and modelID
- * Accepts formats: "provider/model" or just "model" (defaults to Anthropic for Claude models)
  */
 function parseModelId(modelId: string): ModelSelection {
-	// Check if modelId contains provider separator
 	const separatorIndex = modelId.indexOf('/');
-
 	if (separatorIndex !== -1) {
-		// Format: "provider/model"
 		return {
 			providerID: modelId.substring(0, separatorIndex),
 			modelID: modelId.substring(separatorIndex + 1)
 		};
 	}
 
-	// Format: just "model" - infer provider from common patterns
 	const providerMapping: Record<string, string> = {
 		claude: 'anthropic',
 		gpt: 'openai',
@@ -48,56 +42,28 @@ function parseModelId(modelId: string): ModelSelection {
 		}
 	}
 
-	// Default: assume Claude model if no provider specified
 	return { providerID: 'anthropic', modelID: modelId };
 }
 
 /**
- * Map OpenCode errors to appropriate HTTP responses
+ * Map OpenCode errors to HTTP status codes
  */
-function mapOpenCodeErrorToHTTP(err: unknown): { status: number; message: string } {
-	if (err instanceof OpenCodeConnectionError) {
-		return { status: 503, message: 'Service unavailable. Please try again later.' };
-	}
-	if (err instanceof OpenCodeAuthenticationError) {
-		return { status: 401, message: 'Authentication failed. Please verify your credentials.' };
-	}
-	if (err instanceof OpenCodeValidationError) {
-		return { status: 400, message: 'Invalid request parameters. Please check your input.' };
-	}
-	if (err instanceof OpenCodeExecutionError) {
-		return { status: 500, message: 'AI request failed. Please try again.' };
-	}
-	if (err instanceof OpenCodeError) {
-		return { status: 500, message: err.message };
-	}
-
-	// Unknown error
-	return { status: 500, message: 'An unexpected error occurred.' };
+function mapOpenCodeErrorStatus(err: unknown): number {
+	if (err instanceof OpenCodeConnectionError) return 503;
+	if (err instanceof OpenCodeAuthenticationError) return 401;
+	if (err instanceof OpenCodeValidationError) return 400;
+	if (err instanceof OpenCodeExecutionError) return 500;
+	if (err instanceof OpenCodeError) return 500;
+	return 500;
 }
 
 export const POST: RequestHandler = async (event) => {
-	// Require authentication for AI chat
-	const user = authenticateRequest(event);
+	authenticateRequest(event);
+
+	const { message, model } = await validateRequest(event, chatRequestSchema);
+	const modelSelection = parseModelId(model);
 
 	try {
-		const body = await event.request.json();
-		const parsed = chatRequestSchema.safeParse(body);
-
-		if (!parsed.success) {
-			throw error(
-				400,
-				JSON.stringify({ message: 'Invalid request', errors: parsed.error.flatten() })
-			);
-		}
-
-		const { message, model } = parsed.data;
-
-		// Parse model ID into provider and model
-		const modelSelection = parseModelId(model);
-
-		// Execute using OpenCode session.prompt
-		// Using 'chat' as agent name - this would need to be defined in OpenCode
 		const res = await executeAgentWithSession<string>({
 			model: modelSelection,
 			agent: 'chat',
@@ -105,29 +71,19 @@ export const POST: RequestHandler = async (event) => {
 			maxTokens: 1024
 		});
 
-		// Handle errors from OpenCode
 		if (res.error) {
-			throw error(500, res.error.message || 'AI request failed');
+			apiFail(res.error.message || 'AI request failed', 500);
 		}
 
-		// Extract content from OpenCode response
-		// executeAgentWithSession returns { data?: TOutput, error?: { message: string } }
 		const content = res.data || '';
-
-		// Extract usage info if available
 		const usage = (res as any)?.usage ?? { input_tokens: 0, output_tokens: 0 };
 
-		return json({
-			content,
-			message: content,
-			usage
-		});
+		return apiSuccess({ content, message: content, usage });
 	} catch (err: unknown) {
 		console.error('AI chat error:', err);
-
-		// Check if it's an OpenCode error
-		const httpError = mapOpenCodeErrorToHTTP(err);
-
-		throw error(httpError.status, JSON.stringify({ message: httpError.message, errors: null }));
+		const status = mapOpenCodeErrorStatus(err);
+		const msg =
+			err instanceof Error ? err.message : 'An unexpected error occurred.';
+		apiFail(msg, status);
 	}
 };

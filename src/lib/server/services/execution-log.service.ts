@@ -8,6 +8,7 @@ import { db } from '$lib/server/db/client';
 import { executionLogs, type ExecutionLog, type NewExecutionLog } from '$lib/server/db/schema';
 import { eq, desc, count, and } from 'drizzle-orm';
 import type { ExecutionResult } from './execution.service';
+import { executionLogRepo } from '../repositories';
 
 /**
  * Input for creating a log entry
@@ -67,7 +68,7 @@ async function logExecutionAsync(entry: CreateLogEntry): Promise<void> {
 		functionType: entry.functionType ?? 'executor'
 	};
 
-	await db.insert(executionLogs).values(logData);
+	await executionLogRepo.insert(logData);
 }
 
 /**

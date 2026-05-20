@@ -1,3 +1,4 @@
+import { settingsRepo } from '../repositories';
 import { db } from '../db/client';
 import { adminSettings, type AdminSetting, type NewAdminSetting } from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -56,7 +57,7 @@ export interface SettingsByCategory {
  * Get all settings grouped by category
  */
 export async function getAllSettings(): Promise<SettingsByCategory> {
-	const settings = await db.select().from(adminSettings);
+	const settings = await settingsRepo.findAll();
 
 	// If no settings exist, initialize with defaults
 	if (settings.length === 0) {
@@ -80,14 +81,11 @@ export async function getAllSettings(): Promise<SettingsByCategory> {
  * Get a single setting by key
  */
 export async function getSetting(key: string): Promise<string | null> {
-	const setting = await db.select().from(adminSettings).where(eq(adminSettings.key, key)).limit(1);
-
-	if (setting.length === 0) {
-		// Return default if exists
+	const setting = await settingsRepo.findByKey(key);
+	if (!setting) {
 		return DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS] || null;
 	}
-
-	return setting[0].value;
+	return setting.value;
 }
 
 /**

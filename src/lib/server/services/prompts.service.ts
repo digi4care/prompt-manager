@@ -1,20 +1,14 @@
 import { db } from '../db/client';
 import { prompts, type NewPrompt, type Prompt } from '../db/schema';
-import { eq, desc, asc, like, isNull, and, count, inArray } from 'drizzle-orm';
-import { type SQL, sql } from 'drizzle-orm';
+import { like, isNull, and, desc, asc } from 'drizzle-orm';
+import { promptRepo } from '../repositories';
 
 export async function createPrompt(data: NewPrompt): Promise<Prompt> {
-	const [prompt] = await db.insert(prompts).values(data).returning();
-	return prompt;
+	return promptRepo.insert(data);
 }
 
 export async function getPrompt(id: number): Promise<Prompt | null> {
-	const [prompt] = await db
-		.select()
-		.from(prompts)
-		.where(and(eq(prompts.id, id), isNull(prompts.deletedAt)))
-		.limit(1);
-	return prompt || null;
+	return promptRepo.findById(id);
 }
 
 export interface ListPromptsResult {
@@ -86,32 +80,16 @@ export async function listPrompts(
 }
 
 export async function updatePrompt(id: number, data: Partial<NewPrompt>): Promise<Prompt> {
-	const [updated] = await db
-		.update(prompts)
-		.set({ ...data, updatedAt: new Date() })
-		.where(eq(prompts.id, id))
-		.returning();
-	return updated;
+	return promptRepo.update(id, data);
 }
 
 export async function deletePrompt(id: number): Promise<void> {
-	// Soft delete
-	await db.update(prompts).set({ deletedAt: new Date() }).where(eq(prompts.id, id));
+	await promptRepo.softDelete(id);
 }
 
 export async function bulkDeletePrompts(ids: number[]): Promise<number> {
 	if (!ids || ids.length === 0) return 0;
-
-	const result = await db.transaction(async (tx) => {
-		const updated = await tx
-			.update(prompts)
-			.set({ deletedAt: new Date() })
-			.where(inArray(prompts.id, ids))
-			.returning();
-		return updated.length;
-	});
-
-	return result;
+	return promptRepo.bulkSoftDelete(ids);
 }
 
 export async function getAllTags(): Promise<string[]> {

@@ -2,8 +2,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 
 // Mock database
-vi.mock('$lib/server/db/client', () => ({
-	db: {
+vi.mock('$lib/server/db/client', () => {
+	const mockTx = {
 		select: vi.fn(() => ({
 			from: vi.fn(() => ({
 				orderBy: vi.fn().mockResolvedValue([])
@@ -32,8 +32,15 @@ vi.mock('$lib/server/db/client', () => ({
 				returning: vi.fn().mockResolvedValue([{ id: 1 }])
 			}))
 		}))
-	}
-}));
+	};
+
+	const db = {
+		...mockTx,
+		transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx))
+	};
+
+	return { db };
+});
 
 // Mock services
 vi.mock('$lib/server/services/admin-settings.service', () => ({

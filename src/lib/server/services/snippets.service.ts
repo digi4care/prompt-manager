@@ -1,3 +1,4 @@
+import { snippetRepo, snippetTagRepo } from '../repositories';
 import { db } from '../db/client';
 import {
 	snippets,
@@ -17,23 +18,7 @@ export interface SnippetWithTags extends Snippet {
 }
 
 export async function createSnippet(data: NewSnippet & { tagIds?: number[] }): Promise<Snippet> {
-	const { tagIds, ...snippetData } = data;
-
-	return await db.transaction(async (tx) => {
-		const [snippet] = await tx.insert(snippets).values(snippetData).returning();
-
-		// Insert tag assignments if provided
-		if (tagIds && tagIds.length > 0) {
-			await tx.insert(snippetTagAssignments).values(
-				tagIds.map((tagId) => ({
-					snippetId: snippet.id,
-					tagId
-				}))
-			);
-		}
-
-		return snippet;
-	});
+	return snippetRepo.insert(data);
 }
 
 export async function getSnippet(id: number): Promise<SnippetWithTags | null> {
@@ -192,46 +177,19 @@ export async function updateSnippet(
 	id: number,
 	data: Partial<NewSnippet> & { tagIds?: number[] }
 ): Promise<Snippet> {
-	const { tagIds, ...snippetData } = data;
-
-	return await db.transaction(async (tx) => {
-		const [updated] = await tx
-			.update(snippets)
-			.set({ ...snippetData, updatedAt: new Date() })
-			.where(eq(snippets.id, id))
-			.returning();
-
-		// Sync tag assignments if provided
-		if (tagIds !== undefined) {
-			// Delete existing assignments
-			await tx.delete(snippetTagAssignments).where(eq(snippetTagAssignments.snippetId, id));
-
-			// Insert new assignments
-			if (tagIds.length > 0) {
-				await tx.insert(snippetTagAssignments).values(
-					tagIds.map((tagId) => ({
-						snippetId: id,
-						tagId
-					}))
-				);
-			}
-		}
-
-		return updated;
-	});
+	return snippetRepo.update(id, data);
 }
 
 export async function deleteSnippet(id: number): Promise<void> {
-	// Soft delete (cascade will handle tag assignments)
-	await db.update(snippets).set({ deletedAt: new Date() }).where(eq(snippets.id, id));
+	await snippetRepo.softDelete(id);
 }
 
 export async function getAllCategories(): Promise<SnippetCategory[]> {
-	return db.select().from(snippetCategories).orderBy(asc(snippetCategories.sortOrder));
+	return snippetRepo.getAllCategories();
 }
 
 export async function getAllTags(): Promise<SnippetTag[]> {
-	return db.select().from(snippetTags).orderBy(asc(snippetTags.name));
+	return snippetRepo.getAllTags();
 }
 
 // Check if snippet title exists (for uniqueness validation)

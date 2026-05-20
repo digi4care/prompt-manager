@@ -16,14 +16,21 @@ import { db } from '$lib/server/db/client';
 import { improvePresets } from '$lib/server/db/schema';
 
 // Mock db client
-vi.mock('$lib/server/db/client', () => ({
-	db: {
+vi.mock('$lib/server/db/client', () => {
+	const mockTx = {
 		select: vi.fn(),
 		insert: vi.fn(),
 		update: vi.fn(),
 		delete: vi.fn()
-	}
-}));
+	};
+
+	const db = {
+		...mockTx,
+		transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx))
+	};
+
+	return { db };
+});
 
 const mockPolicy: OpenCodePolicy = {
 	allowedModels: ['anthropic/claude-3-5-sonnet', 'openai/gpt-4'],

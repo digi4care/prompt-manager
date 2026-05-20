@@ -1,5 +1,5 @@
-import { db } from '../db/client';
-import { judgeEvaluations, performanceMetrics, type PromptVersion } from '../db/schema';
+import { judgeRepo } from '../repositories';
+import type { PromptVersion } from '../db/schema';
 import {
 	executeAgentWithSession,
 	OpenCodeValidationError
@@ -176,44 +176,37 @@ export async function saveEvaluation(
 	const qualityScore =
 		(judgeResponse.clarity + judgeResponse.completeness + judgeResponse.specificity) / 3;
 
-	return await db.transaction(async (tx) => {
-		const [evaluation] = await tx
-			.insert(judgeEvaluations)
-			.values({
-				versionId,
-				judgeModel: modelParams?.modelId || 'opencode:prompt-judge',
-				providerId: modelParams?.providerId || null,
-				modelId: modelParams?.modelId || null,
-				temperature: modelParams?.temperature || null,
-				maxTokens: modelParams?.maxTokens || null,
-				criteria: JSON.stringify({
-					clarity: 'Is the prompt clear and unambiguous?',
-					completeness: 'Does it include all necessary context?',
-					specificity: 'Are instructions specific and actionable?'
-				}),
-				scores: JSON.stringify({
-					clarity: judgeResponse.clarity,
-					completeness: judgeResponse.completeness,
-					specificity: judgeResponse.specificity,
-					overall: qualityScore
-				}),
-				gaps: JSON.stringify(judgeResponse.gaps),
-				recommendations: JSON.stringify(judgeResponse.recommendations),
-				rawResponse,
-				thinking: thinking?.thinking || null,
-				thinkingSignature: thinking?.signature || null
-			})
-			.returning();
-
-		// Also update performance metrics
-		await tx.insert(performanceMetrics).values({
+	return judgeRepo.saveEvaluationWithMetrics(
+		{
+			versionId,
+			judgeModel: modelParams?.modelId || 'opencode:prompt-judge',
+			providerId: modelParams?.providerId || null,
+			modelId: modelParams?.modelId || null,
+			temperature: modelParams?.temperature || null,
+			maxTokens: modelParams?.maxTokens || null,
+			criteria: JSON.stringify({
+				clarity: 'Is the prompt clear and unambiguous?',
+				completeness: 'Does it include all necessary context?',
+				specificity: 'Are instructions specific and actionable?'
+			}),
+			scores: JSON.stringify({
+				clarity: judgeResponse.clarity,
+				completeness: judgeResponse.completeness,
+				specificity: judgeResponse.specificity,
+				overall: qualityScore
+			}),
+			gaps: JSON.stringify(judgeResponse.gaps),
+			recommendations: JSON.stringify(judgeResponse.recommendations),
+			rawResponse,
+			thinking: thinking?.thinking || null,
+			thinkingSignature: thinking?.signature || null
+		},
+		{
 			versionId,
 			qualityScore,
 			clarity: judgeResponse.clarity,
 			completeness: judgeResponse.completeness,
 			specificity: judgeResponse.specificity
-		});
-
-		return evaluation.id;
-	});
+		}
+	);
 }

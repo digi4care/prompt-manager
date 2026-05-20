@@ -281,16 +281,24 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 		});
 
 		const promptResult = await withRetry(
-			() => client.session.prompt({
-				path: { id: activeSession.id },
-				body: {
-					parts: [{ type: 'text', text: content }],
-					model: {
-						providerID: providerId,
-						modelID: modelId
+			async () => {
+				const result = await client.session.prompt({
+					path: { id: activeSession.id },
+					body: {
+						parts: [{ type: 'text', text: content }],
+						model: {
+							providerID: providerId,
+							modelID: modelId
+						}
 					}
+				});
+				// SDK returns error in result rather than throwing —
+				// throw here so withRetry can catch transient failures
+				if (result.error) {
+					throw ExecutionError.fromSDKError(result.error);
 				}
-			}),
+				return result;
+			},
 			{ maxRetries: 2 }
 		);
 

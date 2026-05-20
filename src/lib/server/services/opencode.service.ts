@@ -245,8 +245,8 @@ export function clearAllCaches(): void {
 }
 
 // Graceful cleanup on process exit
-process.on('SIGTERM', () => clearAllCaches());
-process.on('SIGINT', () => clearAllCaches());
+process.on('SIGTERM', () => { clearAllCaches(); process.exit(0); });
+process.on('SIGINT', () => { clearAllCaches(); process.exit(0); });
 
 // Types
 export interface ProviderInfo {

@@ -232,6 +232,7 @@ export async function resetCachedConnection(): Promise<void> {
 // Graceful cleanup on process exit
 async function gracefulShutdown() {
 	await resetCachedConnection();
+	process.exit(0);
 }
 
 process.on('SIGTERM', gracefulShutdown);

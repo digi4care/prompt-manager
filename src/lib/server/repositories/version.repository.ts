@@ -49,7 +49,7 @@ export const versionRepo = {
 
 			await tx
 				.update(prompts)
-				.set({ latestVersionId: version.id })
+				.set({ latestVersionId: version.id, updatedAt: new Date() })
 				.where(eq(prompts.id, promptId));
 
 			return version;

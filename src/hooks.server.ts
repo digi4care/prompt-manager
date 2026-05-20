@@ -5,7 +5,7 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { redirect } from '@sveltejs/kit';
 import { paraglideMiddleware } from '$lib/paraglide/server.js';
 import { dev } from '$app/environment';
-import { logSecurityEvent } from '$lib/server/audit';
+import { eventBus, initEventSubscribers } from '$lib/server/events';
 import {
 	rateLimitMiddleware,
 	authMiddleware,
@@ -14,6 +14,7 @@ import {
 
 // Validate environment on server start
 validateEnvironment();
+initEventSubscribers();
 
 // Extend SvelteKit Locals type to include Better Auth session
 declare module '@sveltejs/kit' {
@@ -110,12 +111,15 @@ export const handleError: HandleServerError = async ({ error, event }) => {
 	});
 
 	if (event.request.method !== 'GET' && [401, 403, 500].includes((error as any)?.status || 500)) {
-		await logSecurityEvent('ERROR_OCCURRED', {
-			path: pathname,
-			status: (error as any)?.status || 500,
-			method: event.request.method,
-			ip: clientIP,
-			timestamp
+		eventBus.emit('security:event', {
+			event: 'ERROR_OCCURRED',
+			metadata: {
+				path: pathname,
+				status: (error as any)?.status || 500,
+				method: event.request.method,
+				ip: clientIP,
+				timestamp
+			}
 		});
 	}
 

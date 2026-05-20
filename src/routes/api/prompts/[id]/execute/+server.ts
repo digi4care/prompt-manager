@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { executePrompt, ExecutionError } from '$lib/server/services/execution.service';
-import { logExecution } from '$lib/server/services/execution-log.service';
+import { eventBus } from '$lib/server/events';
 import { authenticateWithBetterAuth } from '$lib/server/auth.helper';
 
 /**
@@ -102,8 +102,8 @@ export const POST: RequestHandler = async (event) => {
 			overrides
 		});
 
-		// Log successful execution (async, non-blocking)
-		logExecution({
+		// Emit execution event (async, non-blocking)
+		eventBus.emit('execution:completed', {
 			promptId,
 			inputContent: content,
 			result,
@@ -114,8 +114,8 @@ export const POST: RequestHandler = async (event) => {
 	} catch (err) {
 		// Handle ExecutionError instances
 		if (err instanceof ExecutionError) {
-			// Log failed execution (async, non-blocking)
-			logExecution({
+			// Emit execution event (async, non-blocking)
+			eventBus.emit('execution:completed', {
 				promptId,
 				inputContent: content,
 				result: null,

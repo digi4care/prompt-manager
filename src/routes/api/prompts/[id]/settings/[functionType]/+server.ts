@@ -1,62 +1,68 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { upsertPromptFunctionSettings } from '$lib/server/services/settings-cascade.service';
+import {
+	upsertPromptFunctionSettings,
+	deletePromptFunctionSettings
+} from '$lib/server/services/settings-cascade.service';
+import { authenticateRequest } from '$lib/server/auth.helper';
+import { parseJsonBody } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 
 type FunctionType = 'executor' | 'judge' | 'improve' | 'council';
+const VALID_TYPES: FunctionType[] = ['executor', 'judge', 'improve', 'council'];
 
-export const PUT: RequestHandler = async ({ params, request }) => {
-	const promptId = parseInt(params.id, 10);
+function parsePromptId(raw: string): number {
+	const id = parseInt(raw, 10);
+	if (isNaN(id)) apiFail('Invalid prompt ID', 400);
+	return id;
+}
 
-	if (isNaN(promptId)) {
-		return json({ error: 'Invalid prompt ID' }, { status: 400 });
+function validateFunctionType(type: unknown): asserts type is FunctionType {
+	if (!type || !VALID_TYPES.includes(type as FunctionType)) {
+		apiFail('Invalid function type', 400);
 	}
+}
+
+export const PUT: RequestHandler = async (event) => {
+	authenticateRequest(event);
+	const promptId = parsePromptId(event.params.id);
+
+	const body = (await parseJsonBody(event)) as Record<string, unknown>;
+	const { functionType, settings } = body as {
+		functionType: FunctionType;
+		settings: {
+			modelOverride?: string | null;
+			modelVariantOverride?: string | null;
+			temperature?: number | null;
+			maxTokens?: number | null;
+			promptLinkId?: number | null;
+		};
+	};
+
+	validateFunctionType(functionType);
 
 	try {
-		const body = await request.json();
-		const { functionType, settings } = body as {
-			functionType: FunctionType;
-			settings: {
-				modelOverride?: string | null;
-				modelVariantOverride?: string | null;
-				temperature?: number | null;
-				maxTokens?: number | null;
-				promptLinkId?: number | null;
-			};
-		};
-
-		if (!functionType || !['executor', 'judge', 'improve', 'council'].includes(functionType)) {
-			return json({ error: 'Invalid function type' }, { status: 400 });
-		}
-
 		const result = await upsertPromptFunctionSettings(promptId, functionType, settings);
-		return json({ data: result });
-	} catch (error) {
-		console.error('Failed to save prompt settings:', error);
-		return json({ error: 'Failed to save settings' }, { status: 500 });
+		return apiSuccess(result);
+	} catch (err) {
+		console.error('Failed to save prompt settings:', err);
+		apiFail('Failed to save settings', 500);
 	}
 };
 
-export const DELETE: RequestHandler = async ({ params, request }) => {
-	const promptId = parseInt(params.id, 10);
+export const DELETE: RequestHandler = async (event) => {
+	authenticateRequest(event);
+	const promptId = parsePromptId(event.params.id);
 
-	if (isNaN(promptId)) {
-		return json({ error: 'Invalid prompt ID' }, { status: 400 });
-	}
+	const body = (await parseJsonBody(event)) as Record<string, unknown>;
+	const { functionType } = body as { functionType: FunctionType };
+
+	validateFunctionType(functionType);
 
 	try {
-		const body = await request.json();
-		const { functionType } = body as { functionType: FunctionType };
-
-		if (!functionType || !['executor', 'judge', 'improve', 'council'].includes(functionType)) {
-			return json({ error: 'Invalid function type' }, { status: 400 });
-		}
-
-		const { deletePromptFunctionSettings } =
-			await import('$lib/server/services/settings-cascade.service');
 		await deletePromptFunctionSettings(promptId, functionType);
-		return json({ success: true });
-	} catch (error) {
-		console.error('Failed to delete prompt settings:', error);
-		return json({ error: 'Failed to delete settings' }, { status: 500 });
+		return apiSuccess(null);
+	} catch (err) {
+		console.error('Failed to delete prompt settings:', err);
+		apiFail('Failed to delete settings', 500);
 	}
 };

@@ -1,4 +1,3 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	getAllImprovePresets,
@@ -6,24 +5,23 @@ import {
 	validatePresetData
 } from '$lib/server/services/improve-presets.service';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
+import { requireAdmin } from '$lib/server/auth.helper';
+import { parseJsonBody } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiCreated, apiFail } from '$lib/server/utils/api-response';
 
 /**
  * GET /api/admin/improve-presets
  * Fetch all improve presets
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async (event) => {
+	requireAdmin(event);
+
 	try {
 		const presets = await getAllImprovePresets();
-		return json({ success: true, data: presets });
+		return apiSuccess(presets);
 	} catch (err) {
 		console.error('Failed to fetch improve presets:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Failed to fetch improve presets',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Failed to fetch improve presets', 500);
 	}
 };
 
@@ -31,76 +29,66 @@ export const GET: RequestHandler = async () => {
  * POST /api/admin/improve-presets
  * Create a new improve preset
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	requireAdmin(event);
+
+	const body = (await parseJsonBody(event)) as Record<string, unknown>;
+	const {
+		name,
+		description,
+		instruction,
+		model,
+		modelVariant,
+		temperature,
+		allowedModels,
+		isDefault
+	}: {
+		name: string;
+		description?: string;
+		instruction: string;
+		model?: string | null;
+		modelVariant?: string | null;
+		temperature?: number | null;
+		allowedModels?: string | null;
+		isDefault?: boolean;
+	} = body as Record<string, unknown> as any;
+
+	// Validate required fields
+	if (!name || !instruction) {
+		apiFail('Missing required fields: name and instruction are required', 400);
+	}
+
+	// Get current policy for validation
+	const policy = await getOpenCodePolicy();
+
+	// Validate preset data against policy
+	const validation = validatePresetData(
+		{ model: model ?? null, modelVariant: modelVariant ?? null, temperature: temperature ?? null, allowedModels: allowedModels ?? null },
+		policy
+	);
+
+	if (!validation.valid) {
+		apiFail('Validation failed', 400, validation.errors);
+	}
+
 	try {
-		const body = await request.json();
-		const {
-			name,
-			description,
-			instruction,
-			model,
-			modelVariant,
-			temperature,
-			allowedModels,
-			isDefault
-		} = body;
-
-		// Validate required fields
-		if (!name || !instruction) {
-			throw error(
-				400,
-				JSON.stringify({
-					message: 'Missing required fields: name and instruction are required'
-				})
-			);
-		}
-
-		// Get current policy for validation
-		const policy = await getOpenCodePolicy();
-
-		// Validate preset data against policy
-		const validation = validatePresetData(
-			{ model, modelVariant, temperature, allowedModels },
-			policy
-		);
-
-		if (!validation.valid) {
-			throw error(
-				400,
-				JSON.stringify({
-					message: 'Validation failed',
-					errors: validation.errors
-				})
-			);
-		}
-
 		// Create preset
 		const preset = await createImprovePreset({
 			name,
-			description,
+			description: description || null,
 			instruction,
 			model: model || null,
 			modelVariant: modelVariant || null,
-			temperature: temperature !== undefined ? temperature : null,
+			temperature: temperature ?? null,
 			allowedModels: allowedModels || null,
-			isDefault: isDefault || false,
+			isDefault: (isDefault as boolean) || false,
 			updatedBy: 'admin'
 		});
 
-		return json({ success: true, data: preset }, { status: 201 });
+		return apiCreated(preset);
 	} catch (err) {
-		// Re-throw HttpErrors (they have a status property)
-		if (err && typeof err === 'object' && 'status' in err) {
-			throw err;
-		}
-
+		if (err && typeof err === 'object' && 'status' in err) throw err;
 		console.error('Failed to create improve preset:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Failed to create improve preset',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Failed to create improve preset', 500);
 	}
 };

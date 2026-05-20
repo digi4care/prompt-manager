@@ -1,4 +1,3 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	getOpencodeConnectionStatus,
@@ -8,6 +7,8 @@ import {
 	OpenCodeSettingsValidationError,
 	validateSettings
 } from '$lib/server/opencode/validate-settings';
+import { parseJsonBody } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 
 /**
  * GET /api/admin/opencode-connection
@@ -15,42 +16,24 @@ import {
  * Public endpoint - needed before login to check connection
  */
 export const GET: RequestHandler = async () => {
-	// No authentication required - connection status needed before login
-
 	try {
 		const status = await getOpencodeConnectionStatus();
-		return json({ data: status });
+		return apiSuccess(status);
 	} catch (err) {
 		console.error('Failed to get OpenCode connection status:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Failed to get OpenCode connection status',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Failed to get OpenCode connection status', 500);
 	}
 };
 
 /**
  * PUT /api/admin/opencode-connection
  * Update OpenCode connection settings
- * Body: { settings: OpenCodeConnectionSettings }
- *
  * Public endpoint - needed before login to configure connection
  */
 export const PUT: RequestHandler = async (event) => {
-	// No authentication required - connection settings needed before login
+	const body = (await parseJsonBody(event)) as Record<string, unknown>;
 
-	let body: unknown;
-	try {
-		body = await event.request.json();
-	} catch {
-		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
-	}
-
-	const data = body as Record<string, unknown>;
-
+	const data = body;
 	const resolvedSettings = data.settings ?? {
 		mode: data.mode,
 		remote:
@@ -75,25 +58,13 @@ export const PUT: RequestHandler = async (event) => {
 		// Get fresh status after update
 		const status = await getOpencodeConnectionStatus();
 
-		return json({ data: status });
+		return apiSuccess(status);
 	} catch (err) {
 		if (err instanceof OpenCodeSettingsValidationError) {
-			throw error(
-				400,
-				JSON.stringify({
-					message: 'Validation failed',
-					errors: err.errors
-				})
-			);
+			apiFail('Validation failed', 400, err.errors);
 		}
 
 		console.error('Failed to update OpenCode connection:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Failed to update OpenCode connection',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Failed to update OpenCode connection', 500);
 	}
 };

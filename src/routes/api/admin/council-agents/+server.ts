@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { apiSuccess, apiCreated, apiFail } from '$lib/server/utils/api-response';
+import { requireAdmin } from '$lib/server/auth.helper';
 import { validateRequest } from '$lib/server/utils/validate-request';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
 import { getProviderCatalog, type ProviderInfo } from '$lib/server/services/opencode.service';
@@ -28,14 +29,16 @@ const createAgentSchema = z.object({
 });
 
 // GET: List all council agents for function_defaults with prompt names
-export const GET: RequestHandler = async ({ url }) => {
-	const parentType = (url.searchParams.get('parentType') ?? 'function_defaults') as ParentType;
+export const GET: RequestHandler = async (event) => {
+	requireAdmin(event);
+	const parentType = (event.url.searchParams.get('parentType') ?? 'function_defaults') as ParentType;
 	const agents = await getCouncilAgents(parentType);
 	return apiSuccess(agents);
 };
 
 // POST: Create new council agent with variant validation
 export const POST: RequestHandler = async (event) => {
+	requireAdmin(event);
 	const data = await validateRequest(event, createAgentSchema);
 
 	// Validate model+variant against policy (SPEC-14 AIC-008)

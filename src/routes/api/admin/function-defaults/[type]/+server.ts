@@ -1,4 +1,3 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	getFunctionDefault,
@@ -6,68 +5,52 @@ import {
 	type FunctionType
 } from '$lib/server/services/function-defaults.service';
 import { validateFunctionSettingUpdate } from '$lib/validators/function-settings';
-import { authenticateRequest } from '$lib/server/auth.helper';
+import { requireAdmin } from '$lib/server/auth.helper';
+import { parseJsonBody } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 import { getOpenCodePolicy } from '$lib/server/services/admin-settings.service';
 import { getProviderCatalog, type ProviderInfo } from '$lib/server/services/opencode.service';
 import {
 	validateModelVariantScope,
 	type PolicyScope,
 	type PolicyData,
-	type CatalogData,
-	type CatalogModel
+	type CatalogData
 } from '$lib/server/validators/model-variant.validator';
 
 // Valid function types
 const VALID_FUNCTION_TYPES: FunctionType[] = ['executor', 'judge', 'improve', 'council'];
+
+function validateFunctionType(type: string): asserts type is FunctionType {
+	if (!VALID_FUNCTION_TYPES.includes(type as FunctionType)) {
+		apiFail(
+			`Function type '${type}' not found`,
+			404,
+			{ type: 'Invalid function type. Must be one of: executor, judge, improve, council' }
+		);
+	}
+}
 
 /**
  * GET /api/admin/function-defaults/[type]
  * Fetch a single function default by type
  */
 export const GET: RequestHandler = async (event) => {
-	// Require authentication
-	authenticateRequest(event);
-
+	const user = requireAdmin(event);
 	const { type } = event.params;
-
-	// Validate function type
-	if (!VALID_FUNCTION_TYPES.includes(type as FunctionType)) {
-		throw error(
-			404,
-			JSON.stringify({
-				message: `Function type '${type}' not found`,
-				errors: { type: 'Invalid function type. Must be one of: executor, judge, improve, council' }
-			})
-		);
-	}
+	validateFunctionType(type);
 
 	try {
-		const defaultSetting = await getFunctionDefault(type as FunctionType);
+		const defaultSetting = await getFunctionDefault(type);
 
 		if (!defaultSetting) {
-			throw error(
-				404,
-				JSON.stringify({
-					message: `Function default for type '${type}' not found`,
-					errors: null
-				})
-			);
+			apiFail(`Function default for type '${type}' not found`, 404);
 		}
 
-		return json({ data: defaultSetting });
+		return apiSuccess(defaultSetting);
 	} catch (err) {
-		// Re-throw SvelteKit errors
-		if (err instanceof Error && err.message.includes('404')) {
-			throw err;
-		}
+		if (err && typeof err === 'object' && 'status' in err) throw err;
 		console.error('Failed to fetch function default:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Failed to fetch function default',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Failed to fetch function default', 500);
 	}
 };
 
@@ -76,40 +59,17 @@ export const GET: RequestHandler = async (event) => {
  * Update a function default by type with validation
  */
 export const PUT: RequestHandler = async (event) => {
-	// Require authentication
-	authenticateRequest(event);
-
+	const user = requireAdmin(event);
 	const { type } = event.params;
+	validateFunctionType(type);
 
-	// Validate function type
-	if (!VALID_FUNCTION_TYPES.includes(type as FunctionType)) {
-		throw error(
-			404,
-			JSON.stringify({
-				message: `Function type '${type}' not found`,
-				errors: { type: 'Invalid function type. Must be one of: executor, judge, improve, council' }
-			})
-		);
-	}
-
-	let body: unknown;
-	try {
-		body = await event.request.json();
-	} catch {
-		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
-	}
+	const body = await parseJsonBody(event);
 
 	// Validate the update data
 	const validation = validateFunctionSettingUpdate(body as Record<string, unknown>);
 
 	if (!validation.success) {
-		throw error(
-			400,
-			JSON.stringify({
-				message: 'Validation failed',
-				errors: validation.errors
-			})
-		);
+		apiFail('Validation failed', 400, validation.errors);
 	}
 
 	try {
@@ -172,38 +132,28 @@ export const PUT: RequestHandler = async (event) => {
 			if (!variantValidation.valid) {
 				const errorCode = variantValidation.error?.code || 'MODEL_NOT_FOUND';
 				const httpStatus = errorCode === 'VARIANT_REQUIRED' ? 400 : 422;
-				throw error(
+				apiFail(
+					variantValidation.error?.message || 'Model/variant validation failed',
 					httpStatus,
-					JSON.stringify({
-						message: variantValidation.error?.message || 'Model/variant validation failed',
-						code: errorCode,
-						errors: { modelVariant: variantValidation.error?.message }
-					})
+					{ code: errorCode, modelVariant: variantValidation.error?.message }
 				);
 			}
 		}
 
 		// Log the update for audit purposes
-		const authUser = event.locals.auth?.user;
 		console.log(
-			`[AUDIT] User ${authUser?.id || 'unknown'} (${authUser?.email || 'unknown'}) updating function default: ${type}`,
+			`[AUDIT] User ${user.userId} (${user.email}) updating function default: ${type}`,
 			updateData
 		);
 
 		const updated = await updateFunctionDefaultByType(type as FunctionType, updateData);
-		return json({ data: updated });
+		return apiSuccess(updated);
 	} catch (err) {
 		// Re-throw SvelteKit HttpError (has status property)
 		if (err && typeof err === 'object' && 'status' in err) {
 			throw err;
 		}
 		console.error('Failed to update function default:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Failed to update function default',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Failed to update function default', 500);
 	}
 };

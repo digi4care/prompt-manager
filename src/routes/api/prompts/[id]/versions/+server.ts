@@ -1,9 +1,11 @@
-import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getPrompt } from '$lib/server/services/prompts.service';
 import { getVersionHistory, createVersion } from '$lib/server/services/versions.service';
 import { computeDiff } from '$lib/server/utils/diff';
 import { validateFrontmatter } from '$lib/server/opencode/frontmatter';
+import { authenticateRequest } from '$lib/server/auth.helper';
+import { validateRequest } from '$lib/server/utils/validate-request';
+import { apiSuccess, apiCreated, apiFail } from '$lib/server/utils/api-response';
 import { z } from 'zod';
 
 const createVersionSchema = z.object({
@@ -14,19 +16,19 @@ const createVersionSchema = z.object({
 	frontmatterYaml: z.string().max(50000).optional()
 });
 
-export const GET: RequestHandler = async ({ params, url }) => {
-	const promptId = parseInt(params.id);
-	if (isNaN(promptId)) {
-		throw error(400, JSON.stringify({ message: 'Invalid prompt ID', errors: null }));
-	}
+function parsePromptId(raw: string): number {
+	const id = parseInt(raw);
+	if (isNaN(id)) apiFail('Invalid prompt ID', 400);
+	return id;
+}
 
+export const GET: RequestHandler = async ({ params, url }) => {
+	const promptId = parsePromptId(params.id);
 	const includeDiff = url.searchParams.get('diff') === 'true';
 
 	try {
 		const prompt = await getPrompt(promptId);
-		if (!prompt) {
-			throw error(404, JSON.stringify({ message: 'Prompt not found', errors: null }));
-		}
+		if (!prompt) apiFail('Prompt not found', 404);
 
 		const versions = await getVersionHistory(promptId);
 
@@ -37,7 +39,6 @@ export const GET: RequestHandler = async ({ params, url }) => {
 				}
 				const previousVersion = versions[index + 1];
 				const diffResult = computeDiff(previousVersion.content, version.content);
-				// Return diff result for display on frontend
 				const diffDisplay = {
 					added: diffResult.added,
 					removed: diffResult.removed,
@@ -45,74 +46,52 @@ export const GET: RequestHandler = async ({ params, url }) => {
 				};
 				return { ...version, diff: diffDisplay };
 			});
-			return json({ data: { versions: versionsWithDiff } });
+			return apiSuccess({ versions: versionsWithDiff });
 		}
 
-		return json({ data: { versions } });
+		return apiSuccess({ versions });
 	} catch (err: unknown) {
 		const e = err as { status?: number };
 		if (e.status) throw err;
 		console.error('Failed to fetch versions:', err);
-		throw error(500, JSON.stringify({ message: 'Failed to fetch versions', errors: null }));
+		apiFail('Failed to fetch versions', 500);
 	}
 };
 
-export const POST: RequestHandler = async ({ params, request }) => {
-	const promptId = parseInt(params.id);
-	if (isNaN(promptId)) {
-		throw error(400, JSON.stringify({ message: 'Invalid prompt ID', errors: null }));
-	}
-
-	let data: unknown;
-	try {
-		data = await request.json();
-	} catch {
-		throw error(400, JSON.stringify({ message: 'Invalid JSON body', errors: null }));
-	}
-
-	const parsed = createVersionSchema.safeParse(data);
-	if (!parsed.success) {
-		throw error(
-			400,
-			JSON.stringify({ message: 'Validation failed', errors: parsed.error.flatten() })
-		);
-	}
+export const POST: RequestHandler = async (event) => {
+	const user = authenticateRequest(event);
+	const promptId = parsePromptId(event.params.id);
+	const parsed = await validateRequest(event, createVersionSchema);
 
 	try {
 		const prompt = await getPrompt(promptId);
-		if (!prompt) {
-			throw error(404, JSON.stringify({ message: 'Prompt not found', errors: null }));
-		}
+		if (!prompt) apiFail('Prompt not found', 404);
 
-		const frontmatterYaml = (parsed.data.frontmatterYaml ?? '').trim();
+		const frontmatterYaml = (parsed.frontmatterYaml ?? '').trim();
 		if (frontmatterYaml) {
 			const frontmatterResult = validateFrontmatter(frontmatterYaml);
 			if (!frontmatterResult.ok) {
-				throw error(
-					400,
-					JSON.stringify({
-						message: 'Frontmatter YAML validation failed',
-						errors: { frontmatterYaml: frontmatterResult.errors }
-					})
-				);
+				apiFail('Frontmatter YAML validation failed', 400, {
+					frontmatterYaml: frontmatterResult.errors
+				});
 			}
 		}
 
 		const version = await createVersion(
 			promptId,
-			parsed.data.content,
-			parsed.data.changeType,
-			parsed.data.changeNotes,
-			'user', // TODO: Replace with authenticated user ID (Phase 1C)
-			parsed.data.metadata,
+			parsed.content,
+			parsed.changeType,
+			parsed.changeNotes,
+			String(user.userId),
+			parsed.metadata,
 			frontmatterYaml || null
 		);
 
-		return json({ data: version }, { status: 201 });
+		return apiCreated(version);
 	} catch (err: unknown) {
 		const e = err as { status?: number };
 		if (e.status) throw err;
 		console.error('Failed to create version:', err);
-		throw error(500, JSON.stringify({ message: 'Failed to create version', errors: null }));
+		apiFail('Failed to create version', 500);
 	}
 };

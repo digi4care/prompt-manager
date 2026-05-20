@@ -1,7 +1,7 @@
-import { json, error } from '@sveltejs/kit';
+import { requireAdmin } from '$lib/server/auth.helper';
 import type { RequestHandler } from './$types';
 import { getFunctionDefaults } from '$lib/server/services/function-defaults.service';
-import { requireAdmin } from '$lib/server/auth.helper';
+import { apiSuccess, apiFail } from '$lib/server/utils/api-response';
 
 /**
  * GET /api/admin/function-defaults
@@ -12,15 +12,9 @@ export const GET: RequestHandler = async (event) => {
 
 	try {
 		const defaults = await getFunctionDefaults();
-		return json({ data: defaults });
+		return apiSuccess(defaults);
 	} catch (err) {
 		console.error('Failed to fetch function defaults:', err);
-		throw error(
-			500,
-			JSON.stringify({
-				message: 'Failed to fetch function defaults',
-				errors: err instanceof Error ? err.message : null
-			})
-		);
+		apiFail('Failed to fetch function defaults', 500);
 	}
 };

@@ -12,6 +12,12 @@ import {
 	type OpenCodePolicy
 } from '$lib/server/services/admin-settings.service';
 
+export interface JudgeDeps {
+	executeAgentWithSession?: typeof executeAgentWithSession;
+	getOpenCodePolicy?: typeof getOpenCodePolicy;
+	isModelAllowed?: typeof isModelAllowed;
+}
+
 export type JudgeResponse = {
 	clarity: number;
 	completeness: number;
@@ -69,13 +75,17 @@ function parseModelId(modelId: string): { providerID: string; modelID: string } 
  * @returns Selected model ID
  * @throws OpenCodeValidationError if model is not allowed
  */
-function selectEffectiveModel(policy: OpenCodePolicy, allowedModels?: string[]): string {
+function selectEffectiveModel(
+	policy: OpenCodePolicy,
+	allowedModels?: string[],
+	checkModelAllowed: typeof isModelAllowed = isModelAllowed
+): string {
 	let candidateModel = policy.judgeDefaultModel;
 
 	// If request specifies allowedModels, they must be a subset of global policy
 	if (allowedModels && allowedModels.length > 0) {
 		// Validate each model in allowedModels is in global policy
-		const invalidModels = allowedModels.filter((m) => !isModelAllowed(m, policy));
+		const invalidModels = allowedModels.filter((m) => !checkModelAllowed(m, policy));
 		if (invalidModels.length > 0) {
 			throw new OpenCodeValidationError(
 				`Requested models not allowed by global policy: ${invalidModels.join(', ')}`
@@ -92,7 +102,7 @@ function selectEffectiveModel(policy: OpenCodePolicy, allowedModels?: string[]):
 	}
 
 	// Validate default model against global policy
-	if (!isModelAllowed(candidateModel, policy)) {
+	if (!checkModelAllowed(candidateModel, policy)) {
 		throw new OpenCodeValidationError(
 			`Default model '${candidateModel}' is not in global policy allowlist`
 		);
@@ -106,22 +116,26 @@ export { OpenCodeValidationError } from '$lib/server/services/opencode.service';
 
 export async function evaluatePrompt(
 	version: PromptVersion,
-	allowedModels?: string[]
+	allowedModels?: string[],
+	deps?: JudgeDeps
 ): Promise<EvaluationResult> {
+	const executeAgent = deps?.executeAgentWithSession ?? executeAgentWithSession;
+	const getPolicy = deps?.getOpenCodePolicy ?? getOpenCodePolicy;
+	const checkModelAllowed = deps?.isModelAllowed ?? isModelAllowed;
 	return withRetry(
 		async () => {
 			// 1. Get OpenCode policy for model selection
-			const policy = await getOpenCodePolicy();
+			const policy = await getPolicy();
 
 			// 2. Select effective model based on policy and request constraints
-			const selectedModel = selectEffectiveModel(policy, allowedModels);
+			const selectedModel = selectEffectiveModel(policy, allowedModels, checkModelAllowed);
 
 			// 3. Parse model ID to extract provider and model components
 			const { providerID, modelID } = parseModelId(selectedModel);
 
 			// 4. Call OpenCode using session.prompt with model selection (ara.12 spike result)
 			// Rubric-only: no instruction field, only prompt content
-			const res = await executeAgentWithSession({
+			const res = await executeAgent({
 				model: { providerID, modelID },
 				agent: 'prompt-judge',
 				parts: [{ type: 'text', text: JSON.stringify({ prompt: version.content }) }],

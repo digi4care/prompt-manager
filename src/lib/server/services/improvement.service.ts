@@ -12,6 +12,11 @@ import { parseImproveAgentResponse } from '$lib/server/opencode/contracts';
 import { getOpenCodePolicy, isModelAllowed, type OpenCodePolicy } from './admin-settings.service';
 import { getPresetWithDefaults } from './improve-presets.service';
 
+export interface ImprovementDeps {
+	executeAgentWithSession?: typeof executeAgentWithSession;
+	getOpenCodePolicy?: typeof getOpenCodePolicy;
+	isModelAllowed?: typeof isModelAllowed;
+}
 export type ImproveOptions = {
 	instruction?: string;
 	preset?: string | number;
@@ -95,14 +100,18 @@ export async function generateVariantsWithModelSelection(
 	baseVersion: PromptVersion,
 	judgeResponse: JudgeResponse,
 	options: ImproveOptions,
-	count = 3
+	count = 3,
+	deps?: ImprovementDeps
 ): Promise<ImproveResult> {
+	const executeAgent = deps?.executeAgentWithSession ?? executeAgentWithSession;
+	const getPolicy = deps?.getOpenCodePolicy ?? getOpenCodePolicy;
+	const checkModelAllowed = deps?.isModelAllowed ?? isModelAllowed;
 	// Load policy
-	const policy = await getOpenCodePolicy();
+	const policy = await getPolicy();
 
 	// Resolve effective model and parameters
 	const { modelSelection, modelVariant, temperature, presetInfo, effectiveInstruction } =
-		await resolveImproveParameters(policy, options);
+		await resolveImproveParameters(policy, options, checkModelAllowed);
 
 	// Build agent input
 	const agentInput: any = {
@@ -119,7 +128,7 @@ export async function generateVariantsWithModelSelection(
 
 	// Execute using session.prompt with model selection
 	const res = await withRetry(
-		() => executeAgentWithSession({
+		() => executeAgent({
 			model: modelSelection,
 			agent: 'prompt-improve',
 			parts: [{ type: 'text', text: JSON.stringify(agentInput) }],
@@ -153,7 +162,8 @@ export async function generateVariantsWithModelSelection(
  */
 async function resolveImproveParameters(
 	policy: OpenCodePolicy,
-	options: ImproveOptions
+	options: ImproveOptions,
+	checkModelAllowed: typeof isModelAllowed = isModelAllowed
 ): Promise<{
 	modelSelection: ModelSelection;
 	modelVariant?: string | null;
@@ -193,7 +203,7 @@ async function resolveImproveParameters(
 	const modelSelection = parseModelId(effectiveModel);
 
 	// Validate model is allowed
-	if (!isModelAllowed(`${modelSelection.providerID}/${modelSelection.modelID}`, policy)) {
+	if (!checkModelAllowed(`${modelSelection.providerID}/${modelSelection.modelID}`, policy)) {
 		throw new Error(
 			`Model "${effectiveModel}" is not in the allowed list. Please choose from the available models.`
 		);
@@ -204,7 +214,8 @@ async function resolveImproveParameters(
 		const directModelSelection = parseModelId(options.modelId);
 		// Validate direct model selection
 		if (
-			!isModelAllowed(`${directModelSelection.providerID}/${directModelSelection.modelID}`, policy)
+			!checkModelAllowed(`${directModelSelection.providerID}/${directModelSelection.modelID}`, policy)
+
 		) {
 			throw new Error(
 				`Model "${options.modelId}" is not in the allowed list. Please choose from the available models.`

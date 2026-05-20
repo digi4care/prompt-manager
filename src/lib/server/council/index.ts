@@ -7,3 +7,16 @@ export type {
 	CouncilModeStrategy
 } from './types';
 export { createCouncilEvent, streamToAsyncGenerator } from './streaming';
+export type {
+	DebateArchetype,
+	DebateState,
+	DebateAgentConfig,
+	DebateAgentResult,
+	DebateRoundResult,
+	DebateSynthesis,
+	DebateRun,
+	DebateEventType,
+	DebateEvent,
+	AgentOverride
+} from './debate';
+export { executeCouncilDebate, executeDebate } from './debate';

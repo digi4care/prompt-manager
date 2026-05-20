@@ -14,6 +14,11 @@ import { getOpencodeClient, getProviders } from './opencode.service';
 import type { FunctionType } from './function-defaults.service';
 import { withRetry } from '../utils/retry';
 
+export interface StreamingDeps {
+	getOpencodeClient?: typeof getOpencodeClient;
+	resolveFunctionSettings?: typeof resolveFunctionSettings;
+	getProviders?: typeof getProviders;
+}
 /**
  * Streaming event types emitted to SSE clients
  */
@@ -129,8 +134,12 @@ interface SessionErrorProperties {
  * @returns Cleanup function that deletes the OpenCode session
  */
 export async function* streamPromptExecution(
-	options: StreamPromptOptions
+	options: StreamPromptOptions,
+	deps?: StreamingDeps
 ): AsyncGenerator<StreamingEvent, () => Promise<void>, unknown> {
+	const getClient = deps?.getOpencodeClient ?? getOpencodeClient;
+	const resolveSettings = deps?.resolveFunctionSettings ?? resolveFunctionSettings;
+	const getProvidersFn = deps?.getProviders ?? getProviders;
 	const { promptId, content, functionType = 'executor', overrides } = options;
 
 	const startTime = Date.now();
@@ -139,10 +148,10 @@ export async function* streamPromptExecution(
 	let accumulatedContent = '';
 
 	// Get OpenCode client
-	const client = await getOpencodeClient();
+	const client = await getClient();
 
 	// Resolve settings through cascade
-	const settings = await resolveFunctionSettings({
+	const settings = await resolveSettings({
 		functionType,
 		promptId,
 		runOverrides: overrides
@@ -159,7 +168,7 @@ export async function* streamPromptExecution(
 		modelId = modelIdValue;
 
 		try {
-			const providersResponse = await getProviders();
+			const providersResponse = await getProvidersFn();
 			const providers = providersResponse?.providers || [];
 
 			for (const provider of providers) {

@@ -14,6 +14,11 @@ import { getOpencodeClient, getProviders } from './opencode.service';
 import type { FunctionType } from './function-defaults.service';
 import { withRetry } from '../utils/retry';
 
+export interface ExecutionDeps {
+	getOpencodeClient?: typeof getOpencodeClient;
+	resolveFunctionSettings?: typeof resolveFunctionSettings;
+	getProviders?: typeof getProviders;
+}
 /**
  * Custom error class for execution errors
  * Maps SDK errors to user-friendly messages with recovery hints
@@ -189,7 +194,13 @@ export interface ExecutePromptOptions {
  * 4. Cleans up the session
  * 5. Returns structured result with timing and usage info
  */
-export async function executePrompt(options: ExecutePromptOptions): Promise<ExecutionResult> {
+export async function executePrompt(
+	options: ExecutePromptOptions,
+	deps?: ExecutionDeps
+): Promise<ExecutionResult> {
+	const getClient = deps?.getOpencodeClient ?? getOpencodeClient;
+	const resolveSettings = deps?.resolveFunctionSettings ?? resolveFunctionSettings;
+	const getProvidersFn = deps?.getProviders ?? getProviders;
 	const { promptId, content, functionType = 'executor', overrides } = options;
 
 	const startTime = Date.now();
@@ -197,7 +208,7 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 
 	try {
 		// Resolve settings through cascade
-		const settings = await resolveFunctionSettings({
+		const settings = await resolveSettings({
 			functionType,
 			promptId,
 			runOverrides: overrides
@@ -215,7 +226,7 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 
 			// Try to find the provider that has this model
 			try {
-				const providersResponse = await getProviders();
+				const providersResponse = await getProvidersFn();
 				const providers = providersResponse?.providers || [];
 
 				for (const provider of providers) {
@@ -242,7 +253,7 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 		}
 
 		// Get OpenCode client
-		const client = await getOpencodeClient();
+		const client = await getClient();
 
 		// Create ephemeral session
 		const createResult = await client.session.create();
@@ -391,7 +402,7 @@ export async function executePrompt(options: ExecutePromptOptions): Promise<Exec
 		// Always clean up the session
 		if (session) {
 			try {
-				const client = await getOpencodeClient();
+				const client = await getClient();
 				await client.session.delete({ path: { id: session.id } });
 			} catch {
 				// Log but don't throw - session cleanup failure shouldn't affect response

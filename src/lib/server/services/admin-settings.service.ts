@@ -93,15 +93,16 @@ export async function getSetting(key: string): Promise<string | null> {
 /**
  * Update a setting
  */
-export async function updateSetting(data: SettingUpdate): Promise<AdminSetting> {
+export async function updateSetting(data: SettingUpdate, tx?: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]): Promise<AdminSetting> {
 	const { key, value, updatedBy = 'admin' } = data;
+	const executor = tx || db;
 
 	// Check if setting exists
-	const existing = await db.select().from(adminSettings).where(eq(adminSettings.key, key)).limit(1);
+	const existing = await executor.select().from(adminSettings).where(eq(adminSettings.key, key)).limit(1);
 
 	if (existing.length > 0) {
 		// Update existing
-		const updated = await db
+		const updated = await executor
 			.update(adminSettings)
 			.set({
 				value,
@@ -115,7 +116,7 @@ export async function updateSetting(data: SettingUpdate): Promise<AdminSetting> 
 	} else {
 		// Insert new
 		const category = getCategoryForKey(key);
-		const inserted = await db
+		const inserted = await executor
 			.insert(adminSettings)
 			.values({
 				category,
@@ -127,20 +128,22 @@ export async function updateSetting(data: SettingUpdate): Promise<AdminSetting> 
 
 		return inserted[0];
 	}
-}
 
+}
 /**
  * Update multiple settings at once
  */
 export async function updateMultipleSettings(updates: SettingUpdate[]): Promise<AdminSetting[]> {
-	const results: AdminSetting[] = [];
+	return await db.transaction(async (tx) => {
+		const results: AdminSetting[] = [];
 
-	for (const update of updates) {
-		const result = await updateSetting(update);
-		results.push(result);
-	}
+		for (const update of updates) {
+			const result = await updateSetting(update, tx);
+			results.push(result);
+		}
 
-	return results;
+		return results;
+	});
 }
 
 /**

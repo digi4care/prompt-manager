@@ -77,21 +77,23 @@ export async function updateImprovePreset(
 ): Promise<ImprovePreset | null> {
 	const { updatedBy = 'admin', ...presetData } = data;
 
-	// If setting isDefault to true, first unset all other defaults
-	if (presetData.isDefault === true) {
-		await db.update(improvePresets).set({ isDefault: false });
-	}
+	return await db.transaction(async (tx) => {
+		// If setting isDefault to true, first unset all other defaults
+		if (presetData.isDefault === true) {
+			await tx.update(improvePresets).set({ isDefault: false });
+		}
 
-	const updated = await db
-		.update(improvePresets)
-		.set({
-			...presetData,
-			updatedAt: new Date()
-		})
-		.where(eq(improvePresets.id, id))
-		.returning();
+		const updated = await tx
+			.update(improvePresets)
+			.set({
+				...presetData,
+				updatedAt: new Date()
+			})
+			.where(eq(improvePresets.id, id))
+			.returning();
 
-	return updated.length > 0 ? updated[0] : null;
+		return updated.length > 0 ? updated[0] : null;
+	});
 }
 
 /**

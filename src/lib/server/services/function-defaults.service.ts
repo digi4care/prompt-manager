@@ -133,11 +133,13 @@ export async function seedDefaultFunctionSettings(): Promise<void> {
 		(t) => !existingTypes.has(t)
 	);
 
-	// Insert missing defaults
-	for (const functionType of missingTypes) {
-		const defaultSettings = DEFAULT_FUNCTION_SETTINGS[functionType];
-		await db.insert(functionDefaults).values(defaultSettings);
-	}
+	// Insert missing defaults in a transaction
+	await db.transaction(async (tx) => {
+		for (const functionType of missingTypes) {
+			const defaultSettings = DEFAULT_FUNCTION_SETTINGS[functionType];
+			await tx.insert(functionDefaults).values(defaultSettings);
+		}
+	});
 }
 
 /**

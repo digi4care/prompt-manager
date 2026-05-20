@@ -147,11 +147,13 @@ export async function updateMultipleSettings(updates: SettingUpdate[]): Promise<
  * Reset all settings to defaults
  */
 export async function resetToDefaults(): Promise<void> {
-	// Delete all existing settings
-	await db.delete(adminSettings);
+	await db.transaction(async (tx) => {
+		// Delete all existing settings
+		await tx.delete(adminSettings);
 
-	// Insert defaults
-	await initializeDefaultSettings();
+		// Insert defaults
+		await initializeDefaultSettings(tx);
+	});
 }
 
 /**
@@ -174,7 +176,9 @@ export async function resetSetting(key: string): Promise<AdminSetting | null> {
 /**
  * Initialize default settings in database
  */
-async function initializeDefaultSettings(): Promise<void> {
+async function initializeDefaultSettings(
+	tx: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db
+): Promise<void> {
 	const settingsToInsert: NewAdminSetting[] = Object.entries(DEFAULT_SETTINGS).map(
 		([key, value]) => ({
 			category: getCategoryForKey(key),
@@ -184,7 +188,7 @@ async function initializeDefaultSettings(): Promise<void> {
 		})
 	);
 
-	await db.insert(adminSettings).values(settingsToInsert);
+	await tx.insert(adminSettings).values(settingsToInsert);
 }
 
 /**

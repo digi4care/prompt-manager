@@ -285,18 +285,20 @@ export async function deletePromptFunctionSettings(
 		return false; // Nothing to delete
 	}
 
-	// Cascade delete: remove council agents linked to this settings record
-	await db
-		.delete(councilAgents)
-		.where(
-			and(
-				eq(councilAgents.parentType, 'prompt_function_settings'),
-				eq(councilAgents.parentId, existing.id)
-			)
-		);
+	await db.transaction(async (tx) => {
+		// Cascade delete: remove council agents linked to this settings record
+		await tx
+			.delete(councilAgents)
+			.where(
+				and(
+					eq(councilAgents.parentType, 'prompt_function_settings'),
+					eq(councilAgents.parentId, existing.id)
+				)
+			);
 
-	// Delete the settings record
-	await db.delete(promptFunctionSettings).where(eq(promptFunctionSettings.id, existing.id));
+		// Delete the settings record
+		await tx.delete(promptFunctionSettings).where(eq(promptFunctionSettings.id, existing.id));
+	});
 
 	return true;
 }

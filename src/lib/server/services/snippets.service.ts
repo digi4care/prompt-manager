@@ -18,19 +18,22 @@ export interface SnippetWithTags extends Snippet {
 
 export async function createSnippet(data: NewSnippet & { tagIds?: number[] }): Promise<Snippet> {
 	const { tagIds, ...snippetData } = data;
-	const [snippet] = await db.insert(snippets).values(snippetData).returning();
 
-	// Insert tag assignments if provided
-	if (tagIds && tagIds.length > 0) {
-		await db.insert(snippetTagAssignments).values(
-			tagIds.map((tagId) => ({
-				snippetId: snippet.id,
-				tagId
-			}))
-		);
-	}
+	return await db.transaction(async (tx) => {
+		const [snippet] = await tx.insert(snippets).values(snippetData).returning();
 
-	return snippet;
+		// Insert tag assignments if provided
+		if (tagIds && tagIds.length > 0) {
+			await tx.insert(snippetTagAssignments).values(
+				tagIds.map((tagId) => ({
+					snippetId: snippet.id,
+					tagId
+				}))
+			);
+		}
+
+		return snippet;
+	});
 }
 
 export async function getSnippet(id: number): Promise<SnippetWithTags | null> {
@@ -191,29 +194,31 @@ export async function updateSnippet(
 ): Promise<Snippet> {
 	const { tagIds, ...snippetData } = data;
 
-	const [updated] = await db
-		.update(snippets)
-		.set({ ...snippetData, updatedAt: new Date() })
-		.where(eq(snippets.id, id))
-		.returning();
+	return await db.transaction(async (tx) => {
+		const [updated] = await tx
+			.update(snippets)
+			.set({ ...snippetData, updatedAt: new Date() })
+			.where(eq(snippets.id, id))
+			.returning();
 
-	// Sync tag assignments if provided
-	if (tagIds !== undefined) {
-		// Delete existing assignments
-		await db.delete(snippetTagAssignments).where(eq(snippetTagAssignments.snippetId, id));
+		// Sync tag assignments if provided
+		if (tagIds !== undefined) {
+			// Delete existing assignments
+			await tx.delete(snippetTagAssignments).where(eq(snippetTagAssignments.snippetId, id));
 
-		// Insert new assignments
-		if (tagIds.length > 0) {
-			await db.insert(snippetTagAssignments).values(
-				tagIds.map((tagId) => ({
-					snippetId: id,
-					tagId
-				}))
-			);
+			// Insert new assignments
+			if (tagIds.length > 0) {
+				await tx.insert(snippetTagAssignments).values(
+					tagIds.map((tagId) => ({
+						snippetId: id,
+						tagId
+					}))
+				);
+			}
 		}
-	}
 
-	return updated;
+		return updated;
+	});
 }
 
 export async function deleteSnippet(id: number): Promise<void> {

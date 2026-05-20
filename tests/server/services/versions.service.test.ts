@@ -10,8 +10,8 @@ import { prompts, promptVersions } from '$lib/server/db/schema';
 import { getNextVersion } from '$lib/server/utils/semver';
 
 // Mock dependencies
-vi.mock('$lib/server/db/client', () => ({
-	db: {
+vi.mock('$lib/server/db/client', () => {
+	const mockTx = {
 		select: vi.fn(() => ({
 			from: vi.fn(() => Promise.resolve([]))
 		})),
@@ -26,8 +26,15 @@ vi.mock('$lib/server/db/client', () => ({
 			}))
 		})),
 		delete: vi.fn()
-	}
-}));
+	};
+
+	const db = {
+		...mockTx,
+		transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx))
+	};
+
+	return { db };
+});
 
 vi.mock('$lib/server/utils/semver', () => ({
 	getNextVersion: vi.fn(() => '1.0.0')

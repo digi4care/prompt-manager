@@ -194,3 +194,12 @@ try {
 - Test files: `tests/**/*.test.{ts,js}` and `e2e/**/*.spec.{ts,js}`
 - Setup file: `tests/setup.ts`
 - Environment: jsdom for unit tests
+
+## Code Quality Reference
+
+- **Design Patterns Decision Tree** — `../design-patterns-explained-ts/design-patterns-decision.json`
+  - 37 items (23 patterns + 14 principles) with decision trees mapping code smells → recommended patterns
+  - Covers: creational, structural, behavioral, architectural, and concurrency patterns
+  - Includes TypeScript-specific guidance (`ts_notes`), signals/anti-signals, and example files
+  - Use when: writing new code, reviewing PRs, refactoring, or choosing between approaches
+  - How to use: spot a code smell → check `decision_trees` for the problem category → follow condition paths → validate with `signals`/`use_when`/`avoid_when`

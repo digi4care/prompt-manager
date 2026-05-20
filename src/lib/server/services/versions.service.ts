@@ -17,28 +17,30 @@ export async function createVersion(
 
 	const normalizedFrontmatter = (frontmatterYaml ?? '').trim();
 
-	const [newVersion] = await db
-		.insert(promptVersions)
-		.values({
-			promptId,
-			version,
-			content,
-			changeType,
-			changeNotes,
-			createdBy,
-			parentVersionId: latestVersion?.id || null,
-			metadata: metadata ? JSON.stringify(metadata) : null,
-			frontmatterYaml: normalizedFrontmatter ? normalizedFrontmatter : null
-		})
-		.returning();
+	return await db.transaction(async (tx) => {
+		const [newVersion] = await tx
+			.insert(promptVersions)
+			.values({
+				promptId,
+				version,
+				content,
+				changeType,
+				changeNotes,
+				createdBy,
+				parentVersionId: latestVersion?.id || null,
+				metadata: metadata ? JSON.stringify(metadata) : null,
+				frontmatterYaml: normalizedFrontmatter ? normalizedFrontmatter : null
+			})
+			.returning();
 
-	// Update latest version reference
-	await db
-		.update(prompts)
-		.set({ latestVersionId: newVersion.id, updatedAt: new Date() })
-		.where(eq(prompts.id, promptId));
+		// Update latest version reference
+		await tx
+			.update(prompts)
+			.set({ latestVersionId: newVersion.id, updatedAt: new Date() })
+			.where(eq(prompts.id, promptId));
 
-	return newVersion;
+		return newVersion;
+	});
 }
 
 export async function getLatestVersion(promptId: number): Promise<PromptVersion | null> {

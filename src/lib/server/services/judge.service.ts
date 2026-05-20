@@ -176,42 +176,44 @@ export async function saveEvaluation(
 	const qualityScore =
 		(judgeResponse.clarity + judgeResponse.completeness + judgeResponse.specificity) / 3;
 
-	const [evaluation] = await db
-		.insert(judgeEvaluations)
-		.values({
+	return await db.transaction(async (tx) => {
+		const [evaluation] = await tx
+			.insert(judgeEvaluations)
+			.values({
+				versionId,
+				judgeModel: modelParams?.modelId || 'opencode:prompt-judge',
+				providerId: modelParams?.providerId || null,
+				modelId: modelParams?.modelId || null,
+				temperature: modelParams?.temperature || null,
+				maxTokens: modelParams?.maxTokens || null,
+				criteria: JSON.stringify({
+					clarity: 'Is the prompt clear and unambiguous?',
+					completeness: 'Does it include all necessary context?',
+					specificity: 'Are instructions specific and actionable?'
+				}),
+				scores: JSON.stringify({
+					clarity: judgeResponse.clarity,
+					completeness: judgeResponse.completeness,
+					specificity: judgeResponse.specificity,
+					overall: qualityScore
+				}),
+				gaps: JSON.stringify(judgeResponse.gaps),
+				recommendations: JSON.stringify(judgeResponse.recommendations),
+				rawResponse,
+				thinking: thinking?.thinking || null,
+				thinkingSignature: thinking?.signature || null
+			})
+			.returning();
+
+		// Also update performance metrics
+		await tx.insert(performanceMetrics).values({
 			versionId,
-			judgeModel: modelParams?.modelId || 'opencode:prompt-judge',
-			providerId: modelParams?.providerId || null,
-			modelId: modelParams?.modelId || null,
-			temperature: modelParams?.temperature || null,
-			maxTokens: modelParams?.maxTokens || null,
-			criteria: JSON.stringify({
-				clarity: 'Is the prompt clear and unambiguous?',
-				completeness: 'Does it include all necessary context?',
-				specificity: 'Are instructions specific and actionable?'
-			}),
-			scores: JSON.stringify({
-				clarity: judgeResponse.clarity,
-				completeness: judgeResponse.completeness,
-				specificity: judgeResponse.specificity,
-				overall: qualityScore
-			}),
-			gaps: JSON.stringify(judgeResponse.gaps),
-			recommendations: JSON.stringify(judgeResponse.recommendations),
-			rawResponse,
-			thinking: thinking?.thinking || null,
-			thinkingSignature: thinking?.signature || null
-		})
-		.returning();
+			qualityScore,
+			clarity: judgeResponse.clarity,
+			completeness: judgeResponse.completeness,
+			specificity: judgeResponse.specificity
+		});
 
-	// Also update performance metrics
-	await db.insert(performanceMetrics).values({
-		versionId,
-		qualityScore,
-		clarity: judgeResponse.clarity,
-		completeness: judgeResponse.completeness,
-		specificity: judgeResponse.specificity
+		return evaluation.id;
 	});
-
-	return evaluation.id;
 }

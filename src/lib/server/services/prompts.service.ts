@@ -1,6 +1,6 @@
 import { db } from '../db/client';
 import { prompts, type NewPrompt, type Prompt } from '../db/schema';
-import { eq, desc, asc, like, isNull, and, count } from 'drizzle-orm';
+import { eq, desc, asc, like, isNull, and, count, inArray } from 'drizzle-orm';
 import { type SQL, sql } from 'drizzle-orm';
 
 export async function createPrompt(data: NewPrompt): Promise<Prompt> {
@@ -102,20 +102,16 @@ export async function deletePrompt(id: number): Promise<void> {
 export async function bulkDeletePrompts(ids: number[]): Promise<number> {
 	if (!ids || ids.length === 0) return 0;
 
-	// Soft delete multiple prompts
-	const result = await db
-		.update(prompts)
-		.set({ deletedAt: new Date() })
-		.where(eq(prompts.id, ids[0])); // Drizzle doesn't have bulk where, we'll use a transaction or execute multiple
+	const result = await db.transaction(async (tx) => {
+		const updated = await tx
+			.update(prompts)
+			.set({ deletedAt: new Date() })
+			.where(inArray(prompts.id, ids))
+			.returning();
+		return updated.length;
+	});
 
-	// For now, execute multiple updates (Drizzle limitation without custom SQL)
-	let deletedCount = 0;
-	for (const id of ids) {
-		await db.update(prompts).set({ deletedAt: new Date() }).where(eq(prompts.id, id));
-		deletedCount++;
-	}
-
-	return deletedCount;
+	return result;
 }
 
 export async function getAllTags(): Promise<string[]> {

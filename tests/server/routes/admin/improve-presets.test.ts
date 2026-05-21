@@ -250,7 +250,7 @@ describe('improve-presets API routes', () => {
 				}))
 			});
 
-			const { GET } = await import('../../../../src/routes/api/admin/improve-presets/[id]/+server');
+			const { GET } = await import('../../../../src/routes/api/admin/improve-presets/[id=int]/+server');
 
 			const event = {
 				locals: mockLocals(),
@@ -287,7 +287,7 @@ describe('improve-presets API routes', () => {
 				}))
 			});
 
-			const { PUT } = await import('../../../../src/routes/api/admin/improve-presets/[id]/+server');
+			const { PUT } = await import('../../../../src/routes/api/admin/improve-presets/[id=int]/+server');
 
 			const body = JSON.stringify({
 				name: 'Updated Preset',
@@ -326,7 +326,7 @@ describe('improve-presets API routes', () => {
 			});
 
 			const { DELETE } =
-				await import('../../../../src/routes/api/admin/improve-presets/[id]/+server');
+				await import('../../../../src/routes/api/admin/improve-presets/[id=int]/+server');
 
 			const event = {
 				locals: mockLocals(),

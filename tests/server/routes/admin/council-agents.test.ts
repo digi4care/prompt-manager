@@ -311,7 +311,7 @@ describe('council-agents API routes', () => {
 			}));
 
 			const { PUT } =
-				await import('../../../../src/routes/api/admin/council-agents/[id]/+server');
+				await import('../../../../src/routes/api/admin/council-agents/[id=int]/+server');
 
 			const body = JSON.stringify({
 				modelVariant: 'high'
@@ -353,7 +353,7 @@ describe('council-agents API routes', () => {
 			});
 
 			const { PUT } =
-				await import('../../../../src/routes/api/admin/council-agents/[id]/+server');
+				await import('../../../../src/routes/api/admin/council-agents/[id=int]/+server');
 
 			const body = JSON.stringify({
 				modelVariant: 'high'
@@ -380,7 +380,7 @@ describe('council-agents API routes', () => {
 	describe('DELETE /api/admin/council-agents/[id]', () => {
 		it('deletes council agent', async () => {
 			const { DELETE } =
-				await import('../../../../src/routes/api/admin/council-agents/[id]/+server');
+				await import('../../../../src/routes/api/admin/council-agents/[id=int]/+server');
 
 			const event = {
 				params: { id: '1' }

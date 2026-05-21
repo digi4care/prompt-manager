@@ -9,7 +9,7 @@
 		VersionControlSection,
 		EditPromptSidebar,
 		VariantSelectionModal
-	} from '../../../routes/prompts/[id]/edit/_components';
+	} from '../../../routes/prompts/[id=int]/edit/_components';
 
 	interface Props {
 		prompt: {

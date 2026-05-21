@@ -104,7 +104,7 @@ describe('Improve API - Thinking Integration', () => {
 			mockValidateRequest.mockResolvedValue(requestBody);
 			mockOrchestrateImprovement.mockResolvedValue(mockResult);
 
-			const { POST } = await import('$lib/../routes/api/prompts/[id]/improve/+server');
+			const { POST } = await import('$lib/../routes/api/prompts/[id=int]/improve/+server');
 
 			const request = new Request('http://localhost/api/prompts/1/improve', {
 				method: 'POST',
@@ -190,7 +190,7 @@ describe('Improve API - Thinking Integration', () => {
 			mockValidateRequest.mockResolvedValue(requestBody);
 			mockOrchestrateImprovement.mockResolvedValue(mockResult);
 
-			const { POST } = await import('$lib/../routes/api/prompts/[id]/improve/+server');
+			const { POST } = await import('$lib/../routes/api/prompts/[id=int]/improve/+server');
 
 			const request = new Request('http://localhost/api/prompts/2/improve', {
 				method: 'POST',

@@ -106,7 +106,7 @@ describe('function-defaults API routes', () => {
 			(getFunctionDefault as ReturnType<typeof vi.fn>).mockResolvedValue(mockDefault);
 
 			const { GET } =
-				await import('../../../../src/routes/api/admin/function-defaults/[type]/+server');
+				await import('../../../../src/routes/api/admin/function-defaults/[type=function_type]/+server');
 
 			const event = {
 				locals: { auth: mockAuth() },
@@ -122,14 +122,16 @@ describe('function-defaults API routes', () => {
 			expect(getFunctionDefault).toHaveBeenCalledWith('executor');
 		});
 
-		it('returns 404 for invalid function type', async () => {
+		it('returns 404 for non-existent function type', async () => {
+			(getFunctionDefault as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
 			const { GET } =
-				await import('../../../../src/routes/api/admin/function-defaults/[type]/+server');
+				await import('../../../../src/routes/api/admin/function-defaults/[type=function_type]/+server');
 
 			const event = {
 				locals: { auth: mockAuth() },
-				params: { type: 'invalid-type' },
-				url: new URL('http://localhost/api/admin/function-defaults/invalid-type')
+				params: { type: 'executor' },
+				url: new URL('http://localhost/api/admin/function-defaults/executor')
 			} as any;
 
 			try {
@@ -168,7 +170,7 @@ describe('function-defaults API routes', () => {
 			(updateFunctionDefaultByType as ReturnType<typeof vi.fn>).mockResolvedValue(mockUpdated);
 
 			const { PUT } =
-				await import('../../../../src/routes/api/admin/function-defaults/[type]/+server');
+				await import('../../../../src/routes/api/admin/function-defaults/[type=function_type]/+server');
 
 			const body = JSON.stringify({
 				modelProvider: 'openai',
@@ -214,7 +216,7 @@ describe('function-defaults API routes', () => {
 			});
 
 			const { PUT } =
-				await import('../../../../src/routes/api/admin/function-defaults/[type]/+server');
+				await import('../../../../src/routes/api/admin/function-defaults/[type=function_type]/+server');
 
 			const body = JSON.stringify({
 				modelProvider: 'openai',
@@ -262,7 +264,7 @@ describe('function-defaults API routes', () => {
 			});
 
 			const { PUT } =
-				await import('../../../../src/routes/api/admin/function-defaults/[type]/+server');
+				await import('../../../../src/routes/api/admin/function-defaults/[type=function_type]/+server');
 
 			const body = JSON.stringify({
 				modelProvider: 'openai',

@@ -29,7 +29,7 @@ spec:
     - id: FR-04
       title: Settings Cascade
       status: delivered
-      description: The system shall resolve model/temperature/parameters via deterministic precedence: run > prompt > default.
+      description: "The system shall resolve model/temperature/parameters via deterministic precedence: run > prompt > default."
       evidence: [settings registry, 177+ tests]
       linkedStories: [US-3.1]
       priority: Must

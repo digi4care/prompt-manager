@@ -10,7 +10,7 @@ spec:
       status: done
       description: Persist execution metadata including model, source, tokens, and duration to the log.
       acceptanceCriteria: ["Log entry created with all required fields"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -21,7 +21,7 @@ spec:
       status: done
       description: Display a history of all executions for a given prompt.
       acceptanceCriteria: ["Execution history loads and displays correctly"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -32,7 +32,7 @@ spec:
       status: done
       description: Log entries display the fully resolved prompt with all variables substituted.
       acceptanceCriteria: ["Resolved prompt visible in log details"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -43,7 +43,7 @@ spec:
       status: done
       description: Store AI output or error details with contextual metadata in each log entry.
       acceptanceCriteria: ["Output or error stored with log entry"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build

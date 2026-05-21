@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { goto, invalidate } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -14,11 +14,18 @@
 		Trash2,
 		CheckSquare,
 		X,
-		FileText,
 		FolderOpen
 	} from 'lucide-svelte';
 	import type { Prompt } from '$lib/stores/prompts.svelte';
 	import PromptCardSkeleton from '$lib/components/prompts/prompt-card-skeleton.svelte';
+	import {
+		filterAndSortPrompts,
+		syncFiltersToUrl,
+		clearUrlFilters,
+		createDebounced,
+		type FilterState
+	} from './prompts-filter';
+	import { deletePrompt, bulkDeletePrompts } from './prompts-bulk-actions';
 
 	interface Props {
 		data: PageData;
@@ -28,9 +35,10 @@
 
 	// View state
 	let viewMode: 'grid' | 'table' = $state('grid');
-	let searchQuery: string = $state($page.url.searchParams.get('search') || '');
 	let isLoading: boolean = $state(false);
-	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	// Filter state
+	let searchQuery: string = $state($page.url.searchParams.get('search') || '');
 	let selectedTags: string[] = $state([]);
 	let selectedPurpose: string = $state($page.url.searchParams.get('purpose') || '');
 	let sortField: string = $state($page.url.searchParams.get('sort') || 'updatedAt');
@@ -50,71 +58,24 @@
 	// Derived values
 	let allTags: string[] = $derived(data.allTags || []);
 	let prompts: Prompt[] = $derived(data.prompts || []);
-	let filteredPrompts: Prompt[] = $derived(filterPrompts(prompts));
-
-	function filterPrompts(prompts: Prompt[]): Prompt[] {
-		let result = [...prompts];
-
-		// Apply search filter
-		if (searchQuery) {
-			const query = searchQuery.toLowerCase();
-			result = result.filter(
-				(p) =>
-					p.title.toLowerCase().includes(query) ||
-					(p.description || '').toLowerCase().includes(query)
-			);
-		}
-
-		// Apply tag filter
-		if (selectedTags.length > 0) {
-			result = result.filter((p) => selectedTags.some((tag) => p.tags?.includes(tag)));
-		}
-
-		// Apply purpose filter
-		if (selectedPurpose) {
-			result = result.filter((p) => p.purpose === selectedPurpose);
-		}
-
-		// Apply sorting
-		result.sort((a, b) => {
-			let comparison = 0;
-			switch (sortField) {
-				case 'title':
-					comparison = a.title.localeCompare(b.title);
-					break;
-				case 'updatedAt':
-					comparison = new Date(a.updatedAt || 0).getTime() - new Date(b.updatedAt || 0).getTime();
-					break;
-				case 'createdAt':
-					comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-					break;
-			}
-			return sortDirection === 'asc' ? comparison : -comparison;
-		});
-
-		return result;
-	}
+	let filters: FilterState = $derived({
+		searchQuery,
+		selectedTags,
+		selectedPurpose,
+		sortField,
+		sortDirection
+	});
+	let filteredPrompts: Prompt[] = $derived(filterAndSortPrompts(prompts, filters));
 
 	function updateUrl() {
-		const url = new URL(window.location.href);
-		if (searchQuery) url.searchParams.set('search', searchQuery);
-		else url.searchParams.delete('search');
-		if (selectedPurpose) url.searchParams.set('purpose', selectedPurpose);
-		else url.searchParams.delete('purpose');
-		url.searchParams.set('sort', sortField);
-		url.searchParams.set('direction', sortDirection);
 		isLoading = true;
-		goto(url.toString(), { replaceState: true, invalidateAll: true }).finally(() => {
+		syncFiltersToUrl(filters).finally(() => {
 			isLoading = false;
 		});
 	}
 
-	function debouncedSearch() {
-		if (searchTimeout) clearTimeout(searchTimeout);
-		searchTimeout = setTimeout(updateUrl, 300);
-	}
+	const debouncedSearch = $derived(createDebounced(updateUrl, 300));
 
-	// Toggle tag selection
 	function toggleTag(tag: string) {
 		if (selectedTags.includes(tag)) {
 			selectedTags = selectedTags.filter((t) => t !== tag);
@@ -123,22 +84,15 @@
 		}
 	}
 
-	// Clear all filters
 	function clearFilters() {
 		searchQuery = '';
 		selectedTags = [];
 		selectedPurpose = '';
 		sortField = 'updatedAt';
 		sortDirection = 'desc';
-		const url = new URL(window.location.href);
-		url.searchParams.delete('search');
-		url.searchParams.delete('purpose');
-		url.searchParams.delete('sort');
-		url.searchParams.delete('direction');
-		goto(url.toString(), { replaceState: true, invalidateAll: true });
+		clearUrlFilters();
 	}
 
-	// Bulk mode
 	function toggleBulkMode() {
 		isBulkMode = !isBulkMode;
 		selectedPromptIds = new Set();
@@ -162,7 +116,6 @@
 		selectedPromptIds = newSet;
 	}
 
-	// CRUD handlers
 	function handleCreate() {
 		goto('/prompts/new');
 	}
@@ -178,24 +131,12 @@
 
 	async function confirmDelete() {
 		if (!promptToDelete) return;
-
-		try {
-			const response = await fetch(`/api/prompts/${promptToDelete.id}`, {
-				method: 'DELETE',
-				headers: { 'Content-Type': 'application/json' }
-			});
-
-			if (response.ok) {
-				await invalidate('prompts:list');
-				showDeleteConfirm = false;
-				promptToDelete = null;
-			} else {
-				console.error('Failed to delete prompt:', await response.text());
-				alert('Failed to delete prompt');
-			}
-		} catch (error) {
-			console.error('Error deleting prompt:', error);
-			alert('Error deleting prompt');
+		const ok = await deletePrompt(promptToDelete);
+		if (ok) {
+			showDeleteConfirm = false;
+			promptToDelete = null;
+		} else {
+			alert('Failed to delete prompt');
 		}
 	}
 
@@ -209,26 +150,12 @@
 	}
 
 	async function handleBulkDelete() {
-		if (selectedPromptIds.size === 0) return;
-
-		try {
-			const response = await fetch('/api/prompts/bulk-delete', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ ids: Array.from(selectedPromptIds) })
-			});
-
-			if (response.ok) {
-				selectedPromptIds = new Set();
-				showBulkDeleteConfirm = false;
-				await invalidate('prompts:list');
-			} else {
-				console.error('Failed to delete prompts:', await response.text());
-				alert('Failed to delete prompts');
-			}
-		} catch (error) {
-			console.error('Error deleting prompts:', error);
-			alert('Error deleting prompts');
+		const ok = await bulkDeletePrompts(selectedPromptIds);
+		if (ok) {
+			selectedPromptIds = new Set();
+			showBulkDeleteConfirm = false;
+		} else {
+			alert('Failed to delete prompts');
 		}
 	}
 

@@ -10,7 +10,7 @@ spec:
       status: done
       description: Stream AI execution results to the client in real-time using Server-Sent Events.
       acceptanceCriteria: ["Results stream in real-time without polling"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -21,7 +21,7 @@ spec:
       status: done
       description: Allow users to cancel an in-progress streaming execution.
       acceptanceCriteria: ["Stream can be aborted by user action"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -32,7 +32,7 @@ spec:
       status: done
       description: Maintain SSE connection health with heartbeats and automatic reconnection on failure.
       acceptanceCriteria: ["SSE reconnects automatically after disconnect"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build

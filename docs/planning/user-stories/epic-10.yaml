@@ -10,7 +10,7 @@ spec:
       status: done
       description: Initiate a council correct review that runs 3 AI agents in parallel.
       acceptanceCriteria: ["Council review triggers 3 parallel agents"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -21,7 +21,7 @@ spec:
       status: done
       description: Each council agent evaluates the prompt from a distinct, configured perspective.
       acceptanceCriteria: ["Each agent provides unique perspective feedback"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -32,7 +32,7 @@ spec:
       status: done
       description: Council agents load and use their configured system prompts and model settings.
       acceptanceCriteria: ["Agents use correct system prompts and models"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -43,7 +43,7 @@ spec:
       status: done
       description: Allow temporary override of agent system prompts for a single council session.
       acceptanceCriteria: ["Prompt overrides apply for the session only"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -54,7 +54,7 @@ spec:
       status: done
       description: Stream council agent responses to the client in real-time using SSE.
       acceptanceCriteria: ["Council results stream in real-time"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -65,7 +65,7 @@ spec:
       status: done
       description: Present all council agent feedback with clear labeling of which agent produced each response.
       acceptanceCriteria: ["Each feedback item shows agent identity"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build

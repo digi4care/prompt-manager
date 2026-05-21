@@ -1,0 +1,11 @@
+apiVersion: planning/v1
+kind: Decisions
+metadata:
+  name: epic-06
+  lastUpdated: "2026-05-21"
+spec:
+  items: []
+  legacyContent:
+    - |
+      Decisions for this epic were not separately tracked during implementation.
+      Key decisions are captured in architecture.yaml and decisions/epic-01.yaml.

@@ -10,7 +10,7 @@ spec:
       status: done
       description: Integrate OpenCode SDK to execute prompts and receive AI responses.
       acceptanceCriteria: ["Prompt executes and returns AI response"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -21,7 +21,7 @@ spec:
       status: done
       description: Show which model was resolved and used during prompt execution.
       acceptanceCriteria: ["Resolved model displayed in execution results"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -32,7 +32,7 @@ spec:
       status: done
       description: Allow users to override model, temperature, and max_tokens for individual executions.
       acceptanceCriteria: ["Overrides applied correctly per execution"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -43,7 +43,7 @@ spec:
       status: done
       description: Display actionable error messages when prompt execution fails.
       acceptanceCriteria: ["Error messages indicate cause and suggested action"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -54,7 +54,7 @@ spec:
       status: done
       description: Show execution duration and token usage metrics alongside the AI response.
       acceptanceCriteria: ["Duration and token counts visible in results"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build

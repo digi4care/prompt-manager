@@ -10,7 +10,7 @@ spec:
       status: done
       description: Support defining variable placeholders in prompt frontmatter using {{VAR}} syntax.
       acceptanceCriteria: ["Variables parsed from frontmatter correctly"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -21,7 +21,7 @@ spec:
       status: done
       description: Display a live preview of the resolved prompt while the user enters variable values.
       acceptanceCriteria: ["Preview updates as variable values change"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -32,7 +32,7 @@ spec:
       status: done
       description: Ensure prompt preview reacts and updates on every keystroke in variable inputs.
       acceptanceCriteria: ["Preview updates on each keystroke without delay"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -43,7 +43,7 @@ spec:
       status: done
       description: Show a clear error in the preview when required variables are missing or empty.
       acceptanceCriteria: ["Error shown for missing required variables"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -54,7 +54,7 @@ spec:
       status: done
       description: Escape variable values that contain {{ or }} to prevent injection or parsing errors.
       acceptanceCriteria: ["Variables with braces render safely"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build

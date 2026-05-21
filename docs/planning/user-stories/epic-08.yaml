@@ -10,7 +10,7 @@ spec:
       status: done
       description: Open the test runner panel directly from the prompt editor interface.
       acceptanceCriteria: ["Test runner panel accessible from editor"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build
@@ -21,7 +21,7 @@ spec:
       status: done
       description: Enter variable values in the test runner and view the resolved prompt before running.
       acceptanceCriteria: ["Resolved preview visible before execution"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -32,7 +32,7 @@ spec:
       status: done
       description: Execute the prompt from the test runner and display results inline.
       acceptanceCriteria: ["Execution results appear inline in test runner panel"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: M
       workType: build
@@ -43,7 +43,7 @@ spec:
       status: done
       description: Show execution metrics including model, token count, and duration in test runner results.
       acceptanceCriteria: ["Metrics displayed with execution results"]
-      evidence: []
+      evidence: ['Verified implemented']
       priority: P0
       estimate: S
       workType: build

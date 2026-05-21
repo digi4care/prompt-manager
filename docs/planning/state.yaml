@@ -2,13 +2,13 @@ apiVersion: planning/v1
 kind: PlanningState
 metadata:
   name: planning-state
-  lastUpdated: "2026-05-19"
+  lastUpdated: "2026-05-21"
 spec:
-  currentState: requirements_ready
+  currentState: verification_ready
   scaleProfile: Large
   complete: false
-  nextAction: "All Plan gates pass; ready to begin iteration planning"
-  primaryBlocker: null
+  nextAction: "Settings route consolidation (/settings-new into /settings); release preparation with changelog and tagged artifact"
+  primaryBlocker: "Dual settings routes need consolidation before release"
   requiresHumanIntervention: false
   gateTable:
     - state: draft
@@ -48,47 +48,47 @@ spec:
       missing: null
     - state: implementation_ready
       lifecycleStage: Execute
-      pass: false
-      evidence: null
-      missing: "YAML migration must complete first"
+      pass: true
+      evidence: "All 126 Beads issues closed; 8 phases COMPLETE; debate mode implemented; 48 unit tests + 31 E2E specs; bun run check: 0 errors"
+      missing: null
     - state: verification_ready
       lifecycleStage: Verify
-      pass: false
-      evidence: null
-      missing: "Blocked by migration"
+      pass: true
+      evidence: "All P1 stories verified; settings cascade tested end-to-end; security review passed; 0 type errors"
+      missing: null
     - state: release_ready
       lifecycleStage: Release
       pass: false
       evidence: null
-      missing: "Blocked by migration"
+      missing: "Dual settings routes need consolidation; no tagged release artifact; no product changelog"
   documentMap:
     - doc: personas.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: problem.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: vision.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: architecture.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: mvp-scope.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: mvp-plan.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: test-strategy.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: release.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
     - doc: diagrams/traceability.yaml
       status: active
-      lastUpdated: "2026-05-19"
+      lastUpdated: "2026-05-21"
   openQuestions:
     - question: "Should reports/ and modules/ be integrated into YAML or left as supplemental?"
       owner: dev

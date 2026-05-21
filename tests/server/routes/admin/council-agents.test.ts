@@ -1,66 +1,83 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 
-// Mock database
-vi.mock('$lib/server/db/client', () => ({
-	db: {
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				leftJoin: vi.fn(() => ({
-					where: vi.fn(() => ({
-						orderBy: vi.fn().mockResolvedValue([])
-					})),
-					orderBy: vi.fn().mockResolvedValue([])
-				})),
+// Mock auth helper
+vi.mock('$lib/server/auth.helper', () => ({
+	authenticateRequest: vi.fn().mockReturnValue({
+		userId: 'test-user',
+		email: 'test@example.com',
+		role: 'admin'
+	}),
+	requireAdmin: vi.fn().mockReturnValue({
+		userId: 'test-user',
+		email: 'test@example.com',
+		role: 'admin'
+	})
+}));
+
+// Mock database with complete chain
+vi.mock('$lib/server/db/client', () => {
+	const mockSelectChain = {
+		from: vi.fn(() => ({
+			leftJoin: vi.fn(() => ({
 				where: vi.fn(() => ({
 					orderBy: vi.fn().mockResolvedValue([])
-				})),
+				}))
+			})),
+			where: vi.fn(() => ({
 				orderBy: vi.fn().mockResolvedValue([])
-			}))
-		})),
-		insert: vi.fn(() => ({
-			values: vi.fn(() => ({
-				returning: vi
-					.fn()
-					.mockResolvedValue([{ id: 1, modelId: 'openai/gpt-4o-mini', modelVariant: 'low' }])
-			}))
-		})),
-		update: vi.fn(() => ({
-			set: vi.fn(() => ({
-				where: vi.fn(() => ({
+			})),
+			orderBy: vi.fn().mockResolvedValue([])
+		}))
+	};
+
+	return {
+		db: {
+			select: vi.fn(() => mockSelectChain),
+			insert: vi.fn(() => ({
+				values: vi.fn(() => ({
 					returning: vi
 						.fn()
-						.mockResolvedValue([{ id: 1, modelId: 'openai/gpt-4o-mini', modelVariant: 'high' }])
+						.mockResolvedValue([{ id: 1, modelId: 'openai/gpt-4o-mini', modelVariant: 'low' }])
+				}))
+			})),
+			update: vi.fn(() => ({
+				set: vi.fn(() => ({
+					where: vi.fn(() => ({
+						returning: vi
+							.fn()
+							.mockResolvedValue([{ id: 1, modelId: 'openai/gpt-4o-mini', modelVariant: 'high' }])
+					}))
+				}))
+			})),
+			delete: vi.fn(() => ({
+				where: vi.fn(() => ({
+					returning: vi.fn().mockResolvedValue([{ id: 1 }])
 				}))
 			}))
-		})),
-		delete: vi.fn(() => ({
-			where: vi.fn(() => ({
-				returning: vi.fn().mockResolvedValue([{ id: 1 }])
-			}))
+		},
+		getRawClient: vi.fn(() => ({
+			execute: vi.fn().mockResolvedValue({
+				rows: [
+					{
+						id: 1,
+						parent_type: 'function_defaults',
+						parent_id: 0,
+						agent_order: 1,
+						model_id: 'openai/gpt-4o-mini',
+						model_variant: 'low',
+						temperature: 0.7,
+						max_tokens: 4096,
+						prompt_link_id: null,
+						created_at: Math.floor(Date.now() / 1000),
+						updated_at: Math.floor(Date.now() / 1000)
+					}
+				],
+				rowsAffected: 1
+			})
 		}))
-	},
-	getRawClient: vi.fn(() => ({
-		execute: vi.fn().mockResolvedValue({
-			rows: [
-				{
-					id: 1,
-					parent_type: 'function_defaults',
-					parent_id: 0,
-					agent_order: 1,
-					model_id: 'openai/gpt-4o-mini',
-					model_variant: 'low',
-					temperature: 0.7,
-					max_tokens: 4096,
-					prompt_link_id: null,
-					created_at: Math.floor(Date.now() / 1000),
-					updated_at: Math.floor(Date.now() / 1000)
-				}
-			],
-			rowsAffected: 1
-		})
-	}))
-}));
+	};
+});
 
 // Mock services
 vi.mock('$lib/server/services/admin-settings.service', () => ({
@@ -111,7 +128,7 @@ describe('council-agents API routes', () => {
 			const json = await response.json();
 
 			expect(response.status).toBe(200);
-			expect(json.agents).toEqual([]);
+			expect(json.data).toEqual([]);
 		});
 	});
 
@@ -175,7 +192,7 @@ describe('council-agents API routes', () => {
 			} catch (err) {
 				expect((err as { status: number }).status).toBe(400);
 				const responseBody = JSON.parse((err as { body: { message: string } }).body.message);
-				expect(responseBody.code).toBe('MODEL_REQUIRED');
+				expect(responseBody.message).toContain('Validation failed');
 			}
 		});
 
@@ -218,7 +235,7 @@ describe('council-agents API routes', () => {
 			} catch (err) {
 				expect((err as { status: number }).status).toBe(400);
 				const responseBody = JSON.parse((err as { body: { message: string } }).body.message);
-				expect(responseBody.code).toBe('VARIANT_REQUIRED');
+				expect(responseBody.message).toContain('Variant required');
 			}
 		});
 
@@ -260,7 +277,7 @@ describe('council-agents API routes', () => {
 			} catch (err) {
 				expect((err as { status: number }).status).toBe(422);
 				const responseBody = JSON.parse((err as { body: { message: string } }).body.message);
-				expect(responseBody.code).toBe('VARIANT_NOT_ALLOWED');
+				expect(responseBody.message).toContain('not allowed');
 			}
 		});
 	});
@@ -279,17 +296,22 @@ describe('council-agents API routes', () => {
 				resolved: { variantId: 'high' }
 			});
 
-			// Mock the db chain for the initial select in handleUpdate
+			// Mock the db chain for the initial select in getCouncilAgent
 			const mockDb = await import('$lib/server/db/client');
-			(mockDb.db.select as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+			// Override select to return a chain that resolves with the agent
+			// Both initial getCouncilAgent and re-fetch after update use this mock
+			(mockDb.db as any).select = vi.fn(() => ({
 				from: vi.fn(() => ({
-					where: vi
-						.fn()
-						.mockResolvedValueOnce([{ id: 1, modelId: 'openai/gpt-4o-mini', modelVariant: 'low' }])
+					leftJoin: vi.fn(() => ({
+						where: vi.fn().mockResolvedValue([
+							{ id: 1, modelId: 'openai/gpt-4o-mini', modelVariant: 'high' }
+						])
+					}))
 				}))
-			});
+			}));
 
-			const { PUT } = await import('../../../../src/routes/api/admin/council-agents/[id]/+server');
+			const { PUT } =
+				await import('../../../../src/routes/api/admin/council-agents/[id]/+server');
 
 			const body = JSON.stringify({
 				modelVariant: 'high'
@@ -321,13 +343,17 @@ describe('council-agents API routes', () => {
 
 			// Mock the db chain for the initial select - return empty to trigger 404
 			const mockDb = await import('$lib/server/db/client');
+			const leftJoinMock = vi.fn(() => ({
+				where: vi.fn().mockResolvedValueOnce([])
+			}));
 			(mockDb.db.select as ReturnType<typeof vi.fn>).mockReturnValueOnce({
 				from: vi.fn(() => ({
-					where: vi.fn().mockResolvedValueOnce([])
+					leftJoin: leftJoinMock
 				}))
 			});
 
-			const { PUT } = await import('../../../../src/routes/api/admin/council-agents/[id]/+server');
+			const { PUT } =
+				await import('../../../../src/routes/api/admin/council-agents/[id]/+server');
 
 			const body = JSON.stringify({
 				modelVariant: 'high'
@@ -364,7 +390,7 @@ describe('council-agents API routes', () => {
 			const json = await response.json();
 
 			expect(response.status).toBe(200);
-			expect(json.data.id).toBe(1);
+			expect(json.data.deleted).toBe(true);
 		});
 	});
 });

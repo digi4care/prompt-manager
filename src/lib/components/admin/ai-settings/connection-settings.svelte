@@ -23,45 +23,12 @@
 		Lock,
 		ArrowRight
 	} from 'lucide-svelte';
-
-	interface PortRange {
-		min: number;
-		max: number;
-	}
-
-	interface LocalSettings {
-		hostname?: string;
-		portRange?: PortRange;
-	}
-
-	interface RemoteSettings {
-		protocol?: 'http' | 'https';
-		host?: string;
-		port?: number;
-		basePath?: string;
-		baseUrl?: string;
-		username?: string;
-		password?: string;
-	}
-
-	interface ConnectionSettings {
-		mode: 'local' | 'remote';
-		local?: LocalSettings;
-		remote?: RemoteSettings;
-	}
-
-	interface ConnectionStatus {
-		mode: 'local' | 'remote';
-		settings: ConnectionSettings;
-		baseUrl: string;
-		port: number | null;
-		startedLocalServer: boolean;
-		hasPassword: boolean;
-		connected: boolean;
-		healthy: boolean;
-		version: string | null;
-		lastConnected: string | null;
-	}
+	import {
+		type ConnectionSettings,
+		type ConnectionStatus,
+		fetchConnectionStatus,
+		saveConnectionSettings
+	} from './connection-api';
 
 	let { onConnectionChange = () => {} }: { onConnectionChange?: (connected: boolean) => void } =
 		$props();
@@ -84,26 +51,6 @@
 	let remoteBaseUrl = $state('');
 	let remoteUsername = $state('');
 	let remotePassword = $state('');
-
-	function parseErrorMessage(payload: unknown, fallback: string): string {
-		if (typeof payload === 'string') {
-			try {
-				const parsed = JSON.parse(payload) as { message?: string };
-				return parsed.message || payload;
-			} catch {
-				return payload;
-			}
-		}
-
-		if (payload && typeof payload === 'object' && 'message' in payload) {
-			const message = (payload as { message?: unknown }).message;
-			if (typeof message === 'string' && message.length > 0) {
-				return message;
-			}
-		}
-
-		return fallback;
-	}
 
 	function applyStatusToForm(nextStatus: ConnectionStatus) {
 		mode = nextStatus.mode;
@@ -156,14 +103,8 @@
 	}
 
 	function canSaveRemote(): boolean {
-		if (remoteBaseUrl.trim().length > 0) {
-			return true;
-		}
-
-		if (remoteHost.trim().length === 0) {
-			return false;
-		}
-
+		if (remoteBaseUrl.trim().length > 0) return true;
+		if (remoteHost.trim().length === 0) return false;
 		const parsedPort = Number(remotePort);
 		return Number.isInteger(parsedPort) && parsedPort >= 1 && parsedPort <= 65535;
 	}
@@ -171,17 +112,9 @@
 	async function loadStatus() {
 		loading = true;
 		error = null;
-
 		try {
-			const res = await fetch('/api/admin/opencode-connection');
-			if (!res.ok) {
-				const payload = await res.text();
-				throw new Error(parseErrorMessage(payload, 'Failed to load connection status'));
-			}
-
-			const data = (await res.json()) as { data: ConnectionStatus };
-			status = data.data;
-			applyStatusToForm(data.data);
+			status = await fetchConnectionStatus();
+			applyStatusToForm(status);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Unknown error';
 		} finally {
@@ -192,26 +125,11 @@
 	async function saveSettings() {
 		saving = true;
 		error = null;
-
 		try {
-			const res = await fetch('/api/admin/opencode-connection', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					settings: buildSettingsPayload()
-				})
-			});
-
-			if (!res.ok) {
-				const payload = await res.text();
-				throw new Error(parseErrorMessage(payload, 'Failed to save settings'));
-			}
-
-			const data = (await res.json()) as { data: ConnectionStatus };
-			status = data.data;
-			applyStatusToForm(data.data);
+			status = await saveConnectionSettings(buildSettingsPayload());
+			applyStatusToForm(status);
 			remotePassword = '';
-			onConnectionChange(Boolean(data.data.connected && data.data.healthy));
+			onConnectionChange(Boolean(status.connected && status.healthy));
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Unknown error';
 		} finally {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 
+
 // Mock services
 vi.mock('$lib/server/services/function-defaults.service', () => ({
 	getFunctionDefaults: vi.fn(),
@@ -35,7 +36,7 @@ import { validateModelVariantScope } from '$lib/server/validators/model-variant.
 
 const mockAuth = (userId: string = 'test-user', email: string = 'test@example.com') => ({
 	session: { userId },
-	user: { id: userId, email }
+	user: { id: userId, email, role: 'admin' }
 });
 
 const mockCatalog = {
@@ -239,7 +240,7 @@ describe('function-defaults API routes', () => {
 			} catch (err) {
 				expect((err as { status: number }).status).toBe(400);
 				const responseBody = JSON.parse((err as { body: { message: string } }).body.message);
-				expect(responseBody.code).toBe('VARIANT_REQUIRED');
+				expect(responseBody.errors.code).toBe('VARIANT_REQUIRED');
 				expect(responseBody.errors.modelVariant).toBeDefined();
 			}
 		});
@@ -288,7 +289,7 @@ describe('function-defaults API routes', () => {
 			} catch (err) {
 				expect((err as { status: number }).status).toBe(422);
 				const responseBody = JSON.parse((err as { body: { message: string } }).body.message);
-				expect(responseBody.code).toBe('VARIANT_NOT_ALLOWED');
+				expect(responseBody.errors.code).toBe('VARIANT_NOT_ALLOWED');
 				expect(responseBody.errors.modelVariant).toBeDefined();
 			}
 		});

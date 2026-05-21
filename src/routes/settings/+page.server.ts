@@ -1,14 +1,16 @@
-import type { PageServerLoad, Actions } from './$types';
+import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db/client';
 import { adminSettings, opencodeConnection, prompts, councilAgents } from '$lib/server/db/schema';
 import { eq, asc, isNull } from 'drizzle-orm';
 import {
 	getAllProviders,
-	getProviderCatalog,
 	type ProviderInfo
 } from '$lib/server/services/opencode.service';
 import { getFunctionDefaults } from '$lib/server/services/function-defaults.service';
-import { error, json } from '@sveltejs/kit';
+
+// New Settings Schema Registry
+import { settingsRegistry, getDefaultValues } from './settings-schema';
+import { legacyToRegistry } from '$lib/settings/compat';
 
 const SETTINGS_KEY = 'function_defaults';
 const SETTINGS_CATEGORY = 'opencode';
@@ -35,82 +37,12 @@ interface CouncilAgent {
 	promptLinkId?: number | null;
 }
 
-/**
- * Check if a model supports thinking/extended thinking based on model ID
- */
-function modelSupportsThinking(modelId: string): boolean {
-	const lowerModelId = modelId.toLowerCase();
-
-	// Check for explicit -thinking suffix (most reliable)
-	if (lowerModelId.includes('-thinking') || lowerModelId.includes('_thinking')) {
-		return true;
-	}
-
-	// OpenAI o1/o3 series
-	if (
-		lowerModelId.startsWith('o1-') ||
-		lowerModelId.startsWith('o1_') ||
-		lowerModelId.startsWith('o3-') ||
-		lowerModelId.startsWith('o3_')
-	) {
-		return true;
-	}
-
-	// GPT-5.x thinking variants
-	if (lowerModelId.includes('gpt-5.') && lowerModelId.includes('thinking')) {
-		return true;
-	}
-
-	// DeepSeek R1
-	if (lowerModelId.includes('deepseek-r1') || lowerModelId.includes('deepseek_reasoner')) {
-		return true;
-	}
-
-	// Google Gemini thinking
-	if (lowerModelId.includes('gemini') && lowerModelId.includes('thinking')) {
-		return true;
-	}
-
-	// Claude with extended thinking
-	if (
-		lowerModelId.includes('claude-3-7') ||
-		lowerModelId.includes('claude-3.7') ||
-		lowerModelId.includes('claude-sonnet-4')
-	) {
-		return true;
-	}
-
-	return false;
-}
-
-interface FunctionDefaultsSettings {
-	executor: FunctionDefault;
-	judge: FunctionDefault;
-	improve: FunctionDefault;
-	councilAgents: CouncilAgent[];
-	opencode_allowed_models?: string[];
-}
-
-const DEFAULT_SETTINGS: FunctionDefaultsSettings = {
-	executor: { type: 'executor', modelId: null, temperature: 0.7, maxTokens: 4096 },
-	judge: { type: 'judge', modelId: null, temperature: 0.3, maxTokens: 2048 },
-	improve: { type: 'improve', modelId: null, temperature: 0.5, maxTokens: 4096 },
-	councilAgents: []
-};
-
 export const load: PageServerLoad = async ({ url }) => {
-	// Check for force refresh parameter
-	const forceRefresh = url.searchParams.get('refresh') === 'true';
-	if (forceRefresh) {
-		console.log('[Settings] Force refresh requested');
-	}
-
 	// Load function defaults from the function_defaults table
 	const functionDefaultsList = await getFunctionDefaults();
 
 	// Convert array to object keyed by functionType
-	// modelId format is 'providerID/modelID' - we'll extract providerId from it
-	const settings: FunctionDefaultsSettings = { ...DEFAULT_SETTINGS };
+	const settings: Record<string, FunctionDefault> = {};
 	for (const def of functionDefaultsList) {
 		if (
 			def.functionType === 'executor' ||
@@ -146,12 +78,10 @@ export const load: PageServerLoad = async ({ url }) => {
 		try {
 			const parsed = JSON.parse(policySettingsRow[0].value);
 			allowedModels = Array.isArray(parsed) ? parsed : [];
-			console.log('[Settings] Whitelist loaded:', allowedModels);
 		} catch (e) {
 			console.error('[Settings] Failed to parse policy settings:', e);
 		}
 	}
-	console.log('[Settings] Final allowedModels count:', allowedModels.length);
 
 	// Load connection status
 	const connectionRow = await db
@@ -174,197 +104,86 @@ export const load: PageServerLoad = async ({ url }) => {
 	let allProviders: unknown[] = [];
 	let connectedProviderIds: string[] = [];
 	try {
-		console.log('[Settings] Loading all providers from OpenCode...');
-		const catalog = await getAllProviders(forceRefresh);
-		console.log('[Settings] All providers loaded:', catalog.all?.length ?? 0);
-		// Store all providers
+		const catalog = await getAllProviders();
 		allProviders = catalog.all ?? [];
 		connectedProviderIds = catalog.connected ?? [];
-		// Flatten providers to get all models
-		if (catalog.all && Array.isArray(catalog.all)) {
-			// Get selected provider IDs (connected ones)
-			const connectedIds = (catalog.connected ?? []).map((p: string) => p.toLowerCase());
 
-			const allProviderModels = catalog.all.flatMap((p: unknown) => {
-				const provider = p as ProviderInfo;
-				const providerModels = Object.values(provider.models ?? {});
-				return providerModels;
-			});
-			const totalModels = allProviderModels.length;
+		if (catalog.all && Array.isArray(catalog.all)) {
+			const connectedIds = (catalog.connected ?? []).map((p: string) => p.toLowerCase());
 
 			models = catalog.all.flatMap((p: unknown) => {
 				const provider = p as ProviderInfo;
 
-				// Only include models from selected/connected providers
 				if (!connectedIds.includes(provider.id.toLowerCase())) {
 					return [];
 				}
 
-				const providerModels = Object.values(provider.models ?? {});
-
-				// If whitelist exists, filter models by provider/model format
-				let filteredModels = providerModels;
-				if (allowedModels.length > 0) {
-					filteredModels = providerModels.filter((m) => {
-						// Use provider/model format for exact matching
-						const providerModelId = `${provider.id}/${m.id}`.toLowerCase();
-						const modelIdLower = m.id.toLowerCase();
-						return allowedModels.some((wl) => {
-							const wlLower = wl.toLowerCase();
-							// Match provider/model format (e.g., "openrouter/glm-4")
-							if (wlLower.includes('/')) {
-								return providerModelId === wlLower || providerModelId.startsWith(wlLower + '/');
-							}
-							// Legacy support: match just model ID for backward compatibility
-							return (
-								modelIdLower === wlLower ||
-								(wlLower.length >= 7 && modelIdLower.startsWith(wlLower))
-							);
-						});
-					});
-				}
-
-				return filteredModels.map((m) => ({
-					...m,
-					provider: provider.id,
-					supports_thinking: modelSupportsThinking(m.id)
+				return Object.values(provider.models ?? {}).map((model) => ({
+					...model,
+					provider: provider.id
 				}));
 			});
-
-			console.log(
-				`[Settings] Filtered models: ${models.length} from ${totalModels} | whitelist:`,
-				allowedModels
-			);
 		}
 	} catch (err) {
-		console.error('[Settings] FAILED to load all providers:', err);
-	}
-
-	// Second pass: fill in modelProvider from models list for function defaults
-	// This is needed because database might store modelId without provider prefix
-	for (const type of ['executor', 'judge', 'improve'] as const) {
-		const config = settings[type];
-		if (config && !config.modelProvider) {
-			const model = models.find((m: unknown) => {
-				const typedModel = m as { id: string; provider: string };
-				return typedModel.id === config.modelId;
-			}) as { id: string; provider: string } | undefined;
-			if (model?.provider) {
-				settings[type] = {
-					...config,
-					modelProvider: model.provider,
-					providerId: model.provider
-				};
-				console.log(
-					`[Settings] Filled provider for ${type}: ${model.provider} (from model lookup)`
-				);
-			}
-		}
+		console.error('[Settings] Error loading providers:', err);
 	}
 
 	// Load council agents
-	console.log('[Settings] Loading council agents...');
 	let councilAgentsList: CouncilAgent[] = [];
 	try {
-		// Get council agents from the database (ONLY function_defaults)
-		const result = await db
+		const agents = await db
 			.select()
-			.from(councilAgents)
-			.where(eq(councilAgents.parentType, 'function_defaults'))
-			.all();
-		console.log('[Settings] Raw council agents query result:', result.length);
+			.from(councilAgents);
 
-		// Enrich with model info - look up model details from the models list
-		councilAgentsList = result.map((agent) => {
-			// Try to find model name from the models list (fallback)
-			const model = models.find((m: unknown) => (m as { id: string }).id === agent.modelId) as
-				| { id: string; name: string; provider: string; logo?: string }
-				| undefined;
+		councilAgentsList = agents.map((agent) => {
+			const modelParts = agent.modelId.split('/');
+			const providerId = modelParts.length > 1 ? modelParts[0] : undefined;
+			const modelId = modelParts.length > 1 ? modelParts.slice(1).join('/') : agent.modelId;
 
-			// Extract provider from modelId format (provider/model) or use model's provider
-			let providerId: string | undefined;
-			let modelIdOnly = agent.modelId;
-			if (agent.modelId.includes('/')) {
-				const parts = agent.modelId.split('/');
-				providerId = parts[0];
-				modelIdOnly = parts.slice(1).join('/');
-			} else if (model?.provider) {
-				providerId = model.provider;
-			}
+		const model = (models as { id: string; name: string; logo?: string }[]).find((m) => m.id === agent.modelId);
 
-			// Use stored values from database first, then fallback to models list lookup
-			const resolvedModelName = agent.modelName || model?.name || agent.modelId;
 			return {
 				id: String(agent.id),
-				name: resolvedModelName, // Required field - use resolved model name
-				modelId: agent.modelName ? modelIdOnly : agent.modelId, // Store just the model ID part
-				modelName: resolvedModelName,
-				providerId: agent.modelProvider || providerId,
-				modelProvider: agent.modelProvider || model?.provider || providerId,
+				name: agent.modelName || '',
+				modelId: modelId,
+				modelProvider: providerId,
 				modelLogo: agent.modelLogo || model?.logo,
 				temperature: agent.temperature,
 				maxTokens: agent.maxTokens,
 				promptLinkId: agent.promptLinkId || undefined,
-				modelVariant: agent.modelVariant ?? undefined,
-				createdAt: agent.createdAt?.toISOString(),
-				updatedAt: agent.updatedAt?.toISOString()
+				modelVariant: agent.modelVariant ?? undefined
 			};
 		});
-
-		console.log('[Settings] Council agents loaded:', councilAgentsList.length);
 	} catch (err) {
 		console.error('[Settings] Error loading council agents:', err);
 	}
 
-	// Load review agents (same table, different parentType)
-	console.log('[Settings] Loading review agents...');
-	let reviewAgentsList: CouncilAgent[] = [];
-	try {
-		const reviewResult = await db
-			.select()
-			.from(councilAgents)
-			.where(eq(councilAgents.parentType, 'review_defaults'))
-			.all();
+	// Serialize registry blocks for new settings system
+	const allBlocks = settingsRegistry.getAllBlocks();
+	const serializableBlocks = allBlocks.map(block => ({
+		id: block.id,
+		label: block.label,
+		description: block.description,
+		order: block.order,
+		settings: block.settings.map(setting => ({
+			key: setting.key,
+			type: setting.type,
+			label: setting.label,
+			description: setting.description,
+			defaultValue: setting.defaultValue,
+			category: setting.category,
+			order: setting.order,
+			advanced: setting.advanced,
+			options: setting.options
+		}))
+	}));
 
-		reviewAgentsList = reviewResult.map((agent) => {
-			const model = models.find((m: unknown) => (m as { id: string }).id === agent.modelId) as
-				| { id: string; name: string; provider: string; logo?: string }
-				| undefined;
-
-			let providerId: string | undefined;
-			let modelIdOnly = agent.modelId;
-			if (agent.modelId.includes('/')) {
-				const parts = agent.modelId.split('/');
-				providerId = parts[0];
-				modelIdOnly = parts.slice(1).join('/');
-			} else if (model?.provider) {
-				providerId = model.provider;
-			}
-
-			const resolvedModelName = agent.modelName || model?.name || agent.modelId;
-			return {
-				id: String(agent.id),
-				name: resolvedModelName,
-				modelId: agent.modelName ? modelIdOnly : agent.modelId,
-				modelName: resolvedModelName,
-				providerId: agent.modelProvider || providerId,
-				modelProvider: agent.modelProvider || model?.provider || providerId,
-				modelLogo: agent.modelLogo || model?.logo,
-				temperature: agent.temperature,
-				maxTokens: agent.maxTokens,
-				promptLinkId: agent.promptLinkId || undefined,
-				modelVariant: agent.modelVariant ?? undefined,
-				createdAt: agent.createdAt?.toISOString(),
-				updatedAt: agent.updatedAt?.toISOString()
-			};
-		});
-
-		console.log('[Settings] Review agents loaded:', reviewAgentsList.length);
-	} catch (err) {
-		console.error('[Settings] Error loading review agents:', err);
-	}
+	const registrySettings = legacyToRegistry({ defaults: settings });
+	const defaultValues = getDefaultValues();
+	const mergedRegistrySettings = { ...defaultValues, ...registrySettings };
 
 	return {
+		// Legacy data (backward compatibility)
 		settings,
 		connection,
 		models,
@@ -373,33 +192,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		allowedModels,
 		prompts: promptsList,
 		councilAgents: councilAgentsList,
-		reviewAgents: reviewAgentsList
+		// New registry data
+		registrySettings: mergedRegistrySettings,
+		registryBlocks: serializableBlocks
 	};
-};
-
-export const actions: Actions = {
-	saveDefaults: async ({ request }) => {
-		const data = await request.json();
-
-		// TODO: Add Zod validation
-
-		await db
-			.insert(adminSettings)
-			.values({
-				key: SETTINGS_KEY,
-				category: SETTINGS_CATEGORY,
-				value: JSON.stringify(data),
-				updatedBy: 'admin'
-			})
-			.onConflictDoUpdate({
-				target: adminSettings.key,
-				set: {
-					value: JSON.stringify(data),
-					updatedAt: new Date(),
-					updatedBy: 'admin'
-				}
-			});
-
-		return json({ success: true });
-	}
 };

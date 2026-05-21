@@ -7,6 +7,7 @@ const config = defineConfig({
 	plugins: [sveltekit(), svelteTesting()],
 	test: {
 		include: ['tests/**/*.{test,spec}.{js,ts}'],
+		exclude: ['e2e/**', 'node_modules/**'],
 		environment: 'jsdom',
 		setupFiles: ['tests/setup.ts'],
 		globals: true,
@@ -23,6 +24,10 @@ const config = defineConfig({
 	},
 	resolve: {
 		alias: [
+			{
+				find: '$env/static/private',
+				replacement: resolve(__dirname, './tests/stubs/env-private.ts')
+			},
 			{
 				find: '$lib',
 				replacement: resolve(__dirname, './src/lib')

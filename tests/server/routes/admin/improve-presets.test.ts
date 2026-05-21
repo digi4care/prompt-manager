@@ -1,7 +1,21 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 
+
 // Mock database
+// Mock auth helper
+vi.mock('$lib/server/auth.helper', () => ({
+	requireAdmin: vi.fn().mockReturnValue({
+		userId: 'test-user',
+		email: 'test@example.com',
+		role: 'admin'
+	}),
+	authenticateRequest: vi.fn().mockReturnValue({
+		userId: 'test-user',
+		email: 'test@example.com',
+		role: 'admin'
+	})
+}));
 vi.mock('$lib/server/db/client', () => {
 	const mockTx = {
 		select: vi.fn(() => ({
@@ -50,6 +64,13 @@ vi.mock('$lib/server/services/admin-settings.service', () => ({
 
 import { getOpenCodePolicy, isModelAllowed } from '$lib/server/services/admin-settings.service';
 
+const mockAuth = () => ({
+	session: { userId: 'test-user' },
+	user: { id: 'test-user', email: 'test@example.com', role: 'admin' }
+});
+
+const mockLocals = () => ({ auth: mockAuth() });
+
 describe('improve-presets API routes', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -59,7 +80,7 @@ describe('improve-presets API routes', () => {
 		it('returns list of improve presets', async () => {
 			const { GET } = await import('../../../../src/routes/api/admin/improve-presets/+server');
 
-			const response = await GET({} as any);
+			const response = await GET({ locals: mockLocals() } as any);
 			const json = await response.json();
 
 			expect(response.status).toBe(200);
@@ -89,6 +110,7 @@ describe('improve-presets API routes', () => {
 			});
 
 			const event = {
+				locals: mockLocals(),
 				request: new Request('http://localhost/api/admin/improve-presets', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -119,6 +141,7 @@ describe('improve-presets API routes', () => {
 			});
 
 			const event = {
+				locals: mockLocals(),
 				request: new Request('http://localhost/api/admin/improve-presets', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -155,6 +178,7 @@ describe('improve-presets API routes', () => {
 			});
 
 			const event = {
+				locals: mockLocals(),
 				request: new Request('http://localhost/api/admin/improve-presets', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -194,6 +218,7 @@ describe('improve-presets API routes', () => {
 			});
 
 			const event = {
+				locals: mockLocals(),
 				request: new Request('http://localhost/api/admin/improve-presets', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -228,6 +253,7 @@ describe('improve-presets API routes', () => {
 			const { GET } = await import('../../../../src/routes/api/admin/improve-presets/[id]/+server');
 
 			const event = {
+				locals: mockLocals(),
 				params: { id: '999' }
 			} as any;
 
@@ -270,6 +296,7 @@ describe('improve-presets API routes', () => {
 			});
 
 			const event = {
+				locals: mockLocals(),
 				params: { id: '1' },
 				request: new Request('http://localhost/api/admin/improve-presets/1', {
 					method: 'PUT',
@@ -302,6 +329,7 @@ describe('improve-presets API routes', () => {
 				await import('../../../../src/routes/api/admin/improve-presets/[id]/+server');
 
 			const event = {
+				locals: mockLocals(),
 				params: { id: '1' }
 			} as any;
 

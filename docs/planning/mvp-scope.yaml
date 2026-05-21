@@ -2,7 +2,7 @@ apiVersion: planning/v1
 kind: MvpScope
 metadata:
   name: mvp-scope
-  lastUpdated: "2026-05-19"
+  lastUpdated: "2026-05-21"
 spec:
   mvpStatus: DELIVERED
   mvpVersion: "0.0.1"
@@ -36,7 +36,7 @@ spec:
       status: COMPLETE
     - id: SETTINGS
       title: Settings schema registry
-      status: PARTIAL
+      status: COMPLETE
   inScope:
     - id: US-3.1
       title: API route persists settings to DB
@@ -107,10 +107,10 @@ spec:
       evidence: Security review completed, issues fixed
   postMvpWork:
     - title: Settings route cleanup (merge /settings-new into /settings)
-      rationale: Dual settings system needs consolidation
+      rationale: "Dual settings system needs consolidation; /settings reduced 756->352 lines, /settings-new still exists"
       priority: P1
-    - title: Council debate mode UI
-      rationale: Backend done, frontend pending
+    - title: Council debate mode UI refinement
+      rationale: "Backend complete with SSE streaming; basic panel exists; needs polish and E2E coverage"
       priority: P2
     - title: Council consensus mode
       rationale: P3 priority

@@ -63,11 +63,10 @@ spec:
       priority: Should
     - id: FR-16
       title: Council debate mode
-      status: proposed
+      status: delivered
       description: DEBATE-01 through DEBATE-03. Multi-perspective debate with synthesis.
-      evidence: []
-      linkedStories: []
-      priority: Could
+      evidence: [council-debate.service.ts, debate-executor.ts, council-debate-panel.svelte]
+      linkedStories: [DEBATE-01, DEBATE-02, DEBATE-03]
     - id: FR-17
       title: Council consensus mode
       status: proposed

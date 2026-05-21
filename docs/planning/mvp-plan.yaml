@@ -2,12 +2,12 @@ apiVersion: planning/v1
 kind: MvpPlan
 metadata:
   name: mvp-plan
-  lastUpdated: "2026-05-19"
+  lastUpdated: "2026-05-21"
 spec:
   planningHorizon:
     start: "2026-02-14"
     end: "2026-06-30"
-  currentIterationGoal: Complete YAML planning migration to canonical structure
+  currentIterationGoal: "Post-MVP cleanup: settings route consolidation, debate UI polish, release preparation"
   wipLimit: 3
   gateSequence: draft -> problem_validated -> requirements_ready -> diagram_ready -> backlog_ready -> mvp_scoped -> iteration_ready -> implementation_ready
   mvpScope:
@@ -184,7 +184,7 @@ spec:
         - 08-02-PLAN.md — Snippet browser UI: list page with search/filter, create/edit forms, detail view
         - 08-03-PLAN.md — Snippet picker: dialog component with search, category filter, cursor-position insertion
     - name: Phase 9 - Council Debate Mode
-      status: PROPOSED
+      status: COMPLETE
       items: [DEBATE-01, DEBATE-02, DEBATE-03]
       goal: Users can run multi-perspective debate analysis with synthesis
       dependsOn: [Phase 7]
@@ -194,8 +194,8 @@ spec:
         2. System synthesizes conclusion from agent arguments
         3. User sees full debate history with each agent's position
       plans:
-        - 09-01-PLAN.md — Backend: council-debate.service.ts orchestrator with 3-round parallel execution + synthesis, SSE streaming API endpoint
-        - 09-02-PLAN.md — Frontend: timeline UI with collapsible rounds, agent cards, synthesis card, test runner integration with mode toggle
+        - 09-01 — council-debate.service.ts barrel, debate-executor.ts, debate-persistence.ts, debate-prompts.ts, debate-types.ts; /api/council/debate/+server.ts SSE endpoint
+        - 09-02 — council-debate-panel.svelte, debate-synthesis-card.svelte
     - name: Phase 10 - Council Consensus Mode
       status: PROPOSED
       items: [CONSENSUS-01, CONSENSUS-02, CONSENSUS-03]
